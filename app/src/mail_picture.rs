@@ -349,12 +349,16 @@ fn sized(height: f64, cut: bool, purpose: Purpose) {
         let asked = VIEW.with_borrow(|view| {
             view.as_ref().is_some_and(|view| {
                 system::capture(view, WIDTH, height, move |png| {
-                    reached("drawn");
-                    go_away();
-                    match png {
-                        Some(png) => deliver(&Picture { png, cut }, purpose),
-                        None => failed("not drawn"),
-                    }
+                    // The webview goes on a later turn of the event loop, never inside its own callback: WebView2
+                    // is still in the call that brought the picture.
+                    let _ = slint::invoke_from_event_loop(move || {
+                        reached("drawn");
+                        go_away();
+                        match png {
+                            Some(png) => deliver(&Picture { png, cut }, purpose),
+                            None => failed("not drawn"),
+                        }
+                    });
                 })
             })
         });
