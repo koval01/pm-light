@@ -235,13 +235,19 @@ fn open_mailbox(service: &Arc<Service>, app: &Weak<App>) {
         // A row is written once, so what the account chose for it has to be known first.
         // First: whether mail stands in conversations decides which counts are asked for.
         service.read_habits().await;
-        match futures::join!(service.folders(), service.counts(), service.time_settings()) {
-            (Ok(folders), Ok(counts), _) => view::folder_rows(&app, &folders, &counts, FIRST_FOLDER),
-            _ => view::failed(&app),
-        }
+        let folder_count = if let (Ok(folders), Ok(counts), _) =
+            futures::join!(service.folders(), service.counts(), service.time_settings())
+        {
+            view::folder_rows(&app, &folders, &counts, FIRST_FOLDER);
+            folders.len()
+        } else {
+            view::failed(&app);
+            0
+        };
         view::loading_mail(&app);
         service.view_begin_paged(crate::list_style::paged());
         service.view_open(FIRST_FOLDER).await;
+        crate::account_check::mailbox_opened(&service, &app, folder_count);
         let _ = app.upgrade_in_event_loop(|_| sync::request_check());
     });
 }

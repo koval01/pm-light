@@ -56,6 +56,8 @@ pub enum Purpose {
     Share,
     /// The made-up mail of `check`, for CI.
     Check,
+    /// A real mail of the account check: only its size is kept.
+    Account,
 }
 
 /// A drawn mail, as PNG.
@@ -121,6 +123,11 @@ pub fn options(images: bool) -> PrintOptions {
         hole_mark: false,
         ..PrintOptions::default()
     }
+}
+
+/// A real mail drawn for the account check, which keeps nothing of it but its size.
+pub fn draw_for_check(app: &App, prepared: PrintDocument) {
+    draw(app, for_a_picture(prepared), Purpose::Account);
 }
 
 /// The picture in an answer of `DevTools`, `{"data": "<base64 PNG>"}`. Nothing for anything else.
@@ -260,6 +267,7 @@ pub fn for_a_picture(mut prepared: PrintDocument) -> PrintDocument {
 fn failed(what: &str) {
     log::warn!("no picture of a mail: {what}");
     check::failed();
+    crate::account_check::failed("drawing the mail");
     go_away();
     actions::toast(toasts::FAILED);
 }
@@ -372,6 +380,11 @@ fn deliver(picture: &Picture, purpose: Purpose) {
     log::info!("a picture of a mail drawn: {} KB{}", picture.png.len() / 1024, if picture.cut { ", cut" } else { "" });
     match purpose {
         Purpose::Check => check::finish(&picture.png, picture.cut),
+        Purpose::Account => {
+            let size = image::ImageReader::new(std::io::Cursor::new(&picture.png)).with_guessed_format().ok();
+            let (width, height) = size.and_then(|reader| reader.into_dimensions().ok()).unwrap_or((0, 0));
+            crate::account_check::finish(width, height);
+        }
         Purpose::Copy => {
             if system::copy(&picture.png) {
                 actions::toast(if picture.cut { toasts::PICTURE_CUT } else { toasts::PICTURE_COPIED });

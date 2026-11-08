@@ -1,6 +1,9 @@
 //! Read-only look at the real account through the session the app saved. It sends only GET requests,
 //! never refreshes the tokens, keeps nothing, and prints numbers and statuses: no subjects, addresses,
 //! bodies or secrets. Run it with `cargo run -p proton-mail-light --example live_check`.
+//!
+//! The session comes from the keychain, or from `LIVE_SESSION` when that is set, as in CI. With `LIVE_SESSION` its
+//! output is public: errors are then named by their kind, never by their text.
 
 use keyring::Entry;
 use proton_core::{AuthStep, PROTON_API, Service, SessionStore, model::ListOptions};
@@ -21,28 +24,41 @@ fn line(name: &str, value: impl std::fmt::Display) {
     println!("{name:<38} {value}");
 }
 
-async fn run() -> Result<(), String> {
+/// The session to borrow: from the environment in CI, else from the keychain.
+fn saved_session() -> Result<String, String> {
+    if let Some(session) = std::env::var("LIVE_SESSION").ok().filter(|value| !value.trim().is_empty()) {
+        return Ok(session);
+    }
     let entry = Entry::new("org.koval-dev.proton-mail-light", "session").map_err(|e| e.to_string())?;
-    let saved = entry.get_password().map_err(|e| format!("keychain: {e}"))?;
+    entry.get_password().map_err(|e| format!("keychain: {e}"))
+}
+
+/// An error as the output may show it: its kind when the output is public, its text on the owner's own machine.
+fn shown(error: &proton_core::Error) -> String {
+    if std::env::var_os("LIVE_SESSION").is_some() { error.kind().to_string() } else { error.to_string() }
+}
+
+async fn run() -> Result<(), String> {
+    let saved = saved_session()?;
     let service =
-        Service::new(PROTON_API, Arc::new(Borrowed(Some(saved))), Box::new(|_| {})).map_err(|e| e.to_string())?;
+        Service::new(PROTON_API, Arc::new(Borrowed(Some(saved))), Box::new(|_| {})).map_err(|e| shown(&e))?;
     service.forbid_token_refresh();
 
     let started = Instant::now();
-    let step = service.restore().await.map_err(|e| e.to_string())?;
+    let step = service.restore().await.map_err(|e| shown(&e))?;
     line("session reopened", format!("{:?} in {:?}", step, started.elapsed()));
     if step != AuthStep::Ready {
         return Err("the saved session is not usable without a refresh".into());
     }
 
     line("sending addresses", service.addresses().len());
-    line("folders and labels", service.folders().await.map_err(|e| e.to_string())?.len());
-    let counts = service.counts().await.map_err(|e| e.to_string())?;
+    line("folders and labels", service.folders().await.map_err(|e| shown(&e))?.len());
+    let counts = service.counts().await.map_err(|e| shown(&e))?;
     line("folders with counts", counts.len());
-    let account = service.account().await.map_err(|e| e.to_string())?;
+    let account = service.account().await.map_err(|e| shown(&e))?;
     line("paid plan read", account.plan.is_some());
     line("second factor", account.two_factor);
-    let sessions = service.sessions().await.map_err(|e| e.to_string())?;
+    let sessions = service.sessions().await.map_err(|e| shown(&e))?;
     line("sessions / this one found", format!("{} / {}", sessions.len(), sessions.iter().any(|s| s.current)));
     line("mail settings read", service.mail_settings().await.is_ok());
     line("filters read", service.filters().await.is_ok());
@@ -51,7 +67,7 @@ async fn run() -> Result<(), String> {
     let recent = service
         .list("inbox", &ListOptions { limit: Some(10), ..Default::default() })
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| shown(&e))?;
     println!("\nlast {} messages (signature / html / files / images, trackers, links, removed / ms):", recent.len());
     for (index, meta) in recent.iter().enumerate() {
         let started = Instant::now();
@@ -70,14 +86,14 @@ async fn run() -> Result<(), String> {
                     started.elapsed(),
                 );
             }
-            Err(e) => println!("  {index}: FAILED {e}"),
+            Err(e) => println!("  {index}: FAILED {}", shown(&e)),
         }
     }
 
     let with_files = ListOptions { limit: Some(1), has_attachments: Some(true), ..Default::default() };
-    let found = service.list("inbox", &with_files).await.map_err(|e| e.to_string())?;
+    let found = service.list("inbox", &with_files).await.map_err(|e| shown(&e))?;
     if let Some(meta) = found.first() {
-        let m = service.message(&meta.id).await.map_err(|e| e.to_string())?;
+        let m = service.message(&meta.id).await.map_err(|e| shown(&e))?;
         if let Some(file) = m.attachments.first() {
             let started = Instant::now();
             match service.attachment(&meta.id, file, &m.address_id).await {
@@ -85,7 +101,7 @@ async fn run() -> Result<(), String> {
                     "attachment decrypted, bytes / expected",
                     format!("{} / {} in {:?}", data.len(), file.size, started.elapsed()),
                 ),
-                Err(e) => line("attachment", format!("FAILED {e}")),
+                Err(e) => line("attachment", format!("FAILED {}", shown(&e))),
             }
         }
     }

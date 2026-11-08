@@ -92,10 +92,15 @@ jobs:
         run: |
           program="$OUT/proton-mail-light"
           if [ -d "$OUT/Proton Mail Light.app" ]; then program="$OUT/Proton Mail Light.app/Contents/MacOS/proton-mail-light"; fi
-          "$program" "--check-picture=$PWD/$OUT/picture.png" > "$OUT/started.log" 2>&1 & app=$!
-          sleep 25
+          "$program" "--check-picture=$PWD/$OUT/picture.png" --check-window > "$OUT/started.log" 2>&1 & app=$!
+          # The window as it opened, maximised, full screen and back, at the middle of each step of --check-window.
+          sleep 8; screencapture -x "$OUT/window-1-opened.png"
+          sleep 4.5; screencapture -x "$OUT/window-2-maximised.png"
+          sleep 5; screencapture -x "$OUT/window-3-full-screen.png"
+          sleep 5; screencapture -x "$OUT/window-4-back.png"
+          sleep 3
           kill -0 $app || { cat "$OUT/started.log"; echo "The app quit by itself"; exit 1; }
-          screencapture -x "$OUT/started.png"
+          cp "$OUT/window-4-back.png" "$OUT/started.png"
           kill $app
 
       - name: Start on Windows
@@ -107,18 +112,26 @@ jobs:
         run: |
           $out = $env:OUT
           $picture = Join-Path $PWD "$out/picture.png"
-          $app = Start-Process -FilePath "$out/proton-mail-light.exe" -ArgumentList "--check-picture=$picture" `
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          function Shot($name) {
+            $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $shot = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+            [System.Drawing.Graphics]::FromImage($shot).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+            $shot.Save((Join-Path $PWD "$out/$name.png"))
+          }
+          $app = Start-Process -FilePath "$out/proton-mail-light.exe" -ArgumentList "--check-picture=$picture", "--check-window" `
             -RedirectStandardOutput "$out/started.log" -RedirectStandardError "$out/started.err.log" -PassThru
-          Start-Sleep -Seconds 25
+          # The window as it opened, maximised, full screen and back, at the middle of each step of --check-window.
+          Start-Sleep -Seconds 8; Shot "window-1-opened"
+          Start-Sleep -Milliseconds 4500; Shot "window-2-maximised"
+          Start-Sleep -Seconds 5; Shot "window-3-full-screen"
+          Start-Sleep -Seconds 5; Shot "window-4-back"
+          Start-Sleep -Seconds 3
           if ($app.HasExited) {
             Get-Content "$out/started.log", "$out/started.err.log" -ErrorAction SilentlyContinue
             throw "The app quit by itself with code $($app.ExitCode)"
           }
-          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $shot = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
-          [System.Drawing.Graphics]::FromImage($shot).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
-          $shot.Save((Join-Path $PWD "$out/started.png"))
+          Shot "started"
           Stop-Process -Id $app.Id
 
       - name: Start on Linux
@@ -129,10 +142,14 @@ jobs:
         run: |
           # shellcheck disable=SC2016 # expanded by the inner shell, under the virtual screen
           xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" bash -c '
-            "$OUT/proton-mail-light" "--check-picture=$PWD/$OUT/picture.png" > "$OUT/started.log" 2>&1 & app=$!
-            sleep 25
+            "$OUT/proton-mail-light" "--check-picture=$PWD/$OUT/picture.png" --check-window > "$OUT/started.log" 2>&1 & app=$!
+            sleep 8; import -window root "$OUT/window-1-opened.png"
+            sleep 4.5; import -window root "$OUT/window-2-maximised.png"
+            sleep 5; import -window root "$OUT/window-3-full-screen.png"
+            sleep 5; import -window root "$OUT/window-4-back.png"
+            sleep 3
             kill -0 $app || { cat "$OUT/started.log"; echo "The app quit by itself"; exit 1; }
-            import -window root "$OUT/started.png"
+            cp "$OUT/window-4-back.png" "$OUT/started.png"
             kill $app'
 
       - name: The mail picture was drawn
@@ -157,6 +174,8 @@ jobs:
             ${{ env.OUT }}/proton-mail-light.exe
             ${{ env.OUT }}/Proton-Mail-Light-macos.zip
             ${{ env.OUT }}/started.png
+            ${{ env.OUT }}/window-*.png
+            target/screens/*.png
             ${{ env.OUT }}/started*.log
             ${{ env.OUT }}/picture.png
             ${{ env.OUT }}/picture.png.txt

@@ -72,6 +72,24 @@ fn tell_the_system(choice: u8) {
     let _: () = unsafe { msg_send![application, setAppearance: appearance.as_deref()] };
 }
 
+/// Windows takes the taskbar's picture apart from the title bar's, and the toolkit passes on only the title bar's when
+/// the icon is set before the window exists, as `app.slint` sets it: the taskbar showed Windows' blank program.
+#[cfg(target_os = "windows")]
+pub fn taskbar_icon(app: &App) {
+    use slint::winit_030::{
+        WinitWindowAccessor,
+        winit::{platform::windows::WindowExtWindows, window::Icon},
+    };
+    let Ok(picture) = image::load_from_memory(include_bytes!("../icons/128x128.png")) else { return };
+    let picture = picture.to_rgba8();
+    let (width, height) = picture.dimensions();
+    let Ok(icon) = Icon::from_rgba(picture.into_raw(), width, height) else { return };
+    app.window().with_winit_window(|window| window.set_taskbar_icon(Some(icon)));
+}
+
+#[cfg(not(target_os = "windows"))]
+pub const fn taskbar_icon(_app: &App) {}
+
 /// The title bar is the system's. Windows draws it light whatever the app is, unless told; with no
 /// choice, winit follows the system's own setting.
 #[cfg(not(target_os = "macos"))]

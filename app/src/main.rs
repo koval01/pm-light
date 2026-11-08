@@ -2,6 +2,7 @@
 
 //! The window. Everything below it is `proton-core`.
 
+mod account_check;
 mod account_panel;
 mod actions;
 mod auth;
@@ -48,6 +49,7 @@ mod tray;
 mod verify;
 mod view;
 mod webviews;
+mod window_check;
 mod window_place;
 
 use proton_core::{PROTON_API, REPOSITORY, Service};
@@ -215,6 +217,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ended = app.as_weak();
     // No way to Proton yet: `tor_link::begin` chooses it, Tor or not, before anything goes out.
     let service = Service::undecided(PROTON_API, session::keychain(), Box::new(move |ending| auth::session_ended(&ended, ending)));
+    // The account check borrows the session: a refresh would rotate the tokens of whoever saved it.
+    if account_check::asked() {
+        service.forbid_token_refresh();
+        account_check::begin();
+    }
 
     follow_the_view(&service, &app);
 
@@ -247,6 +254,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app.show()?;
     modal::after_show(&app, |app| {
         window_place::restore_position(&app);
+        window_place::fit_on_display(&app);
+        look::taskbar_icon(&app);
         look::apply_zoom(&app);
         // The menus take the window's thread for a moment: before the envelope starts to move, not during it. The
         // event loop runs by now, which macOS wants before it takes a tray icon.
@@ -260,6 +269,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     mail_picture::check::run_if_asked(&app);
+    window_check::run_if_asked(&app);
     #[cfg(target_os = "linux")]
     if gtk_started {
         gtk_loop::pump();

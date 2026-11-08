@@ -87,8 +87,9 @@ window, a look at the bundle running.
 
 `.github/workflows/build.yml` does the same on macOS, Windows and Linux on every push to main and every pull request,
 with the dependencies cached from main. There it starts the debug build the tests made; the release profile, a quarter
-of an hour of whole-program optimisation, is built only for a release. It starts the app on each with `--check-picture`, which draws a made-up mail through the system's web engine: read
-`started.png` and `picture.png` after a change that touches them. `security.yml` runs cargo-deny, gitleaks and zizmor,
+of an hour of whole-program optimisation, is built only for a release. It starts the app on each with `--check-picture`, which draws a made-up mail through the system's web engine, and
+`--check-window`, which maximises the window, makes it full screen and brings it back while CI photographs each: read
+the `window-*.png`, `picture.png` and the screens after a change that touches them. `security.yml` runs cargo-deny, gitleaks and zizmor,
 `codeql.yml` GitHub's code scanning, `scorecard.yml` the OpenSSF Scorecard, and pull requests get a dependency review.
 A release is a tag `v<version>` (`release.yml`). `main` is protected by `.github/rulesets/main.json`, applied with
 `gh api -X POST repos/koval01/pm-light/rulesets --input .github/rulesets/main.json`: changes come through pull
@@ -102,7 +103,9 @@ requests that pass these checks, and only an admin may bypass it.
   the core is checked by running a real build.
 - First prove the check catches the error: put the bug back and see it fail.
 - Every change to the window is looked at at its smallest size, 900 by 580, and at full screen.
-- `app/tests/screens.rs` draws the main screens headless and compares them with `app/tests/screens/*.png`. A change
+- `app/tests/screens.rs` draws the main screens headless, from the smallest window to 4K and at one to two pixels to
+  a point, and compares them with `app/tests/screens/*.png` on macOS; on Windows and Linux it writes them to
+  `target/screens/`, which CI keeps. A change
   meant to be seen is written with `UPDATE_SCREENS=1 cargo test -p proton-mail-light --test screens`, and the new
   pictures are looked at before they are committed. A failure leaves the picture and its difference in
   `target/screens/`. A new screen or mode gets a picture there.
@@ -123,6 +126,14 @@ target for a minute on each push and for ten once a day (`.github/workflows/fuzz
 gets a target there.
 
 Threats, findings and known limits are in `docs/SECURITY.md`: update it with every security change.
+
+## The account check
+
+`.github/workflows/live.yml` opens the test account on macOS, Windows and Linux: `live_check` reads it, and the app,
+started with `--check-account=<file>`, opens its inbox and draws its first mail through the system's web engine. It
+borrows the session the maintainer's Mac saved, handed over with `scripts/live-session.sh`, never refreshes the tokens,
+and sends nothing. It runs by hand only, and each run waits for the maintainer's approval in the environment
+`live-account`, which holds the session. Its log is public: only numbers and fixed words, and no artifacts.
 
 ## Test builds
 

@@ -52,6 +52,9 @@ pub fn begin(service: &Arc<Service>, app: &App) {
     });
     if let Some(choice) = preferences::get().tor {
         go(service, &app.as_weak(), choice);
+    } else if crate::account_check::asked() {
+        // A check run by a machine: straight to Proton, and nothing kept as the person's answer.
+        go(service, &app.as_weak(), preferences::TorChoice { on: false, route: Route::default() });
     } else {
         log::info!("Tor has not been asked about yet");
         app.set_asking_tor(true);
