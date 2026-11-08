@@ -12,9 +12,10 @@ on:
 
 permissions: {}
 
+# A pull request keeps only its newest run. Every commit on main keeps its own, so that none ends cancelled.
 concurrency:
-  group: scorecard-${{ github.ref }}
-  cancel-in-progress: true
+  group: scorecard-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   analysis:

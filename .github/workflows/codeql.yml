@@ -16,9 +16,10 @@ on:
 permissions:
   contents: read
 
+# A pull request keeps only its newest run. Every commit on main keeps its own, so that none ends cancelled.
 concurrency:
-  group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  group: codeql-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   analyze:

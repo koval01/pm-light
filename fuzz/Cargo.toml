@@ -1,6 +1,8 @@
 # Fuzzing the code that reads what strangers send: mail, its HTML and CSS, links, attachments, pictures, pasted codes.
 # A workspace of its own, built only by cargo-fuzz on a nightly compiler: `cargo +nightly fuzz run <target>` from the
 # repository's root. CI runs every target on every push and longer once a day (.github/workflows/fuzz.yml).
+# It keeps no Cargo.lock: the fuzzers build on the newest versions the requirements allow, and the app's own lock
+# stays the one place its dependencies, and their advisories, are read from.
 [package]
 name = "proton-mail-light-fuzz"
 version = "0.0.0"

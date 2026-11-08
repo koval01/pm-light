@@ -3,8 +3,7 @@
 # the only look at Windows and Linux most changes get.
 #
 # It runs on all three systems for every push to main and every pull request, with nothing left out by path: its checks
-# are required to merge, and a check that never runs would hold a pull request forever. A newer run of the same branch
-# stops the older one.
+# are required to merge, and a check that never runs would hold a pull request forever.
 name: Build
 
 on:
@@ -17,9 +16,10 @@ on:
 permissions:
   contents: read
 
+# A pull request keeps only its newest run. Every commit on main keeps its own, so that none ends cancelled.
 concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
+  group: build-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   CARGO_TERM_COLOR: always

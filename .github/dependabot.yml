@@ -26,6 +26,12 @@ updates:
       # One muda in the program: tray-icon moves with the one Slint links (docs/DEVELOPMENT.md, "One muda in the program").
       - dependency-name: tray-icon
       - dependency-name: muda
+      # Locked above us, with no version Dependabot could move to (osv-scanner.toml has the reasons): ml-dsa and
+      # crypto-bigint inside Proton's pgp, glib under the gtk wry pins, lru inside reed-solomon-erasure.
+      - dependency-name: ml-dsa
+      - dependency-name: crypto-bigint
+      - dependency-name: glib
+      - dependency-name: lru
     commit-message:
       prefix: deps
 
