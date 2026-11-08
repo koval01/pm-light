@@ -40,7 +40,7 @@ image = { version = "0.25", default-features = false, features = ["bmp", "gif", 
 imagesize = "0.15.0"
 infer = "0.22.0"
 lol_html = "2"
-parking_lot = "0.12"
+parking_lot = "0.13"
 proton-crypto-account = { git = "https://github.com/ProtonMail/proton-crypto-rs", rev = "c468e282625206eda9b48d539949e6183b1da32a", default-features = false, features = ["rustpgp"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 rand = "0.8"

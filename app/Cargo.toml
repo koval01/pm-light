@@ -28,7 +28,7 @@ open = "5"
 auto-launch = "0.6"
 iana-time-zone = "0.1"
 interprocess = "2"
-parking_lot = "0.12"
+parking_lot = "0.13"
 serde = { version = "1", features = ["derive"] }
 mime_guess = "2"
 mimalloc = { version = "0.1", default-features = false }
