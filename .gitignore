@@ -1,0 +1,4 @@
+.env.live
+.live-session.json
+target
+.DS_Store

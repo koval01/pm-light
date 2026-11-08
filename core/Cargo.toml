@@ -1,0 +1,72 @@
+[package]
+name = "proton-core"
+version = "0.1.0"
+description = "Everything behind the window of Proton Mail Light: the API, keys, mail, cleaning and sending."
+authors = ["Yaroslav Koval"]
+repository = "https://github.com/koval01/pm-light"
+# With the additional terms of section 7 in NOTICE: the author's name and the link to the repository stay.
+license = "AGPL-3.0-only"
+edition = "2024"
+publish = false
+rust-version = "1.99.1"
+
+[dependencies]
+# Tor, by the Tor Project's own Rust implementation. Onion services with vanguards, countries of relays.
+arti-client = { version = "0.48", default-features = false, features = ["tokio", "rustls", "compression", "onion-service-client", "vanguards", "geoip", "experimental-api", "static-sqlite"] }
+tor-proto = { version = "0.48", features = ["stream-ctrl"] }
+tor-netdir = { version = "0.48", features = ["geoip"] }
+tor-geoip = "0.48"
+tor-linkspec = "0.48"
+tor-dirmgr = "0.48"
+tor-rtcompat = { version = "0.48", features = ["tokio", "rustls"] }
+# Tor's directory is compressed with xz. Built in: a library from Homebrew is on no one else's machine, and a signed
+# program refuses to load one signed by someone else.
+liblzma = { version = "0.4", features = ["static"] }
+# Hands Tor's `tracing` events on to `log`, and so to the journal.
+tracing = { version = "0.1", features = ["log"] }
+ammonia = "4"
+argon2 = "0.5"
+log = { version = "0.4", features = ["std"] }
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+chrono-tz = "0.10"
+chacha20poly1305 = "0.10"
+cssparser = "0.37"
+encoding_rs = "0.8"
+hickory-proto = { version = "0.26", default-features = false, features = ["std"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+futures = { version = "0.3", default-features = false, features = ["std"] }
+image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
+imagesize = "0.15.0"
+infer = "0.22.0"
+lol_html = "2"
+parking_lot = "0.12"
+proton-crypto-account = { git = "https://github.com/ProtonMail/proton-crypto-rs", rev = "c468e282625206eda9b48d539949e6183b1da32a", default-features = false, features = ["rustpgp"] }
+qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+rand = "0.8"
+rqrr = "0.11"
+rxing = { version = "0.9", default-features = false, features = ["decoders", "encoding_rs", "multi_barcode_readers", "qrcode"] }
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["gzip", "http2", "json", "multipart", "rustls-tls-webpki-roots", "socks"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-webpki = "0.103"
+sha2 = "0.10"
+webpki-roots = "1"
+percent-encoding = "2"
+serde = { version = "1", features = ["derive", "rc"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["io-util", "macros", "net", "rt", "sync", "time"] }
+unicode-normalization = "0.1"
+url = "2"
+zeroize = { version = "1", features = ["derive", "serde"] }
+reed-solomon-erasure = "6"
+
+[dev-dependencies]
+scraper = "0.24"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+rcgen = { version = "0.13", default-features = false, features = ["crypto", "ring"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[lints]
+workspace = true

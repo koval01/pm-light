@@ -1,0 +1,279 @@
+// A calendar and a clock, in a sheet over the window that asks. Rust keeps the month and the moment,
+// and this only draws them and says what was pressed.
+
+import { Theme, Icon, IconButton } from "base.slint";
+import { Say } from "say.slint";
+import { SmallButton } from "settings.slint";
+
+export struct DayCell {
+    number: int,
+    // Part of the month on show, and not one of its neighbours' days at the edges of the grid.
+    inside: bool,
+    today: bool,
+    picked: bool,
+    enabled: bool,
+}
+
+// A number with an arrow above and below. Nothing is typed.
+component Stepper {
+    in property <string> value;
+    callback step(int);
+    width: 52px;
+    // Under the arrows, which would otherwise never hear a click.
+    TouchArea {
+        scroll-event(event) => {
+            if event.delta-y == 0 {
+                return reject;
+            }
+            root.step(event.delta-y > 0 ? 1 : -1);
+            return accept;
+        }
+    }
+    VerticalLayout {
+        alignment: center;
+        spacing: 2px;
+        HorizontalLayout {
+            alignment: center;
+            IconButton {
+                width: 28px;
+                height: 24px;
+                icon: @image-url("icons/chevron-up.svg");
+                clicked => { root.step(1); }
+            }
+        }
+        Text {
+            text: root.value;
+            color: Theme.foreground;
+            font-size: 22px;
+            font-weight: 600;
+            horizontal-alignment: center;
+        }
+        HorizontalLayout {
+            alignment: center;
+            IconButton {
+                width: 28px;
+                height: 24px;
+                icon: @image-url("icons/chevron-down.svg");
+                clicked => { root.step(-1); }
+            }
+        }
+    }
+}
+
+component Day {
+    in property <DayCell> cell;
+    callback clicked();
+    Rectangle {
+        border-radius: 8px;
+        border-width: root.cell.today && !root.cell.picked ? 1px : 0;
+        border-color: Theme.accent;
+        background: root.cell.picked ? Theme.accent : touch.has-hover && root.cell.enabled ? Theme.hover : transparent;
+        Text {
+            text: root.cell.number;
+            font-size: 13px;
+            font-weight: root.cell.picked || root.cell.today ? 600 : 400;
+            color: root.cell.picked ? #fff : !root.cell.enabled ? Theme.faint : root.cell.inside ? Theme.foreground : Theme.muted;
+            opacity: root.cell.inside ? 1 : 0.6;
+        }
+        touch := TouchArea {
+            mouse-cursor: root.cell.enabled ? pointer : default;
+            clicked => {
+                if root.cell.enabled {
+                    root.clicked();
+                }
+            }
+        }
+    }
+}
+
+export component MomentWindow inherits Window {
+    in property <string> heading;
+    in property <string> chosen;
+    in property <string> month;
+    in property <[string]> weekdays;
+    in property <[DayCell]> days;
+    in property <bool> with-time;
+    in property <string> hour;
+    in property <string> minute;
+    in property <string> part-of-day;
+    in property <string> problem;
+    in property <bool> own-close;
+    callback dismissed();
+    callback confirmed();
+    callback step-month(int);
+    callback step-day(int);
+    callback step-hour(int);
+    callback step-minute(int);
+    callback pick(int);
+    callback go-today();
+    public function begin() { keys.focus(); }
+
+    title: root.heading;
+    preferred-width: 344px;
+    min-width: 344px;
+    preferred-height: root.with-time ? 584px : 460px;
+    min-height: root.with-time ? 584px : 460px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    keys := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.dismissed();
+                return accept;
+            }
+            if event.text == Key.Return {
+                root.confirmed();
+                return accept;
+            }
+            if event.text == Key.LeftArrow {
+                root.step-day(-1);
+                return accept;
+            }
+            if event.text == Key.RightArrow {
+                root.step-day(1);
+                return accept;
+            }
+            if event.text == Key.UpArrow {
+                root.step-day(-7);
+                return accept;
+            }
+            if event.text == Key.DownArrow {
+                root.step-day(7);
+                return accept;
+            }
+            if event.text == Key.PageUp {
+                root.step-month(-1);
+                return accept;
+            }
+            if event.text == Key.PageDown {
+                root.step-month(1);
+                return accept;
+            }
+            return reject;
+        }
+        VerticalLayout {
+            padding: 20px;
+            spacing: 12px;
+            alignment: start;
+            HorizontalLayout {
+                VerticalLayout {
+                    horizontal-stretch: 1;
+                    spacing: 2px;
+                    Text {
+                        text: root.heading;
+                        color: Theme.foreground;
+                        font-size: 16px;
+                        font-weight: 700;
+                        overflow: elide;
+                    }
+                    Text {
+                        text: root.chosen;
+                        color: Theme.muted;
+                        font-size: 12px;
+                    }
+                }
+                if root.own-close: IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => { root.dismissed(); }
+                }
+            }
+            HorizontalLayout {
+                height: 32px;
+                spacing: 2px;
+                IconButton {
+                    icon: @image-url("icons/chevron-left.svg");
+                    clicked => { root.step-month(-1); }
+                }
+                Text {
+                    horizontal-stretch: 1;
+                    text: root.month;
+                    color: Theme.foreground;
+                    font-size: 14px;
+                    font-weight: 600;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                IconButton {
+                    icon: @image-url("icons/chevron-right.svg");
+                    clicked => { root.step-month(1); }
+                }
+            }
+            grid := Rectangle {
+                height: 7 * 40px;
+                for name[index] in root.weekdays: Text {
+                    x: index * parent.width / 7;
+                    y: 0;
+                    width: parent.width / 7;
+                    height: 28px;
+                    text: name;
+                    color: Theme.muted;
+                    font-size: 11px;
+                    font-weight: 600;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                for cell[index] in root.days: Day {
+                    x: mod(index, 7) * parent.width / 7 + 2px;
+                    y: 28px + floor(index / 7) * 42px;
+                    width: parent.width / 7 - 4px;
+                    height: 38px;
+                    cell: cell;
+                    clicked => { root.pick(index); }
+                }
+            }
+            if root.with-time: HorizontalLayout {
+                height: 84px;
+                alignment: center;
+                spacing: 4px;
+                Stepper {
+                    value: root.hour;
+                    step(delta) => { root.step-hour(delta); }
+                }
+                Text {
+                    text: ":";
+                    color: Theme.muted;
+                    font-size: 22px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                }
+                Stepper {
+                    value: root.minute;
+                    step(delta) => { root.step-minute(delta); }
+                }
+                if root.part-of-day != "": Text {
+                    text: root.part-of-day;
+                    color: Theme.muted;
+                    font-size: 14px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                }
+            }
+            // A place of its own, so that a problem moves nothing and is never cut off.
+            if root.with-time: Text {
+                height: 16px;
+                text: root.problem;
+                color: Theme.danger;
+                font-size: 12px;
+                overflow: elide;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                SmallButton {
+                    text: Say.text("date.today");
+                    clicked => { root.go-today(); }
+                }
+                Rectangle { horizontal-stretch: 1; }
+                SmallButton {
+                    text: Say.text("common.cancel");
+                    clicked => { root.dismissed(); }
+                }
+                SmallButton {
+                    text: Say.text("date.choose");
+                    ghost: false;
+                    clicked => { root.confirmed(); }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,175 @@
+// The account panel, opened from the picture at the top right: who is signed in, the plan and the space used, and
+// what can be done with the account from here. A click outside it or Escape closes it.
+
+import { Theme, Icon } from "base.slint";
+import { Secret } from "settings.slint";
+
+export struct AccountCard {
+    name: string,
+    email: string,
+    initials: string,
+    plan: string,
+    storage: string,
+    share: float,
+    // The plan and the space come a moment later, from Proton.
+    loaded: bool,
+    // Only an app with a password of its own can be locked.
+    can-lock: bool,
+}
+
+component PanelRow {
+    in property <image> icon;
+    in property <string> text;
+    in property <bool> danger;
+    callback clicked();
+    height: 34px;
+    Rectangle {
+        border-radius: 8px;
+        background: touch.has-hover ? Theme.hover : transparent;
+    }
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 10px;
+        Icon {
+            y: (parent.height - self.height) / 2;
+            width: 16px;
+            height: 16px;
+            source: root.icon;
+            tint: root.danger ? Theme.danger : Theme.muted;
+        }
+        Text {
+            text: root.text;
+            color: root.danger ? Theme.danger : Theme.foreground;
+            font-size: 13px;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component AccountPanel {
+    in property <AccountCard> card;
+    // "settings", "lock", "sign-out", or "close".
+    callback chosen(string);
+
+    // Anywhere outside the panel closes it.
+    TouchArea { clicked => { root.chosen("close"); } }
+    keys := FocusScope {
+        width: 0px;
+        height: 0px;
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.chosen("close");
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    panel := Rectangle {
+        x: parent.width - self.width - 8px;
+        y: 48px;
+        width: min(300px, parent.width - 16px);
+        height: column.preferred-height;
+        border-radius: 12px;
+        border-width: 1px;
+        border-color: Theme.border;
+        background: Theme.panel;
+        // Clicks inside stay inside.
+        TouchArea { }
+        column := VerticalLayout {
+            padding: 14px;
+            spacing: 12px;
+            HorizontalLayout {
+                spacing: 12px;
+                Rectangle {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 22px;
+                    background: Theme.accent;
+                    Text {
+                        text: root.card.initials;
+                        color: #fff;
+                        font-size: 16px;
+                        font-weight: 700;
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: root.card.name != "" ? root.card.name : @tr("Your account");
+                        color: Theme.foreground;
+                        font-size: 15px;
+                        font-weight: 600;
+                        overflow: elide;
+                    }
+                    // Hidden until pointed at: a screen can be seen by more than its owner.
+                    Secret {
+                        height: 18px;
+                        text: root.card.email;
+                        hidden: true;
+                        size: 12px;
+                    }
+                }
+            }
+            if root.card.loaded: VerticalLayout {
+                spacing: 6px;
+                Text {
+                    text: root.card.plan;
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    overflow: elide;
+                }
+                if root.card.storage != "": Rectangle {
+                    height: 6px;
+                    border-radius: 3px;
+                    background: Theme.field;
+                    Rectangle {
+                        x: 0;
+                        width: parent.width * max(0, min(1, root.card.share));
+                        border-radius: 3px;
+                        background: root.card.share > 0.9 ? Theme.danger : Theme.accent;
+                    }
+                }
+                if root.card.storage != "": Text {
+                    text: root.card.storage;
+                    color: Theme.muted;
+                    font-size: 12px;
+                    overflow: elide;
+                }
+            }
+            if !root.card.loaded: VerticalLayout {
+                spacing: 8px;
+                Rectangle { height: 12px; width: 60%; border-radius: 6px; background: Theme.skeleton; }
+                Rectangle { height: 6px; border-radius: 3px; background: Theme.skeleton; }
+            }
+            Rectangle { height: 1px; background: Theme.border; }
+            VerticalLayout {
+                spacing: 2px;
+                PanelRow {
+                    icon: @image-url("icons/settings.svg");
+                    text: @tr("Account settings");
+                    clicked => { root.chosen("settings"); }
+                }
+                if root.card.can-lock: PanelRow {
+                    icon: @image-url("icons/lock.svg");
+                    text: @tr("Lock the app");
+                    clicked => { root.chosen("lock"); }
+                }
+                PanelRow {
+                    icon: @image-url("icons/log-out.svg");
+                    text: @tr("Sign out");
+                    danger: true;
+                    clicked => { root.chosen("sign-out"); }
+                }
+            }
+        }
+    }
+}

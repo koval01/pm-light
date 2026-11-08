@@ -1,0 +1,79 @@
+// Asks for the name of a folder or a label, in a sheet over the main window.
+
+import { Theme, IconButton } from "base.slint";
+import { Say } from "say.slint";
+import { Field, SmallButton } from "settings.slint";
+
+export component NameWindow inherits Window {
+    in property <string> heading;
+    in property <string> action;
+    in-out property <string> text;
+    in property <bool> busy;
+    in property <bool> own-close;
+    in property <string> problem;
+    callback dismissed();
+    callback confirmed();
+
+    title: root.heading;
+    preferred-width: 400px;
+    preferred-height: 176px;
+    min-width: 320px;
+    min-height: 176px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+        VerticalLayout {
+            padding: 20px;
+            spacing: 12px;
+            HorizontalLayout {
+                Text {
+                    horizontal-stretch: 1;
+                    text: root.heading;
+                    color: Theme.foreground;
+                    font-size: 16px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+                if root.own-close: IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => { root.dismissed(); }
+                }
+            }
+            Field {
+                text <=> root.text;
+                hint: Say.text("nav.name");
+                autofocus: true;
+                accepted => { root.confirmed(); }
+            }
+            if root.problem != "": Text {
+                text: root.problem;
+                color: Theme.danger;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+            Rectangle { vertical-stretch: 1; }
+            HorizontalLayout {
+                alignment: end;
+                spacing: 8px;
+                SmallButton {
+                    text: Say.text("common.cancel");
+                    clicked => { root.dismissed(); }
+                }
+                SmallButton {
+                    text: root.action;
+                    ghost: false;
+                    enabled: !root.busy && root.text != "";
+                    clicked => { root.confirmed(); }
+                }
+            }
+        }
+    }
+}

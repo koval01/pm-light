@@ -1,0 +1,210 @@
+// What every screen is made of.
+
+import { Palette } from "std-widgets.slint";
+
+// One row for each palette, in the order of `Settings.palettes`. The first is this app's own.
+struct Colors {
+    window: color,
+    panel: color,
+    foreground: color,
+    muted: color,
+    border: color,
+    hover: color,
+    selected: color,
+    strong: color,
+    on-strong: color,
+    accent: color,
+    skeleton: color,
+}
+
+export global Theme {
+    out property <string> mono: Platform.os == OperatingSystemType.windows ? "Consolas" : Platform.os == OperatingSystemType.macos ? "Menlo" : "DejaVu Sans Mono";
+    // 0 follows the system, 1 is light, 2 is dark.
+    in property <int> choice;
+    in property <int> palette;
+    in property <bool> compact;
+    // Reader below the list. It needs the height, so narrow windows keep the columns.
+    in property <bool> rows;
+    // Addresses and other private details are shown at once, without being pointed at first.
+    in property <bool> reveal-private;
+    in property <float> mail-text: 1;
+    // The logo made for this window's exact pixels, which a vector drawn at this size cannot match.
+    in property <image> logo;
+    out property <length> logo-size: 26px;
+    out property <bool> dark: root.choice == 0 ? Palette.color-scheme == ColorScheme.dark : root.choice == 2;
+    private property <[Colors]> lights: [
+        { window: #e9ebee, panel: #ffffff, foreground: #17181c, muted: #6b6f7a, border: #e6e8ec, hover: #0000000a, selected: #f1f2f4, strong: #17181c, on-strong: #ffffff, accent: #2f6fe0, skeleton: #0000000f },
+        { window: #f4f5f6, panel: #ffffff, foreground: #16181c, muted: #5b626c, border: #e1e3e6, hover: #37415112, selected: #37415121, strong: #374151, on-strong: #ffffff, accent: #4b5563, skeleton: #37415117 },
+        { window: #f3f8f5, panel: #ffffff, foreground: #10211a, muted: #4f6a5e, border: #dce9e2, hover: #25634912, selected: #2f7d5b24, strong: #256349, on-strong: #ffffff, accent: #2f7d5b, skeleton: #25634917 },
+        { window: #f8f5fb, panel: #ffffff, foreground: #1d1428, muted: #665878, border: #e8e0f0, hover: #643c8a12, selected: #7a4fa324, strong: #643c8a, on-strong: #ffffff, accent: #7a4fa3, skeleton: #643c8a17 },
+        { window: #f6f1e8, panel: #fdfbf7, foreground: #241b10, muted: #6e5f4c, border: #e8dfd0, hover: #8a5a2b12, selected: #a8703a24, strong: #8a5a2b, on-strong: #ffffff, accent: #a8703a, skeleton: #8a5a2b17 },
+        { window: #ffffff, panel: #ffffff, foreground: #000000, muted: #333333, border: #000000, hover: #0000001a, selected: #00000029, strong: #000000, on-strong: #ffffff, accent: #0040c0, skeleton: #00000024 },
+    ];
+    private property <[Colors]> darks: [
+        { window: #26272b, panel: #1b1c1f, foreground: #f2f3f5, muted: #9a9ca5, border: #303136, hover: #ffffff0d, selected: #3a3b41, strong: #f2f3f5, on-strong: #17181c, accent: #6ea8ff, skeleton: #ffffff14 },
+        { window: #1c1f24, panel: #16181c, foreground: #e7e9ec, muted: #9aa1ab, border: #2b2f36, hover: #d1d5db14, selected: #d1d5db26, strong: #d1d5db, on-strong: #111418, accent: #d1d5db, skeleton: #d1d5db1a },
+        { window: #101f19, panel: #0b1712, foreground: #e2efe8, muted: #86a698, border: #1e3229, hover: #7fd1a814, selected: #7fd1a829, strong: #7fd1a8, on-strong: #0a1a13, accent: #7fd1a8, skeleton: #7fd1a81a },
+        { window: #1a1425, panel: #130e1b, foreground: #ece4f4, muted: #a091b3, border: #2c2339, hover: #c9a6ea14, selected: #c9a6ea29, strong: #c9a6ea, on-strong: #170e20, accent: #c9a6ea, skeleton: #c9a6ea1a },
+        { window: #1f1910, panel: #17120c, foreground: #f0e8db, muted: #a8987f, border: #332a1d, hover: #e0b98a14, selected: #e0b98a29, strong: #e0b98a, on-strong: #1c130a, accent: #e0b98a, skeleton: #e0b98a1a },
+        { window: #000000, panel: #000000, foreground: #ffffff, muted: #cccccc, border: #ffffff, hover: #ffffff29, selected: #ffffff3d, strong: #ffffff, on-strong: #000000, accent: #8cc4ff, skeleton: #ffffff33 },
+    ];
+    private property <Colors> now: root.dark ? root.darks[root.palette] : root.lights[root.palette];
+    out property <color> window: now.window;
+    out property <color> panel: now.panel;
+    out property <color> field: root.palette == 0 ? (root.dark ? #33343a : #f1f2f4) : now.window.mix(now.foreground, 0.92);
+    out property <color> foreground: now.foreground;
+    out property <color> muted: now.muted;
+    out property <color> faint: root.palette == 0 ? (root.dark ? #6d6f78 : #9b9fa8) : now.muted.mix(now.panel, 0.75);
+    out property <color> border: now.border;
+    out property <color> hover: now.hover;
+    out property <color> selected: now.selected;
+    out property <color> side-active: now.panel;
+    out property <color> strong: now.strong;
+    out property <color> on-strong: now.on-strong;
+    out property <color> accent: now.accent;
+    out property <color> skeleton: now.skeleton;
+    out property <color> danger: #e0245e;
+    out property <color> success: root.dark ? #4cc38a : #1f8a57;
+}
+
+export component Icon inherits Image {
+    in property <color> tint: Theme.foreground;
+    width: 18px;
+    height: 18px;
+    colorize: tint;
+    image-fit: contain;
+}
+
+// A picture that is a button. Its `hint` says what it does, after the pointer rests on it a moment: a picture alone
+// is not enough for everyone. The hint is a popup, over everything, so that nothing drawn later covers it.
+export component IconButton {
+    in property <image> icon;
+    in property <color> tint: Theme.muted;
+    in property <float> strength: 1;
+    in property <bool> enabled: true;
+    in property <string> hint;
+    // Where the hint opens: below, or to the left for a button at the window's right edge.
+    in property <bool> hint-left;
+    private property <bool> hinted;
+    // Clicked, and the pointer has not left since: the button may be gone from sight, and the hint must not come back.
+    private property <bool> used;
+    callback clicked;
+    width: 32px;
+    height: 32px;
+    Rectangle {
+        border-radius: 8px;
+        background: touch.has-hover && root.enabled ? Theme.hover : transparent;
+        animate background { duration: 120ms; }
+        Icon { source: root.icon; tint: root.tint; opacity: root.enabled ? root.strength : 0.3; }
+        touch := TouchArea {
+            enabled: root.enabled;
+            clicked => {
+                root.used = true;
+                if root.hinted {
+                    tip.close();
+                    root.hinted = false;
+                }
+                root.clicked();
+            }
+            changed has-hover => {
+                if !self.has-hover {
+                    root.used = false;
+                    if root.hinted {
+                        tip.close();
+                        root.hinted = false;
+                    }
+                }
+            }
+        }
+    }
+    Timer {
+        interval: 600ms;
+        running: touch.has-hover && root.hint != "" && !root.hinted && !root.used;
+        triggered => {
+            root.hinted = true;
+            tip.show();
+        }
+    }
+    tip := PopupWindow {
+        x: root.hint-left ? -self.width - 6px : (root.width - self.width) / 2;
+        y: root.hint-left ? (root.height - self.height) / 2 : root.height + 6px;
+        width: label.preferred-width + 16px;
+        height: 24px;
+        close-policy: PopupClosePolicy.no-auto-close;
+        Rectangle {
+            border-radius: 6px;
+            background: Theme.strong;
+            label := Text {
+                text: root.hint;
+                color: Theme.on-strong;
+                font-size: 12px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+// A letter goes into its envelope, the flap shuts, and the envelope lifts off as if it weighed nothing:
+// this is the light client. Each frame is drawn whole by `splash.rs`, from vectors, at the screen's own pixels, and
+// is shown here as it is: the renderer does not smooth what it scales.
+export component Logo {
+    in property <duration> tick;
+    in property <length> size: 88px;
+    // The finished logo, drawn sharp at its exact size.
+    in property <bool> still;
+    // The frames of one turn, and the pictures of the flight to the logo. Empty until they are drawn.
+    in property <[image]> frames;
+    in property <[image]> flight;
+    // On the way to the logo: 0 on the splash, 1 landed.
+    in property <float> landed;
+    private property <length> unit: root.size / 120;
+    private property <int> frame: root.frames.length > 0
+        ? mod(floor(mod(root.tick / 1ms, 2600) / 2600 * root.frames.length), root.frames.length)
+        : 0;
+    private property <int> step: root.flight.length > 1 ? round(root.landed * (root.flight.length - 1)) : 0;
+
+    width: root.size;
+    height: root.size;
+
+    if root.still: Image {
+        source: root.size == Theme.logo-size && Theme.logo.width > 0 ? Theme.logo : @image-url("logo/source/logo.svg");
+        width: root.size;
+        height: root.size;
+    }
+    // In flight: the picture drawn for this very size.
+    if !root.still && root.landed > 0 && root.flight.length > 0: Image {
+        source: root.flight[root.step];
+        width: root.size;
+        height: root.size;
+    }
+    // On the splash: the frame of this moment, with room above for the letter and below for the shadow.
+    if !root.still && root.landed <= 0 && root.frames.length > 0: Image {
+        source: root.frames[root.frame];
+        y: -45 * root.unit;
+        width: root.size;
+        height: root.size * 165 / 120;
+    }
+    // Before the frames are drawn, the logo as it stands.
+    if !root.still && (root.landed > 0 ? root.flight.length == 0 : root.frames.length == 0): Image {
+        source: @image-url("logo/source/logo.svg");
+        width: root.size;
+        height: root.size;
+    }
+}
+
+// The icon of a file, by `FileKind::number` in the core.
+export global FileIcons {
+    public pure function of(kind: int) -> image {
+        if kind == 1 { return @image-url("icons/image.svg"); }
+        if kind == 2 { return @image-url("icons/film.svg"); }
+        if kind == 3 { return @image-url("icons/music.svg"); }
+        if kind == 4 || kind == 6 { return @image-url("icons/file-text.svg"); }
+        if kind == 5 { return @image-url("icons/file-code.svg"); }
+        if kind == 7 { return @image-url("icons/sheet.svg"); }
+        if kind == 8 { return @image-url("icons/presentation.svg"); }
+        if kind == 9 { return @image-url("icons/file-archive.svg"); }
+        if kind == 10 { return @image-url("icons/octagon-alert.svg"); }
+        return @image-url("icons/file.svg");
+    }
+}

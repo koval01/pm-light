@@ -1,0 +1,78 @@
+[package]
+name = "proton-mail-light"
+version = "0.1.0"
+description = "The unofficial Proton Mail Light client. Not affiliated with Proton AG."
+authors = ["Yaroslav Koval"]
+repository = "https://github.com/koval01/pm-light"
+# With the additional terms of section 7 in NOTICE: the author's name and the link to the repository stay.
+license = "AGPL-3.0-only"
+edition = "2024"
+publish = false
+rust-version = "1.99.1"
+
+[build-dependencies]
+slint-build = "1"
+# Not under cfg(windows): that would ask about the machine that builds, not the one the program is for.
+winresource = "0.1"
+liblzma = { version = "0.4", features = ["static"] }
+
+[dependencies]
+liblzma = { version = "0.4", features = ["static"] }
+proton-core = { path = "../core" }
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+futures = { version = "0.3", default-features = false, features = ["std"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+open = "5"
+auto-launch = "0.6"
+iana-time-zone = "0.1"
+interprocess = "2"
+parking_lot = "0.12"
+serde = { version = "1", features = ["derive"] }
+mime_guess = "2"
+mimalloc = { version = "0.1", default-features = false }
+rand = "0.8"
+dirs = "6"
+log = "0.4"
+notify-rust = "4"
+url = "2"
+zeroize = "1"
+rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
+serde_json = "1"
+i-slint-backend-winit = { version = "=1.18.1", default-features = false }
+slint = { version = "~1.18", default-features = false, features = ["std", "compat-1-2", "backend-winit", "renderer-software", "raw-window-handle-06", "unstable-winit-030"] }
+sys-locale = "0.3"
+# On the toolkit's version of muda: two versions in one program register one Objective-C class.
+tray-icon = "0.24"
+tokio = { version = "1", features = ["rt-multi-thread"] }
+# `x11`: on Linux a webview inside the window needs it, and without it every webview is refused.
+wry = { version = "0.54", default-features = false, features = ["os-webview", "protocol", "drag-drop", "mac-proxy", "x11"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6"
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSBundle", "NSData", "NSDictionary", "NSError", "NSGeometry", "NSProcessInfo", "NSString", "NSURL"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "WKPreferences", "WKWebViewConfiguration", "WKWebsiteDataStore", "objc2-core-foundation"] }
+objc2-local-authentication = { version = "0.3", features = ["LAContext", "block2"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSAppearance", "NSApplication", "NSDockTile", "NSResponder", "NSView", "NSWindow", "block2"] }
+objc2-user-notifications = { version = "0.3", default-features = false, features = ["std", "UNUserNotificationCenter", "block2"] }
+xattr = "1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_DataExchange", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Memory", "Win32_System_Ole", "Win32_System_ErrorReporting", "Win32_System_ProcessStatus", "Win32_System_Registry", "Win32_System_SystemServices", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
+# The same version wry uses: to read an HRESULT out of its errors for the journal, and to draw a mail as a picture.
+webview2-com = "0.38"
+# The same version webview2-com uses, for the strings its calls take.
+windows-core = "0.61"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# The same versions wry uses, to draw a mail as a picture and put it on the clipboard.
+gtk = "0.18"
+webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }
+
+[lints]
+workspace = true

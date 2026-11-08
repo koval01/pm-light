@@ -1,0 +1,97 @@
+// What to print and how, in a sheet over the main window. The rows are the ones settings use.
+
+import { ScrollView } from "std-widgets.slint";
+import { Theme, IconButton } from "base.slint";
+import { Say } from "say.slint";
+import { RowView, SettingsRow, SmallButton } from "settings.slint";
+
+export component PrintWindow inherits Window {
+    in property <[SettingsRow]> rows;
+    in property <bool> busy;
+    in property <bool> own-close;
+    in property <string> problem;
+    callback dismissed();
+    callback event(string, int, int);
+    callback edited(string);
+    callback test-sheet();
+    callback send();
+    public function begin() { keys.focus(); }
+
+    title: Say.text("print.title");
+    preferred-width: 520px;
+    preferred-height: 680px;
+    min-width: 440px;
+    min-height: 420px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    keys := FocusScope {
+        width: 0;
+        height: 0;
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    VerticalLayout {
+        padding: 20px;
+        spacing: 8px;
+        HorizontalLayout {
+            Text {
+                horizontal-stretch: 1;
+                text: Say.text("print.title");
+                color: Theme.foreground;
+                font-size: 18px;
+                font-weight: 700;
+                vertical-alignment: center;
+            }
+            if root.own-close: IconButton {
+                icon: @image-url("icons/x.svg");
+                clicked => { root.dismissed(); }
+            }
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                alignment: start;
+                padding-right: 12px;
+                for row in root.rows: RowView {
+                    line <=> row;
+                    event(part, value) => { root.event(row.id, part, value); }
+                    edited => { root.edited(row.id); }
+                }
+            }
+        }
+        if root.problem != "": Text {
+            text: root.problem;
+            color: Theme.danger;
+            font-size: 13px;
+            wrap: word-wrap;
+        }
+        HorizontalLayout {
+            spacing: 8px;
+            SmallButton {
+                large: true;
+                text: Say.text("print.testSheet");
+                enabled: !root.busy;
+                clicked => { root.test-sheet(); }
+            }
+            Rectangle { horizontal-stretch: 1; }
+            SmallButton {
+                large: true;
+                text: Say.text("common.cancel");
+                clicked => { root.dismissed(); }
+            }
+            SmallButton {
+                large: true;
+                ghost: false;
+                text: Say.text("reader.print");
+                enabled: !root.busy;
+                clicked => { root.send(); }
+            }
+        }
+    }
+}

@@ -1,0 +1,55 @@
+[workspace]
+members = ["core", "app"]
+exclude = ["vendor"]
+resolver = "3"
+
+# Mail is hostile input, and a panic on it is a crash anyone can send. Tests may unwrap.
+# Pedantic and nursery are on whole. The few turned off below say why; nothing else may be.
+[workspace.lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+# The crates are the app's own and never published: their errors are one type that says what it means.
+missing_errors_doc = "allow"
+# Names like `text` and `next`, `link` and `line` are ordinary words here, not slips.
+similar_names = "allow"
+# Only test messages: it would turn `assert!(x.is_empty())` into `assert_eq!(x, [] as [T; 0])`, and its own fix
+# does not compile.
+assert_is_empty = "allow"
+# CSS in a string, `a{color:red}`, reads to it as a format argument.
+literal_string_with_formatting_args = "allow"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unreachable = "deny"
+todo = "deny"
+unimplemented = "deny"
+string_slice = "deny"
+indexing_slicing = "deny"
+exit = "deny"
+
+# Debugging and tests: lines in backtraces for our own code, and no debug info for dependencies, which with Tor are
+# hundreds of crates and filled the target folder by the tens of gigabytes.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.release]
+codegen-units = 1
+debug = false
+incremental = false
+lto = "fat"
+opt-level = 3
+overflow-checks = false
+strip = "symbols"
+
+# The tray's menu crate fails to link under fat LTO. Thin LTO costs about 3.5 MB of binary.
+[profile.native]
+inherits = "release"
+lto = "thin"
+
+# On macOS a new buffer per frame, see vendor/softbuffer/PATCHED.md.
+[patch.crates-io]
+softbuffer = { path = "vendor/softbuffer" }
+i-slint-backend-winit = { path = "vendor/i-slint-backend-winit" }

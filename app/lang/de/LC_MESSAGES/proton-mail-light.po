@@ -1,0 +1,4852 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: de\n"
+
+msgctxt "App"
+msgid "Inbox"
+msgstr "Eingang"
+
+msgctxt "App"
+msgid "Starred"
+msgstr "Markiert"
+
+msgctxt "App"
+msgid "Drafts"
+msgstr "Entwürfe"
+
+msgctxt "App"
+msgid "Scheduled"
+msgstr "Geplant"
+
+msgctxt "App"
+msgid "Snoozed"
+msgstr "Zurückgestellt"
+
+msgctxt "App"
+msgid "Sent"
+msgstr "Gesendet"
+
+msgctxt "App"
+msgid "Archive"
+msgstr "Archiv"
+
+msgctxt "App"
+msgid "Spam"
+msgstr "Spam"
+
+msgctxt "App"
+msgid "Trash"
+msgstr "Papierkorb"
+
+msgctxt "App"
+msgid "All mail"
+msgstr "Alle Nachrichten"
+
+msgctxt "App"
+msgid "Today"
+msgstr "Heute"
+
+msgctxt "App"
+msgid "Yesterday"
+msgstr "Gestern"
+
+msgctxt "App"
+msgid "This week"
+msgstr "Diese Woche"
+
+msgctxt "App"
+msgid "Earlier"
+msgstr "Früher"
+
+msgctxt "App"
+msgid "Opening the saved session…"
+msgstr "Gespeicherte Sitzung wird geöffnet …"
+
+msgctxt "App"
+msgid "Connecting to the servers…"
+msgstr "Verbindung zu den Servern …"
+
+msgctxt "App"
+msgid "Decrypting your keys…"
+msgstr "Schlüssel werden entschlüsselt …"
+
+msgctxt "App"
+msgid "Could not update"
+msgstr "Aktualisierung fehlgeschlagen"
+
+msgctxt "App"
+msgid "Updating…"
+msgstr "Wird aktualisiert …"
+
+msgctxt "App"
+msgid "Updated {}"
+msgstr "Aktualisiert: {}"
+
+msgctxt "App"
+msgid "Search mail"
+msgstr "E-Mails suchen"
+
+msgctxt "App"
+msgid "{} unread"
+msgstr "{} ungelesen"
+
+msgctxt "App"
+msgid "All"
+msgstr "Alle"
+
+msgctxt "App"
+msgid "Unread"
+msgstr "Ungelesen"
+
+msgctxt "App"
+msgid "With attachments"
+msgstr "Mit Anhängen"
+
+msgctxt "App"
+msgid "Nothing here"
+msgstr "Hier ist nichts"
+
+msgctxt "App"
+msgid "This message has no text."
+msgstr "Diese Nachricht hat keinen Text."
+
+msgctxt "App"
+msgid "If the system asks for access to its keychain, allow it."
+msgstr "Wenn das System nach dem Zugriff auf den Schlüsselbund fragt, erlaube ihn."
+
+msgctxt "App"
+msgid "Loading your mail…"
+msgstr "E-Mails werden geladen …"
+
+msgctxt "App"
+msgid "Loading images…"
+msgstr "Bilder werden geladen …"
+
+msgctxt "App"
+msgid "Images are hidden to protect your privacy."
+msgstr "Bilder sind zum Schutz deiner Privatsphäre ausgeblendet."
+
+msgctxt "App"
+msgid "Show images"
+msgstr "Bilder anzeigen"
+
+msgctxt "App"
+msgid "Encryption"
+msgstr "Verschlüsselung"
+
+msgctxt "App"
+msgid "Signature"
+msgstr "Signatur"
+
+msgctxt "App"
+msgid "Sender checks"
+msgstr "Absenderprüfung"
+
+msgctxt "App"
+msgid "Message ID"
+msgstr "Nachrichten-ID"
+
+msgctxt "App"
+msgid "Size"
+msgstr "Größe"
+
+msgctxt "App"
+msgid "Tracker"
+msgstr "Tracker"
+
+msgctxt "App"
+msgid "External image"
+msgstr "Externes Bild"
+
+msgctxt "App"
+msgid "Cleaned link"
+msgstr "Bereinigter Link"
+
+msgctxt "App"
+msgid "Removed element"
+msgstr "Entferntes Element"
+
+msgctxt "App"
+msgid "Headers"
+msgstr "Kopfzeilen"
+
+msgctxt "App"
+msgid "Protection: {}"
+msgstr "Schutz: {}"
+
+msgctxt "App"
+msgid "Connected"
+msgstr "Verbunden"
+
+msgctxt "App"
+msgid "What was blocked in this message"
+msgstr "Was in dieser Nachricht blockiert wurde"
+
+msgctxt "App"
+msgid "Message details"
+msgstr "Nachrichtendetails"
+
+msgctxt "App"
+msgid "Message"
+msgstr "Nachricht"
+
+msgctxt "App"
+msgid "Trackers"
+msgstr "Tracker"
+
+msgctxt "App"
+msgid "External images"
+msgstr "Externe Bilder"
+
+msgctxt "App"
+msgid "Cleaned links"
+msgstr "Bereinigte Links"
+
+msgctxt "App"
+msgid "Removed elements"
+msgstr "Entfernte Elemente"
+
+msgctxt "App"
+msgid "Nothing was blocked in this message."
+msgstr "In dieser Nachricht wurde nichts blockiert."
+
+msgctxt "App"
+msgid "Folders"
+msgstr "Ordner"
+
+msgctxt "App"
+msgid "Labels"
+msgstr "Labels"
+
+msgctxt "App"
+msgid "Valid"
+msgstr "Gültig"
+
+msgctxt "App"
+msgid "Invalid"
+msgstr "Ungültig"
+
+msgctxt "App"
+msgid "Unknown"
+msgstr "Nicht prüfbar"
+
+msgctxt "App"
+msgid "Unsigned"
+msgstr "Nicht signiert"
+
+msgctxt "App"
+msgid "Open"
+msgstr "Öffnen"
+
+msgctxt "App"
+msgid "Quit"
+msgstr "Beenden"
+
+msgctxt "App"
+msgid "What was blocked"
+msgstr "Was blockiert wurde"
+
+msgctxt "App"
+msgid "Print…"
+msgstr "Drucken …"
+
+msgctxt "App"
+msgid "Block {}?"
+msgstr "{} blockieren?"
+
+msgctxt "App"
+msgid "{} is a program. Save it only if you trust the sender."
+msgstr "{} ist ein Programm. Speichere es nur, wenn du dem Absender vertraust."
+
+msgctxt "App"
+msgid "{} is a program dressed up as a document. It is probably dangerous."
+msgstr "{} ist ein als Dokument getarntes Programm. Es ist wahrscheinlich gefährlich."
+
+msgctxt "App"
+msgid "For 3 hours"
+msgstr "Für 3 Stunden"
+
+msgctxt "App"
+msgid "Until tomorrow"
+msgstr "Bis morgen"
+
+msgctxt "App"
+msgid "Until next week"
+msgstr "Bis nächste Woche"
+
+msgctxt "App"
+msgid "Delete this message for good?"
+msgstr "Nachricht endgültig löschen?"
+
+msgctxt "App"
+msgid "This cannot be undone."
+msgstr "Das kann nicht rückgängig gemacht werden."
+
+msgctxt "App"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "App"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "App"
+msgid "Mail from this address will go straight to spam."
+msgstr "E-Mails von dieser Adresse landen direkt im Spam."
+
+msgctxt "App"
+msgid "Block"
+msgstr "Blockieren"
+
+msgctxt "App"
+msgid "Block sender"
+msgstr "Absender blockieren"
+
+msgctxt "App"
+msgid "This file can run on your computer"
+msgstr "Diese Datei kann auf deinem Computer ausgeführt werden"
+
+msgctxt "App"
+msgid "Save anyway"
+msgstr "Trotzdem speichern"
+
+msgctxt "App"
+msgid "That did not work. Try again."
+msgstr "Das hat nicht geklappt. Versuche es noch einmal."
+
+msgctxt "App"
+msgid "Sender blocked"
+msgstr "Absender blockiert"
+
+msgctxt "App"
+msgid "Saved"
+msgstr "Gespeichert"
+
+msgctxt "ComposeWindow"
+msgid "Forwarded message"
+msgstr "Weitergeleitete Nachricht"
+
+msgctxt "App"
+msgid "Forwarded message"
+msgstr "Weitergeleitete Nachricht"
+
+msgctxt "ComposeWindow"
+msgid "From"
+msgstr "Von"
+
+msgctxt "App"
+msgid "From"
+msgstr "Von"
+
+msgctxt "ComposeWindow"
+msgid "Date"
+msgstr "Datum"
+
+msgctxt "App"
+msgid "Date"
+msgstr "Datum"
+
+msgctxt "ComposeWindow"
+msgid "Subject"
+msgstr "Betreff"
+
+msgctxt "App"
+msgid "Subject"
+msgstr "Betreff"
+
+msgctxt "ComposeWindow"
+msgid "To"
+msgstr "An"
+
+msgctxt "App"
+msgid "To"
+msgstr "An"
+
+msgctxt "ComposeWindow"
+msgid "Cc"
+msgstr "Cc"
+
+msgctxt "ComposeWindow"
+msgid "Bcc"
+msgstr "Bcc"
+
+msgctxt "ComposeWindow"
+msgid "Cc, Bcc"
+msgstr "Cc, Bcc"
+
+msgctxt "ComposeWindow"
+msgid "Delete this draft?"
+msgstr "Entwurf löschen?"
+
+msgctxt "App"
+msgid "Delete this draft?"
+msgstr "Entwurf löschen?"
+
+msgctxt "ComposeWindow"
+msgid "Message sent"
+msgstr "Nachricht gesendet"
+
+msgctxt "App"
+msgid "Message sent"
+msgstr "Nachricht gesendet"
+
+msgctxt "ComposeWindow"
+msgid "Draft saved"
+msgstr "Entwurf gespeichert"
+
+msgctxt "App"
+msgid "Draft saved"
+msgstr "Entwurf gespeichert"
+
+msgctxt "ComposeWindow"
+msgid "Could not send. Try again."
+msgstr "Senden fehlgeschlagen. Versuche es noch einmal."
+
+msgctxt "ComposeWindow"
+msgid "Saving…"
+msgstr "Wird gespeichert …"
+
+msgctxt "ComposeWindow"
+msgid "Could not save"
+msgstr "Speichern fehlgeschlagen"
+
+msgctxt "ComposeWindow"
+msgid "Not saved"
+msgstr "Nicht gespeichert"
+
+msgctxt "ComposeWindow"
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgctxt "ComposeWindow"
+msgid "Link"
+msgstr "Link"
+
+msgctxt "ComposeWindow"
+msgid "Sending…"
+msgstr "Wird gesendet …"
+
+msgctxt "ComposeWindow"
+msgid "Send"
+msgstr "Senden"
+
+msgctxt "Menus"
+msgid "About Proton Mail Light"
+msgstr "Über Proton Mail Light"
+
+msgctxt "Menus"
+msgid "Services"
+msgstr "Dienste"
+
+msgctxt "Menus"
+msgid "Hide Proton Mail Light"
+msgstr "Proton Mail Light ausblenden"
+
+msgctxt "Menus"
+msgid "Hide Others"
+msgstr "Andere ausblenden"
+
+msgctxt "Menus"
+msgid "Show All"
+msgstr "Alle einblenden"
+
+msgctxt "Menus"
+msgid "Quit Proton Mail Light"
+msgstr "Proton Mail Light beenden"
+
+msgctxt "Menus"
+msgid "File"
+msgstr "Ablage"
+
+msgctxt "Menus"
+msgid "New Message"
+msgstr "Neue Nachricht"
+
+msgctxt "Menus"
+msgid "Close Window"
+msgstr "Fenster schließen"
+
+msgctxt "Menus"
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgctxt "Menus"
+msgid "Undo"
+msgstr "Widerrufen"
+
+msgctxt "Menus"
+msgid "Redo"
+msgstr "Wiederholen"
+
+msgctxt "Menus"
+msgid "Cut"
+msgstr "Ausschneiden"
+
+msgctxt "Menus"
+msgid "Copy"
+msgstr "Kopieren"
+
+msgctxt "Menus"
+msgid "Paste"
+msgstr "Einsetzen"
+
+msgctxt "Menus"
+msgid "Select All"
+msgstr "Alles auswählen"
+
+msgctxt "Menus"
+msgid "View"
+msgstr "Darstellung"
+
+msgctxt "Menus"
+msgid "Check for New Mail"
+msgstr "Nach neuer Post suchen"
+
+msgctxt "Menus"
+msgid "Enter Full Screen"
+msgstr "Vollbildmodus"
+
+msgctxt "Menus"
+msgid "Window"
+msgstr "Fenster"
+
+msgctxt "Menus"
+msgid "Minimize"
+msgstr "Im Dock ablegen"
+
+msgctxt "Menus"
+msgid "Zoom"
+msgstr "Zoomen"
+
+msgctxt "App"
+msgid "Unofficial client by Yaroslav Koval. Not affiliated with Proton AG."
+msgstr "Inoffizieller Client von Yaroslav Koval. Nicht mit Proton AG verbunden."
+
+msgctxt "ComposeWindow"
+msgid "Check the addresses in red"
+msgstr "Prüfe die rot markierten Adressen"
+
+msgctxt "ComposeWindow"
+msgid "Add a recipient"
+msgstr "Füge einen Empfänger hinzu"
+
+msgctxt "App"
+msgid "Message source"
+msgstr "Nachrichtenquelltext"
+
+msgctxt "App"
+msgid "Save as .eml"
+msgstr "Als .eml speichern"
+
+msgctxt "App"
+msgid "Address copied"
+msgstr "Adresse kopiert"
+
+msgctxt "InfoWindow"
+msgid "Message source"
+msgstr "Nachrichtenquelltext"
+
+msgctxt "ComposeWindow"
+msgid "Saved"
+msgstr "Gespeichert"
+
+msgctxt "ComposeWindow"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "ComposeWindow"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "App"
+msgid "Back to top"
+msgstr "Nach oben"
+
+msgctxt "App"
+msgid "No matches so far in what was read."
+msgstr "Bisher keine Treffer im gelesenen Teil."
+
+msgctxt "App"
+msgid "Keep searching"
+msgstr "Weitersuchen"
+
+msgctxt "App"
+msgid "A quotation mark is not closed."
+msgstr "Ein Anführungszeichen ist nicht geschlossen."
+
+msgctxt "App"
+msgid "A pattern must end with a slash, as in /word/."
+msgstr "Ein Muster endet mit einem Schrägstrich, etwa /wort/."
+
+msgctxt "App"
+msgid "This regular expression is not valid."
+msgstr "Dieser reguläre Ausdruck ist ungültig."
+
+msgctxt "App"
+msgid "This regular expression is too long."
+msgstr "Dieser reguläre Ausdruck ist zu lang."
+
+msgctxt "App"
+msgid "{} needs a value."
+msgstr "{} braucht einen Wert."
+
+msgctxt "App"
+msgid "\"{}\" is not a date. Use 2026-11-30."
+msgstr "„{}“ ist kein Datum. Format: 2026-11-30."
+
+msgctxt "App"
+msgid "\"{}\" is not a known value here."
+msgstr "„{}“ ist hier nicht bekannt."
+
+msgctxt "App"
+msgid "Did you mean {}?"
+msgstr "Meintest du {}?"
+
+msgctxt "App"
+msgid "The start date comes after the end date."
+msgstr "Das Startdatum liegt nach dem Enddatum."
+
+msgctxt "App"
+msgid "Sent by"
+msgstr "Gesendet von"
+
+msgctxt "App"
+msgid "Sent to"
+msgstr "Gesendet an"
+
+msgctxt "App"
+msgid "In the subject"
+msgstr "Im Betreff"
+
+msgctxt "App"
+msgid "Not read yet"
+msgstr "Ungelesen"
+
+msgctxt "App"
+msgid "From this date on, 2026-11-30"
+msgstr "Ab diesem Datum, 2026-11-30"
+
+msgctxt "App"
+msgid "Before this date"
+msgstr "Vor diesem Datum"
+
+msgctxt "App"
+msgid "A regular expression"
+msgstr "Regulärer Ausdruck"
+
+msgctxt "SearchBuilder"
+msgid "A quotation mark is not closed."
+msgstr "Ein Anführungszeichen ist nicht geschlossen."
+
+msgctxt "SearchBuilder"
+msgid "This regular expression is not valid."
+msgstr "Dieser reguläre Ausdruck ist ungültig."
+
+msgctxt "SearchBuilder"
+msgid "This regular expression is too long."
+msgstr "Dieser reguläre Ausdruck ist zu lang."
+
+msgctxt "SearchBuilder"
+msgid "\"{}\" is not a date. Use 2026-11-30."
+msgstr "„{}“ ist kein Datum. Format: 2026-11-30."
+
+msgctxt "SearchBuilder"
+msgid "The start date comes after the end date."
+msgstr "Das Startdatum liegt nach dem Enddatum."
+
+msgctxt "SearchBuilder"
+msgid "Something here is not right."
+msgstr "Hier stimmt etwas nicht."
+
+msgctxt "SearchBuilder"
+msgid "Build a search"
+msgstr "Suche zusammenstellen"
+
+msgctxt "SearchBuilder"
+msgid "Words"
+msgstr "Wörter"
+
+msgctxt "SearchBuilder"
+msgid "From"
+msgstr "Von"
+
+msgctxt "SearchBuilder"
+msgid "To"
+msgstr "An"
+
+msgctxt "SearchBuilder"
+msgid "Subject"
+msgstr "Betreff"
+
+msgctxt "SearchBuilder"
+msgid "Pattern"
+msgstr "Ausdruck"
+
+msgctxt "SearchBuilder"
+msgid "From date"
+msgstr "Ab Datum"
+
+msgctxt "SearchBuilder"
+msgid "To date"
+msgstr "Bis Datum"
+
+msgctxt "SearchBuilder"
+msgid "With attachments"
+msgstr "Mit Anhängen"
+
+msgctxt "SearchBuilder"
+msgid "Unread"
+msgstr "Ungelesen"
+
+msgctxt "SearchBuilder"
+msgid "Starred"
+msgstr "Markiert"
+
+msgctxt "SearchBuilder"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "SearchBuilder"
+msgid "Search"
+msgstr "Suchen"
+
+msgctxt "App"
+msgid "The sender will get a request to unsubscribe you."
+msgstr "Der Absender erhält eine Abmeldeanfrage."
+
+msgctxt "App"
+msgid "The sender's page will open: {}"
+msgstr "Die Seite des Absenders wird geöffnet: {}"
+
+msgctxt "App"
+msgid "Unsubscribe from this list?"
+msgstr "Von dieser Liste abmelden?"
+
+msgctxt "App"
+msgid "Unsubscribe"
+msgstr "Abmelden"
+
+msgctxt "App"
+msgid "Signature is not valid"
+msgstr "Signatur ist ungültig"
+
+msgctxt "App"
+msgid "to"
+msgstr "an"
+
+msgctxt "App"
+msgid "cc"
+msgstr "cc"
+
+msgctxt "App"
+msgid "This is a mailing list"
+msgstr "Das ist ein Newsletter"
+
+msgctxt "App"
+msgid "The sender asks you to confirm you read this"
+msgstr "Der Absender bittet um eine Lesebestätigung"
+
+msgctxt "App"
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgctxt "App"
+msgid "Conversation: {}"
+msgstr "Unterhaltung: {}"
+
+msgctxt "App"
+msgid "Reply"
+msgstr "Antworten"
+
+msgctxt "App"
+msgid "Reply all"
+msgstr "Allen antworten"
+
+msgctxt "App"
+msgid "Forward"
+msgstr "Weiterleiten"
+
+msgctxt "App"
+msgid "Unsubscribe request sent"
+msgstr "Abmeldeanfrage gesendet"
+
+msgctxt "App"
+msgid "Confirmation sent"
+msgstr "Bestätigung gesendet"
+
+msgctxt "InfoWindow"
+msgid "To"
+msgstr "An"
+
+msgctxt "InfoWindow"
+msgid "Cc"
+msgstr "Cc"
+
+msgctxt "App"
+msgid "Selected: {}"
+msgstr "Ausgewählt: {}"
+
+msgctxt "App"
+msgid "Empty folder"
+msgstr "Ordner leeren"
+
+msgctxt "App"
+msgid "Empty this folder?"
+msgstr "Diesen Ordner leeren?"
+
+msgctxt "App"
+msgid "Everything in it will be deleted for good."
+msgstr "Alles darin wird endgültig gelöscht."
+
+msgctxt "AuthScreen"
+msgid "unlock your mail"
+msgstr "deine E-Mails entsperren"
+
+msgctxt "AuthScreen"
+msgid "Sign out on this device?"
+msgstr "Auf diesem Gerät abmelden?"
+
+msgctxt "AuthScreen"
+msgid "The app password cannot be recovered. You will need to sign in to Proton again."
+msgstr "Das App-Passwort lässt sich nicht wiederherstellen. Du musst dich erneut bei Proton anmelden."
+
+msgctxt "AuthScreen"
+msgid "Something failed inside the app. The details are in the journal."
+msgstr "In der App ist etwas fehlgeschlagen. Details stehen im Protokoll."
+
+msgctxt "AuthScreen"
+msgid "This connection failed its security check, so nothing was sent. Someone on the network may be interfering, your computer's clock may be wrong, or the app needs an update."
+msgstr "Die Verbindung hat die Sicherheitsprüfung nicht bestanden, daher wurde nichts gesendet. Jemand greift möglicherweise ins Netz ein, die Uhr des Computers geht falsch oder die App braucht ein Update."
+
+msgctxt "AuthScreen"
+msgid "Cannot reach Proton. If this client is open on a public domain, Proton refuses direct requests from it."
+msgstr "Proton ist nicht erreichbar. Von einer öffentlichen Domain lehnt Proton direkte Anfragen ab."
+
+msgctxt "AuthScreen"
+msgid "Wrong password"
+msgstr "Falsches Passwort"
+
+msgctxt "AuthScreen"
+msgid "Proton is not available right now. Try again in a minute."
+msgstr "Proton ist vorübergehend nicht verfügbar. Versuchen Sie es in einer Minute erneut."
+
+msgctxt "AuthScreen"
+msgid "Proton is not available right now. You are still signed in, and the app will carry on by itself."
+msgstr "Proton ist vorübergehend nicht verfügbar. Sie bleiben angemeldet, die App verbindet sich von selbst."
+
+msgctxt "AuthScreen"
+msgid "No connection to Proton. Connecting…"
+msgstr "Keine Verbindung zu Proton. Verbinde…"
+
+
+msgctxt "AuthScreen"
+msgid "A lightweight client for Proton Mail"
+msgstr "Ein leichter Client für Proton Mail"
+
+msgctxt "AuthScreen"
+msgid "This session is no longer valid"
+msgstr "Diese Sitzung ist nicht mehr gültig"
+
+msgctxt "AuthScreen"
+msgid "Proton no longer accepts it. This happens after signing out on another device, changing the password or revoking the session in Proton's settings. The session and keys were removed from this device, so please sign in again."
+msgstr "Proton akzeptiert sie nicht mehr. Das passiert nach einer Abmeldung auf einem anderen Gerät, einer Passwortänderung oder wenn die Sitzung in den Proton-Einstellungen widerrufen wurde. Sitzung und Schlüssel wurden von diesem Gerät entfernt. Bitte melden Sie sich erneut an."
+
+msgctxt "AuthScreen"
+msgid "Username or email"
+msgstr "Benutzername oder E-Mail"
+
+msgctxt "AuthScreen"
+msgid "Password"
+msgstr "Passwort"
+
+msgctxt "AuthScreen"
+msgid "Signing in…"
+msgstr "Anmeldung…"
+
+msgctxt "AuthScreen"
+msgid "Sign in"
+msgstr "Anmelden"
+
+msgctxt "AuthScreen"
+msgid "Two-factor code"
+msgstr "Zwei-Faktor-Code"
+
+msgctxt "AuthScreen"
+msgid "Enter one of the recovery codes you saved when you set up two-factor authentication."
+msgstr "Geben Sie einen der Wiederherstellungscodes ein, die Sie beim Einrichten der Zwei-Faktor-Authentifizierung gespeichert haben."
+
+msgctxt "AuthScreen"
+msgid "Enter the six digits from your authenticator app."
+msgstr "Geben Sie die sechs Ziffern aus Ihrer Authenticator-App ein."
+
+msgctxt "AuthScreen"
+msgid "Recovery code"
+msgstr "Wiederherstellungscode"
+
+msgctxt "AuthScreen"
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgctxt "AuthScreen"
+msgid "Use the authenticator app"
+msgstr "Authenticator-App verwenden"
+
+msgctxt "AuthScreen"
+msgid "Use a recovery code"
+msgstr "Wiederherstellungscode verwenden"
+
+msgctxt "AuthScreen"
+msgid "Mailbox password"
+msgstr "Postfach-Passwort"
+
+msgctxt "AuthScreen"
+msgid "Unlock"
+msgstr "Entsperren"
+
+msgctxt "AuthScreen"
+msgid "The app is locked"
+msgstr "Die App ist gesperrt"
+
+msgctxt "AuthScreen"
+msgid "App password"
+msgstr "App-Passwort"
+
+msgctxt "AuthScreen"
+msgid "Too many attempts. Try again in {}"
+msgstr "Zu viele Versuche. Erneut möglich in {}"
+
+msgctxt "AuthScreen"
+msgid "Use Touch ID"
+msgstr "Touch ID verwenden"
+
+msgctxt "AuthScreen"
+msgid "Forgot the password"
+msgstr "Passwort vergessen"
+
+
+msgctxt "AuthScreen"
+msgid "Unofficial client. Not affiliated with Proton AG."
+msgstr "Inoffizieller Client. Keine Verbindung zu Proton AG."
+
+msgctxt "AuthScreen"
+msgid "Back to sign-in"
+msgstr "Zurück zur Anmeldung"
+
+msgctxt "AuthScreen"
+msgid "Proton verification"
+msgstr "Proton-Überprüfung"
+
+msgctxt "AuthScreen"
+msgid "Open the verification page"
+msgstr "Prüfseite öffnen"
+
+msgctxt "AuthScreen"
+msgid "Check again"
+msgstr "Erneut prüfen"
+
+msgctxt "AuthScreen"
+msgid "Proton wants to confirm you are human. Complete the check on the page that opens and come back: the sign-in continues by itself."
+msgstr "Proton möchte bestätigen, dass du ein Mensch bist. Schließe die Prüfung auf der geöffneten Seite ab und komm zurück: Die Anmeldung läuft dann von selbst weiter."
+
+msgctxt "AuthScreen"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "AuthScreen"
+msgid "Sign out of this account?"
+msgstr "Von diesem Konto abmelden?"
+
+msgctxt "AuthScreen"
+msgid "The session ends, and mail saved on this computer is erased."
+msgstr "Die Sitzung endet, und auf diesem Computer gespeicherte Mails werden gelöscht."
+
+msgctxt "Auth"
+msgid "unlock your mail"
+msgstr "deine E-Mails entsperren"
+
+msgctxt "Auth"
+msgid "Sign out on this device?"
+msgstr "Auf diesem Gerät abmelden?"
+
+msgctxt "Auth"
+msgid "The app password cannot be recovered. You will need to sign in to Proton again."
+msgstr "Das App-Passwort lässt sich nicht wiederherstellen. Du musst dich erneut bei Proton anmelden."
+
+msgctxt "Auth"
+msgid "Something failed inside the app. The details are in the journal."
+msgstr "In der App ist etwas fehlgeschlagen. Details stehen im Protokoll."
+
+msgctxt "Auth"
+msgid "This connection failed its security check, so nothing was sent. Someone on the network may be interfering, your computer's clock may be wrong, or the app needs an update."
+msgstr "Die Verbindung hat die Sicherheitsprüfung nicht bestanden, daher wurde nichts gesendet. Jemand greift möglicherweise ins Netz ein, die Uhr des Computers geht falsch oder die App braucht ein Update."
+
+msgctxt "Auth"
+msgid "Cannot reach Proton. If this client is open on a public domain, Proton refuses direct requests from it."
+msgstr "Proton ist nicht erreichbar. Von einer öffentlichen Domain lehnt Proton direkte Anfragen ab."
+
+msgctxt "Auth"
+msgid "Wrong password"
+msgstr "Falsches Passwort"
+
+msgctxt "Auth"
+msgid "Proton is not available right now. Try again in a minute."
+msgstr "Proton ist vorübergehend nicht verfügbar. Versuchen Sie es in einer Minute erneut."
+
+msgctxt "Auth"
+msgid "Proton is not available right now. You are still signed in, and the app will carry on by itself."
+msgstr "Proton ist vorübergehend nicht verfügbar. Sie bleiben angemeldet, die App verbindet sich von selbst."
+
+msgctxt "Auth"
+msgid "No connection to Proton. Connecting…"
+msgstr "Keine Verbindung zu Proton. Verbinde…"
+
+msgctxt "Auth"
+msgid "A lightweight client for Proton Mail"
+msgstr "Ein leichter Client für Proton Mail"
+
+msgctxt "Auth"
+msgid "This session is no longer valid"
+msgstr "Diese Sitzung ist nicht mehr gültig"
+
+msgctxt "Auth"
+msgid "Proton no longer accepts it. This happens after signing out on another device, changing the password or revoking the session in Proton's settings. The session and keys were removed from this device, so please sign in again."
+msgstr "Proton akzeptiert sie nicht mehr. Das passiert nach einer Abmeldung auf einem anderen Gerät, einer Passwortänderung oder wenn die Sitzung in den Proton-Einstellungen widerrufen wurde. Sitzung und Schlüssel wurden von diesem Gerät entfernt. Bitte melden Sie sich erneut an."
+
+msgctxt "Auth"
+msgid "Username or email"
+msgstr "Benutzername oder E-Mail"
+
+msgctxt "Auth"
+msgid "Password"
+msgstr "Passwort"
+
+msgctxt "Auth"
+msgid "Signing in…"
+msgstr "Anmeldung…"
+
+msgctxt "Auth"
+msgid "Sign in"
+msgstr "Anmelden"
+
+msgctxt "Auth"
+msgid "Two-factor code"
+msgstr "Zwei-Faktor-Code"
+
+msgctxt "Auth"
+msgid "Enter one of the recovery codes you saved when you set up two-factor authentication."
+msgstr "Geben Sie einen der Wiederherstellungscodes ein, die Sie beim Einrichten der Zwei-Faktor-Authentifizierung gespeichert haben."
+
+msgctxt "Auth"
+msgid "Enter the six digits from your authenticator app."
+msgstr "Geben Sie die sechs Ziffern aus Ihrer Authenticator-App ein."
+
+msgctxt "Auth"
+msgid "Recovery code"
+msgstr "Wiederherstellungscode"
+
+msgctxt "Auth"
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgctxt "Auth"
+msgid "Use the authenticator app"
+msgstr "Authenticator-App verwenden"
+
+msgctxt "Auth"
+msgid "Use a recovery code"
+msgstr "Wiederherstellungscode verwenden"
+
+msgctxt "Auth"
+msgid "Mailbox password"
+msgstr "Postfach-Passwort"
+
+msgctxt "Auth"
+msgid "Unlock"
+msgstr "Entsperren"
+
+msgctxt "Auth"
+msgid "The app is locked"
+msgstr "Die App ist gesperrt"
+
+msgctxt "Auth"
+msgid "App password"
+msgstr "App-Passwort"
+
+msgctxt "Auth"
+msgid "Too many attempts. Try again in {}"
+msgstr "Zu viele Versuche. Erneut möglich in {}"
+
+msgctxt "Auth"
+msgid "Use Touch ID"
+msgstr "Touch ID verwenden"
+
+msgctxt "Auth"
+msgid "Forgot the password"
+msgstr "Passwort vergessen"
+
+
+msgctxt "Auth"
+msgid "Unofficial client. Not affiliated with Proton AG."
+msgstr "Inoffizieller Client. Keine Verbindung zu Proton AG."
+
+msgctxt "Auth"
+msgid "Back to sign-in"
+msgstr "Zurück zur Anmeldung"
+
+msgctxt "Auth"
+msgid "Proton verification"
+msgstr "Proton-Überprüfung"
+
+msgctxt "Auth"
+msgid "Open the verification page"
+msgstr "Prüfseite öffnen"
+
+msgctxt "Auth"
+msgid "Check again"
+msgstr "Erneut prüfen"
+
+msgctxt "Auth"
+msgid "Proton wants to confirm you are human. Complete the check on the page that opens and come back: the sign-in continues by itself."
+msgstr "Proton möchte bestätigen, dass du ein Mensch bist. Schließe die Prüfung auf der geöffneten Seite ab und komm zurück: Die Anmeldung läuft dann von selbst weiter."
+
+msgctxt "Auth"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "Auth"
+msgid "Sign out of this account?"
+msgstr "Von diesem Konto abmelden?"
+
+msgctxt "Auth"
+msgid "The session ends, and mail saved on this computer is erased."
+msgstr "Die Sitzung endet, und auf diesem Computer gespeicherte Mails werden gelöscht."
+
+msgctxt "Words"
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgctxt "Words"
+msgid "Reply"
+msgstr "Antworten"
+
+msgctxt "Words"
+msgid "Reply all"
+msgstr "Allen antworten"
+
+msgctxt "Words"
+msgid "Forward"
+msgstr "Weiterleiten"
+
+msgctxt "Words"
+msgid "Show remote images"
+msgstr "Externe Bilder anzeigen"
+
+msgctxt "Words"
+msgid "Message details"
+msgstr "Nachrichtendetails"
+
+msgctxt "Words"
+msgid "Message source"
+msgstr "Quelltext anzeigen"
+
+msgctxt "Words"
+msgid "Print…"
+msgstr "Drucken"
+
+msgctxt "Words"
+msgid "Message headers"
+msgstr "Kopfzeilen"
+
+msgctxt "Words"
+msgid "Filter: unread"
+msgstr "Filter: ungelesen"
+
+msgctxt "Words"
+msgid "Filter: with attachments"
+msgstr "Filter: mit Anhängen"
+
+msgctxt "Words"
+msgid "Contacts"
+msgstr "Kontakte"
+
+msgctxt "Words"
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgctxt "Words"
+msgid "Navigation"
+msgstr "Zu Ordnern wechseln"
+
+msgctxt "Words"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "Words"
+msgid "Next message"
+msgstr "Nächste Nachricht"
+
+msgctxt "Words"
+msgid "Previous message"
+msgstr "Vorherige Nachricht"
+
+msgctxt "Words"
+msgid "Edit draft"
+msgstr "Entwurf bearbeiten"
+
+msgctxt "Words"
+msgid "Close message"
+msgstr "Nachricht schließen"
+
+msgctxt "Words"
+msgid "Scroll the message down"
+msgstr "Nachricht nach unten scrollen"
+
+msgctxt "Words"
+msgid "Scroll the message up"
+msgstr "Nachricht nach oben scrollen"
+
+msgctxt "Words"
+msgid "Search"
+msgstr "Suchen"
+
+msgctxt "Words"
+msgid "Archive"
+msgstr "Archivieren"
+
+msgctxt "Words"
+msgid "Move to trash"
+msgstr "In den Papierkorb"
+
+msgctxt "Words"
+msgid "Move to spam"
+msgstr "In Spam verschieben"
+
+msgctxt "Words"
+msgid "Star"
+msgstr "Markieren"
+
+msgctxt "Words"
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+msgctxt "Words"
+msgid "Move to a folder"
+msgstr "In Ordner verschieben"
+
+msgctxt "Words"
+msgid "Apply a label"
+msgstr "Label anwenden"
+
+msgctxt "Words"
+msgid "Show images"
+msgstr "Bilder anzeigen"
+
+msgctxt "Words"
+msgid "Select message"
+msgstr "Nachricht auswählen"
+
+msgctxt "Words"
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgctxt "Words"
+msgid "Undo send"
+msgstr "Senden rückgängig machen"
+
+msgctxt "Words"
+msgid "This help"
+msgstr "Diese Hilfe"
+
+msgctxt "Words"
+msgid "All commands"
+msgstr "Alle Befehle"
+
+msgctxt "Words"
+msgid "Go to: {}"
+msgstr "Gehe zu: {}"
+
+msgctxt "Words"
+msgid "Move to: {}"
+msgstr "Verschieben: {}"
+
+msgctxt "Words"
+msgid "Label: {}"
+msgstr "Label: {}"
+
+msgctxt "Words"
+msgid "Download: {}"
+msgstr "Herunterladen: {}"
+
+msgctxt "Words"
+msgid "Open: {}"
+msgstr "Öffnen: {}"
+
+msgctxt "Words"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "Words"
+msgid "Email"
+msgstr "E-Mail"
+
+msgctxt "Words"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgctxt "Words"
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
+msgctxt "Words"
+msgid "Delete “{}”?"
+msgstr "„{}“ löschen?"
+
+msgctxt "Words"
+msgid "Not a valid address"
+msgstr "Keine gültige Adresse"
+
+msgctxt "Words"
+msgid "All Commands"
+msgstr "Alle Befehle"
+
+msgctxt "Words"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "Words"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "ContactsWindow"
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgctxt "ContactsWindow"
+msgid "Reply"
+msgstr "Antworten"
+
+msgctxt "ContactsWindow"
+msgid "Reply all"
+msgstr "Allen antworten"
+
+msgctxt "ContactsWindow"
+msgid "Forward"
+msgstr "Weiterleiten"
+
+msgctxt "ContactsWindow"
+msgid "Show remote images"
+msgstr "Externe Bilder anzeigen"
+
+msgctxt "ContactsWindow"
+msgid "Message details"
+msgstr "Nachrichtendetails"
+
+msgctxt "ContactsWindow"
+msgid "Message source"
+msgstr "Quelltext anzeigen"
+
+msgctxt "ContactsWindow"
+msgid "Print…"
+msgstr "Drucken"
+
+msgctxt "ContactsWindow"
+msgid "Message headers"
+msgstr "Kopfzeilen"
+
+msgctxt "ContactsWindow"
+msgid "Filter: unread"
+msgstr "Filter: ungelesen"
+
+msgctxt "ContactsWindow"
+msgid "Filter: with attachments"
+msgstr "Filter: mit Anhängen"
+
+msgctxt "ContactsWindow"
+msgid "Contacts"
+msgstr "Kontakte"
+
+msgctxt "ContactsWindow"
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgctxt "ContactsWindow"
+msgid "Navigation"
+msgstr "Zu Ordnern wechseln"
+
+msgctxt "ContactsWindow"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "ContactsWindow"
+msgid "Next message"
+msgstr "Nächste Nachricht"
+
+msgctxt "ContactsWindow"
+msgid "Previous message"
+msgstr "Vorherige Nachricht"
+
+msgctxt "ContactsWindow"
+msgid "Edit draft"
+msgstr "Entwurf bearbeiten"
+
+msgctxt "ContactsWindow"
+msgid "Close message"
+msgstr "Nachricht schließen"
+
+msgctxt "ContactsWindow"
+msgid "Scroll the message down"
+msgstr "Nachricht nach unten scrollen"
+
+msgctxt "ContactsWindow"
+msgid "Scroll the message up"
+msgstr "Nachricht nach oben scrollen"
+
+msgctxt "ContactsWindow"
+msgid "Search"
+msgstr "Suchen"
+
+msgctxt "ContactsWindow"
+msgid "Archive"
+msgstr "Archivieren"
+
+msgctxt "ContactsWindow"
+msgid "Move to trash"
+msgstr "In den Papierkorb"
+
+msgctxt "ContactsWindow"
+msgid "Move to spam"
+msgstr "In Spam verschieben"
+
+msgctxt "ContactsWindow"
+msgid "Star"
+msgstr "Markieren"
+
+msgctxt "ContactsWindow"
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+msgctxt "ContactsWindow"
+msgid "Move to a folder"
+msgstr "In Ordner verschieben"
+
+msgctxt "ContactsWindow"
+msgid "Apply a label"
+msgstr "Label anwenden"
+
+msgctxt "ContactsWindow"
+msgid "Show images"
+msgstr "Bilder anzeigen"
+
+msgctxt "ContactsWindow"
+msgid "Select message"
+msgstr "Nachricht auswählen"
+
+msgctxt "ContactsWindow"
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgctxt "ContactsWindow"
+msgid "Undo send"
+msgstr "Senden rückgängig machen"
+
+msgctxt "ContactsWindow"
+msgid "This help"
+msgstr "Diese Hilfe"
+
+msgctxt "ContactsWindow"
+msgid "All commands"
+msgstr "Alle Befehle"
+
+msgctxt "ContactsWindow"
+msgid "Go to: {}"
+msgstr "Gehe zu: {}"
+
+msgctxt "ContactsWindow"
+msgid "Move to: {}"
+msgstr "Verschieben: {}"
+
+msgctxt "ContactsWindow"
+msgid "Label: {}"
+msgstr "Label: {}"
+
+msgctxt "ContactsWindow"
+msgid "Download: {}"
+msgstr "Herunterladen: {}"
+
+msgctxt "ContactsWindow"
+msgid "Open: {}"
+msgstr "Öffnen: {}"
+
+msgctxt "ContactsWindow"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "ContactsWindow"
+msgid "Email"
+msgstr "E-Mail"
+
+msgctxt "ContactsWindow"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgctxt "ContactsWindow"
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
+msgctxt "ContactsWindow"
+msgid "Delete “{}”?"
+msgstr "„{}“ löschen?"
+
+msgctxt "ContactsWindow"
+msgid "Not a valid address"
+msgstr "Keine gültige Adresse"
+
+msgctxt "ContactsWindow"
+msgid "All Commands"
+msgstr "Alle Befehle"
+
+msgctxt "ContactsWindow"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "ContactsWindow"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "PaletteWindow"
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgctxt "PaletteWindow"
+msgid "Reply"
+msgstr "Antworten"
+
+msgctxt "PaletteWindow"
+msgid "Reply all"
+msgstr "Allen antworten"
+
+msgctxt "PaletteWindow"
+msgid "Forward"
+msgstr "Weiterleiten"
+
+msgctxt "PaletteWindow"
+msgid "Show remote images"
+msgstr "Externe Bilder anzeigen"
+
+msgctxt "PaletteWindow"
+msgid "Message details"
+msgstr "Nachrichtendetails"
+
+msgctxt "PaletteWindow"
+msgid "Message source"
+msgstr "Quelltext anzeigen"
+
+msgctxt "PaletteWindow"
+msgid "Print…"
+msgstr "Drucken"
+
+msgctxt "PaletteWindow"
+msgid "Message headers"
+msgstr "Kopfzeilen"
+
+msgctxt "PaletteWindow"
+msgid "Filter: unread"
+msgstr "Filter: ungelesen"
+
+msgctxt "PaletteWindow"
+msgid "Filter: with attachments"
+msgstr "Filter: mit Anhängen"
+
+msgctxt "PaletteWindow"
+msgid "Contacts"
+msgstr "Kontakte"
+
+msgctxt "PaletteWindow"
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgctxt "PaletteWindow"
+msgid "Navigation"
+msgstr "Zu Ordnern wechseln"
+
+msgctxt "PaletteWindow"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "PaletteWindow"
+msgid "Next message"
+msgstr "Nächste Nachricht"
+
+msgctxt "PaletteWindow"
+msgid "Previous message"
+msgstr "Vorherige Nachricht"
+
+msgctxt "PaletteWindow"
+msgid "Edit draft"
+msgstr "Entwurf bearbeiten"
+
+msgctxt "PaletteWindow"
+msgid "Close message"
+msgstr "Nachricht schließen"
+
+msgctxt "PaletteWindow"
+msgid "Scroll the message down"
+msgstr "Nachricht nach unten scrollen"
+
+msgctxt "PaletteWindow"
+msgid "Scroll the message up"
+msgstr "Nachricht nach oben scrollen"
+
+msgctxt "PaletteWindow"
+msgid "Search"
+msgstr "Suchen"
+
+msgctxt "PaletteWindow"
+msgid "Archive"
+msgstr "Archivieren"
+
+msgctxt "PaletteWindow"
+msgid "Move to trash"
+msgstr "In den Papierkorb"
+
+msgctxt "PaletteWindow"
+msgid "Move to spam"
+msgstr "In Spam verschieben"
+
+msgctxt "PaletteWindow"
+msgid "Star"
+msgstr "Markieren"
+
+msgctxt "PaletteWindow"
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+msgctxt "PaletteWindow"
+msgid "Move to a folder"
+msgstr "In Ordner verschieben"
+
+msgctxt "PaletteWindow"
+msgid "Apply a label"
+msgstr "Label anwenden"
+
+msgctxt "PaletteWindow"
+msgid "Show images"
+msgstr "Bilder anzeigen"
+
+msgctxt "PaletteWindow"
+msgid "Select message"
+msgstr "Nachricht auswählen"
+
+msgctxt "PaletteWindow"
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgctxt "PaletteWindow"
+msgid "Undo send"
+msgstr "Senden rückgängig machen"
+
+msgctxt "PaletteWindow"
+msgid "This help"
+msgstr "Diese Hilfe"
+
+msgctxt "PaletteWindow"
+msgid "All commands"
+msgstr "Alle Befehle"
+
+msgctxt "PaletteWindow"
+msgid "Go to: {}"
+msgstr "Gehe zu: {}"
+
+msgctxt "PaletteWindow"
+msgid "Move to: {}"
+msgstr "Verschieben: {}"
+
+msgctxt "PaletteWindow"
+msgid "Label: {}"
+msgstr "Label: {}"
+
+msgctxt "PaletteWindow"
+msgid "Download: {}"
+msgstr "Herunterladen: {}"
+
+msgctxt "PaletteWindow"
+msgid "Open: {}"
+msgstr "Öffnen: {}"
+
+msgctxt "PaletteWindow"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "PaletteWindow"
+msgid "Email"
+msgstr "E-Mail"
+
+msgctxt "PaletteWindow"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgctxt "PaletteWindow"
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
+msgctxt "PaletteWindow"
+msgid "Delete “{}”?"
+msgstr "„{}“ löschen?"
+
+msgctxt "PaletteWindow"
+msgid "Not a valid address"
+msgstr "Keine gültige Adresse"
+
+msgctxt "PaletteWindow"
+msgid "All Commands"
+msgstr "Alle Befehle"
+
+msgctxt "PaletteWindow"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "PaletteWindow"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "InfoWindow"
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgctxt "InfoWindow"
+msgid "Reply"
+msgstr "Antworten"
+
+msgctxt "InfoWindow"
+msgid "Reply all"
+msgstr "Allen antworten"
+
+msgctxt "InfoWindow"
+msgid "Forward"
+msgstr "Weiterleiten"
+
+msgctxt "InfoWindow"
+msgid "Show remote images"
+msgstr "Externe Bilder anzeigen"
+
+msgctxt "InfoWindow"
+msgid "Message details"
+msgstr "Nachrichtendetails"
+
+msgctxt "InfoWindow"
+msgid "Print…"
+msgstr "Drucken"
+
+msgctxt "InfoWindow"
+msgid "Message headers"
+msgstr "Kopfzeilen"
+
+msgctxt "InfoWindow"
+msgid "Filter: unread"
+msgstr "Filter: ungelesen"
+
+msgctxt "InfoWindow"
+msgid "Filter: with attachments"
+msgstr "Filter: mit Anhängen"
+
+msgctxt "InfoWindow"
+msgid "Contacts"
+msgstr "Kontakte"
+
+msgctxt "InfoWindow"
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgctxt "InfoWindow"
+msgid "Navigation"
+msgstr "Zu Ordnern wechseln"
+
+msgctxt "InfoWindow"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "InfoWindow"
+msgid "Next message"
+msgstr "Nächste Nachricht"
+
+msgctxt "InfoWindow"
+msgid "Previous message"
+msgstr "Vorherige Nachricht"
+
+msgctxt "InfoWindow"
+msgid "Edit draft"
+msgstr "Entwurf bearbeiten"
+
+msgctxt "InfoWindow"
+msgid "Close message"
+msgstr "Nachricht schließen"
+
+msgctxt "InfoWindow"
+msgid "Scroll the message down"
+msgstr "Nachricht nach unten scrollen"
+
+msgctxt "InfoWindow"
+msgid "Scroll the message up"
+msgstr "Nachricht nach oben scrollen"
+
+msgctxt "InfoWindow"
+msgid "Search"
+msgstr "Suchen"
+
+msgctxt "InfoWindow"
+msgid "Archive"
+msgstr "Archivieren"
+
+msgctxt "InfoWindow"
+msgid "Move to trash"
+msgstr "In den Papierkorb"
+
+msgctxt "InfoWindow"
+msgid "Move to spam"
+msgstr "In Spam verschieben"
+
+msgctxt "InfoWindow"
+msgid "Star"
+msgstr "Markieren"
+
+msgctxt "InfoWindow"
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+msgctxt "InfoWindow"
+msgid "Move to a folder"
+msgstr "In Ordner verschieben"
+
+msgctxt "InfoWindow"
+msgid "Apply a label"
+msgstr "Label anwenden"
+
+msgctxt "InfoWindow"
+msgid "Show images"
+msgstr "Bilder anzeigen"
+
+msgctxt "InfoWindow"
+msgid "Select message"
+msgstr "Nachricht auswählen"
+
+msgctxt "InfoWindow"
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgctxt "InfoWindow"
+msgid "Undo send"
+msgstr "Senden rückgängig machen"
+
+msgctxt "InfoWindow"
+msgid "This help"
+msgstr "Diese Hilfe"
+
+msgctxt "InfoWindow"
+msgid "All commands"
+msgstr "Alle Befehle"
+
+msgctxt "InfoWindow"
+msgid "Go to: {}"
+msgstr "Gehe zu: {}"
+
+msgctxt "InfoWindow"
+msgid "Move to: {}"
+msgstr "Verschieben: {}"
+
+msgctxt "InfoWindow"
+msgid "Label: {}"
+msgstr "Label: {}"
+
+msgctxt "InfoWindow"
+msgid "Download: {}"
+msgstr "Herunterladen: {}"
+
+msgctxt "InfoWindow"
+msgid "Open: {}"
+msgstr "Öffnen: {}"
+
+msgctxt "InfoWindow"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "InfoWindow"
+msgid "Email"
+msgstr "E-Mail"
+
+msgctxt "InfoWindow"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgctxt "InfoWindow"
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
+msgctxt "InfoWindow"
+msgid "Delete “{}”?"
+msgstr "„{}“ löschen?"
+
+msgctxt "InfoWindow"
+msgid "Not a valid address"
+msgstr "Keine gültige Adresse"
+
+msgctxt "InfoWindow"
+msgid "All Commands"
+msgstr "Alle Befehle"
+
+msgctxt "InfoWindow"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "InfoWindow"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "Menus"
+msgid "All Commands"
+msgstr "Alle Befehle"
+
+msgctxt "App"
+msgid "The app restarted after an internal error."
+msgstr "Die App wurde nach einem internen Fehler neu gestartet."
+
+msgctxt "App"
+msgid "Something failed inside the app. The details are in the journal."
+msgstr "In der App ist etwas fehlgeschlagen. Details stehen im Protokoll."
+
+msgctxt "Words"
+msgid "New mail"
+msgstr "Neue Post"
+
+msgctxt "Words"
+msgid "New messages: {}"
+msgstr "Neue Nachrichten: {}"
+
+msgctxt "App"
+msgid "No connection to Proton. New mail will appear once it is back."
+msgstr "Keine Verbindung zu Proton. Neue Nachrichten erscheinen, sobald sie zurück ist."
+
+msgctxt "App"
+msgid "Proton is having trouble. You are still signed in, and new mail will appear once it passes."
+msgstr "Proton ist vorübergehend nicht verfügbar. Sie bleiben angemeldet, neue Nachrichten erscheinen, sobald es wieder läuft."
+
+msgctxt "App"
+msgid "This connection failed its security check, so nothing was sent."
+msgstr "Die Verbindung hat die Sicherheitsprüfung nicht bestanden, daher wurde nichts gesendet. Jemand greift möglicherweise ins Netz ein, die Uhr des Computers geht falsch oder die App braucht ein Update."
+
+msgctxt "App"
+msgid "New message"
+msgstr "Neue Nachricht"
+
+msgctxt "App"
+msgid "Check for new mail"
+msgstr "Nach neuer Post suchen"
+
+msgctxt "App"
+msgid "RAM {} MB"
+msgstr "RAM {} MB"
+
+msgctxt "Say"
+msgid "active until {{date}}"
+msgstr "gültig bis {{date}}"
+
+msgctxt "Say"
+msgid "Plan"
+msgstr "Tarif"
+
+msgctxt "Say"
+msgid "Free"
+msgstr "Kostenlos"
+
+msgctxt "Say"
+msgid "renews {{date}}"
+msgstr "Verlängerung am {{date}}"
+
+msgctxt "Say"
+msgid "No connection to Proton. New mail will appear once it is back."
+msgstr "Keine Verbindung zu Proton. Neue Nachrichten erscheinen, sobald sie zurück ist."
+
+msgctxt "Say"
+msgid "Proton is having trouble. You are still signed in, and new mail will appear once it passes."
+msgstr "Proton ist vorübergehend nicht verfügbar. Sie bleiben angemeldet, neue Nachrichten erscheinen, sobald es wieder läuft."
+
+msgctxt "Say"
+msgid "This connection failed its security check, so nothing was sent. Someone on the network may be interfering, your computer's clock may be wrong, or the app needs an update."
+msgstr "Die Verbindung hat die Sicherheitsprüfung nicht bestanden, daher wurde nichts gesendet. Jemand greift möglicherweise ins Netz ein, die Uhr des Computers geht falsch oder die App braucht ein Update."
+
+msgctxt "Say"
+msgid "Proton Mail for Android"
+msgstr "Proton Mail für Android"
+
+msgctxt "Say"
+msgid "Proton Mail Bridge"
+msgstr "Proton Mail Bridge"
+
+msgctxt "Say"
+msgid "Lets Outlook, Thunderbird and Apple Mail use your account."
+msgstr "Verbindet Outlook, Thunderbird und Apple Mail mit deinem Konto."
+
+msgctxt "Say"
+msgid "On a computer"
+msgstr "Auf dem Computer"
+
+msgctxt "Say"
+msgid "Proton Mail for desktop"
+msgstr "Proton Mail für den Desktop"
+
+msgctxt "Say"
+msgid "Proton Mail for iPhone and iPad"
+msgstr "Proton Mail für iPhone und iPad"
+
+msgctxt "Say"
+msgid "On your phone"
+msgstr "Auf dem Telefon"
+
+msgctxt "Say"
+msgid "Open"
+msgstr "Öffnen"
+
+msgctxt "Say"
+msgid "Proton's Export Tool saves all your mail to this computer. It is a separate app for macOS, Windows and Linux, because the mail has to be decrypted on your side."
+msgstr "Das Export Tool von Proton speichert deine gesamte Post auf diesem Computer. Es ist eine eigene App für macOS, Windows und Linux, denn entschlüsselt wird bei dir."
+
+msgctxt "Say"
+msgid "Get the Export Tool"
+msgstr "Export Tool herunterladen"
+
+msgctxt "Say"
+msgid "Credit"
+msgstr "Guthaben"
+
+msgctxt "Say"
+msgid "Available credit"
+msgstr "Verfügbares Guthaben"
+
+msgctxt "Say"
+msgid "Ends on"
+msgstr "Endet am"
+
+msgctxt "Say"
+msgid "Details on invoices"
+msgstr "Angaben auf Rechnungen"
+
+msgctxt "Say"
+msgid "Invoice details saved"
+msgstr "Rechnungsangaben gespeichert"
+
+msgctxt "Say"
+msgid "Invoices"
+msgstr "Rechnungen"
+
+msgctxt "Say"
+msgid "Changing the plan, payment methods and downloading invoices happen on Proton's website."
+msgstr "Tarif, Zahlungsmethoden und Rechnungs-Downloads verwalten Sie auf der Proton-Website."
+
+msgctxt "Say"
+msgid "Payment methods"
+msgstr "Zahlungsmethoden"
+
+msgctxt "Say"
+msgid "{{count}} months"
+msgstr "{{count}} Monate"
+
+msgctxt "Say"
+msgid "Closed"
+msgstr "Geschlossen"
+
+msgctxt "Say"
+msgid "Paid for this period"
+msgstr "Für diesen Zeitraum bezahlt"
+
+msgctxt "Say"
+msgid "Renews on"
+msgstr "Verlängerung am"
+
+msgctxt "Say"
+msgid "Unpaid"
+msgstr "Unbezahlt"
+
+msgctxt "Say"
+msgid "Mail is encrypted and opens at once, even after a restart. The key stays with the session, so with an app password mail cannot be read without it. Signing out or turning this off erases everything."
+msgstr "E-Mails sind verschlüsselt und öffnen sofort, auch nach einem Neustart. Der Schlüssel liegt bei der Sitzung: Mit einem App-Passwort sind sie ohne dieses nicht lesbar. Abmelden oder Ausschalten löscht alles."
+
+msgctxt "Say"
+msgid "Keep read mail on this computer"
+msgstr "Gelesene E-Mails auf diesem Computer behalten"
+
+msgctxt "Say"
+msgid "Mail storage"
+msgstr "E-Mail-Speicher"
+
+msgctxt "Say"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgctxt "Say"
+msgid "Create"
+msgstr "Erstellen"
+
+msgctxt "Say"
+msgid "Loading…"
+msgstr "Wird geladen…"
+
+msgctxt "Say"
+msgid "Save"
+msgstr "Speichern"
+
+msgctxt "Say"
+msgid "Delete the message after"
+msgstr "Nachricht löschen nach"
+
+msgctxt "Say"
+msgid "1 day"
+msgstr "1 Tag"
+
+msgctxt "Say"
+msgid "4 weeks"
+msgstr "4 Wochen"
+
+msgctxt "Say"
+msgid "1 hour"
+msgstr "1 Stunde"
+
+msgctxt "Say"
+msgid "Never"
+msgstr "Nie"
+
+msgctxt "Say"
+msgid "1 week"
+msgstr "1 Woche"
+
+msgctxt "Say"
+msgid "Password for recipients outside Proton"
+msgstr "Passwort für Empfänger außerhalb von Proton"
+
+msgctxt "Say"
+msgid "Share it with the recipient some other way."
+msgstr "Teile es dem Empfänger auf anderem Weg mit."
+
+msgctxt "Say"
+msgid "Password hint"
+msgstr "Passworthinweis"
+
+msgctxt "Say"
+msgid "Pick a time"
+msgstr "Zeit auswählen"
+
+msgctxt "Say"
+msgid "Sent with {{link}} secure email."
+msgstr "Gesendet mit der sicheren E-Mail von {{link}}."
+
+msgctxt "Say"
+msgid "Request a read receipt"
+msgstr "Lesebestätigung anfordern"
+
+msgctxt "Say"
+msgid "Schedule"
+msgstr "Planen"
+
+msgctxt "Say"
+msgid "Message scheduled"
+msgstr "Nachricht geplant"
+
+msgctxt "Say"
+msgid "Sending: {{when}}"
+msgstr "Versand: {{when}}"
+
+msgctxt "Say"
+msgid "Message sent"
+msgstr "Nachricht gesendet"
+
+msgctxt "Say"
+msgid "Subject"
+msgstr "Betreff"
+
+msgctxt "Say"
+msgid "Tomorrow morning"
+msgstr "Morgen früh"
+
+msgctxt "Say"
+msgid "Undo"
+msgstr "Rückgängig"
+
+msgctxt "Say"
+msgid "How long the servers take to answer. Measured on this computer, only when you open this tab or press the button."
+msgstr "Wie lange die Server für eine Antwort brauchen. Gemessen auf diesem Computer, nur wenn du diesen Tab öffnest oder die Schaltfläche drückst."
+
+msgctxt "Say"
+msgid "Measure again"
+msgstr "Erneut messen"
+
+msgctxt "Say"
+msgid "Measuring…"
+msgstr "Wird gemessen …"
+
+msgctxt "Say"
+msgid "{{value}} ms"
+msgstr "{{value}} ms"
+
+msgctxt "Say"
+msgid "No answer"
+msgstr "Keine Antwort"
+
+msgctxt "Say"
+msgid "Connected"
+msgstr "Verbunden"
+
+msgctxt "Say"
+msgid "Proton server"
+msgstr "Proton-Server"
+
+msgctxt "Say"
+msgid "Quad9 (DNS)"
+msgstr "Quad9 (DNS)"
+
+msgctxt "Say"
+msgid "State"
+msgstr "Status"
+
+msgctxt "Say"
+msgid "Mail updated"
+msgstr "E-Mails aktualisiert"
+
+msgctxt "Say"
+msgid "Choose"
+msgstr "Auswählen"
+
+msgctxt "Say"
+msgid "January,February,March,April,May,June,July,August,September,October,November,December"
+msgstr "Januar,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember"
+
+msgctxt "Say"
+msgid "Today"
+msgstr "Heute"
+
+msgctxt "Say"
+msgid "Mo,Tu,We,Th,Fr,Sa,Su"
+msgstr "Mo,Di,Mi,Do,Fr,Sa,So"
+
+msgctxt "Say"
+msgid "Cc"
+msgstr "Cc"
+
+msgctxt "Say"
+msgid "Date"
+msgstr "Datum"
+
+msgctxt "Say"
+msgid "To"
+msgstr "An"
+
+msgctxt "Say"
+msgid "Check now"
+msgstr "Jetzt prüfen"
+
+msgctxt "Say"
+msgid "Checking…"
+msgstr "Wird geprüft…"
+
+msgctxt "Say"
+msgid "Correct"
+msgstr "Korrekt"
+
+msgctxt "Say"
+msgid "DKIM"
+msgstr "DKIM"
+
+msgctxt "Say"
+msgid "DMARC"
+msgstr "DMARC"
+
+msgctxt "Say"
+msgid "This account has no domains of its own."
+msgstr "Dieses Konto hat keine eigenen Domains."
+
+msgctxt "Say"
+msgid "Adding a domain and changing its records happen on Proton's website."
+msgstr "Domains und ihre Einträge verwalten Sie auf der Proton-Website."
+
+msgctxt "Say"
+msgid "MX"
+msgstr "MX"
+
+msgctxt "Say"
+msgid "Nothing found"
+msgstr "Nichts gefunden"
+
+msgctxt "Say"
+msgid "SPF"
+msgstr "SPF"
+
+msgctxt "Say"
+msgid "Verified"
+msgstr "Bestätigt"
+
+msgctxt "Say"
+msgid "Needs fixing"
+msgstr "Muss korrigiert werden"
+
+msgctxt "Say"
+msgid "Invalid address: {{address}}"
+msgstr "Ungültige Adresse: {{address}}"
+
+msgctxt "Say"
+msgid "That send time is not valid"
+msgstr "Dieser Versandzeitpunkt ist ungültig"
+
+msgctxt "Say"
+msgid "This message cannot be moved there"
+msgstr "Diese Nachricht kann nicht dorthin verschoben werden"
+
+msgctxt "Say"
+msgid "The send time must be in the future"
+msgstr "Der Versandzeitpunkt muss in der Zukunft liegen"
+
+msgctxt "Say"
+msgid "Something failed inside the app. The details are in the journal."
+msgstr "In der App ist etwas fehlgeschlagen. Details stehen im Protokoll."
+
+msgctxt "Say"
+msgid "Active"
+msgstr "Aktiv"
+
+msgctxt "Say"
+msgid "Adding a forwarding creates keys for it, which happens on Proton's website."
+msgstr "Eine neue Weiterleitung erzeugt eigene Schlüssel und wird daher auf der Proton-Website eingerichtet."
+
+msgctxt "Say"
+msgid "Remove forwarding"
+msgstr "Weiterleitung entfernen"
+
+msgctxt "Say"
+msgid "Forwarding with {{address}} will stop."
+msgstr "Die Weiterleitung mit {{address}} wird beendet."
+
+msgctxt "Say"
+msgid "No forwarding is set up."
+msgstr "Keine Weiterleitung eingerichtet."
+
+msgctxt "Say"
+msgid "Encrypted"
+msgstr "Verschlüsselt"
+
+msgctxt "Say"
+msgid "Forwards to you"
+msgstr "Wird an Sie weitergeleitet"
+
+msgctxt "Say"
+msgid "Needs renewal"
+msgstr "Muss erneuert werden"
+
+msgctxt "Say"
+msgid "Forwards to this address"
+msgstr "Wird an diese Adresse weitergeleitet"
+
+msgctxt "Say"
+msgid "Pause"
+msgstr "Pausieren"
+
+msgctxt "Say"
+msgid "Paused"
+msgstr "Pausiert"
+
+msgctxt "Say"
+msgid "Waiting"
+msgstr "Ausstehend"
+
+msgctxt "Say"
+msgid "Rejected"
+msgstr "Abgelehnt"
+
+msgctxt "Say"
+msgid "Resume"
+msgstr "Fortsetzen"
+
+msgctxt "Say"
+msgid "Forwarding"
+msgstr "Weiterleitung"
+
+msgctxt "Say"
+msgid "Code from your authenticator app"
+msgstr "Code aus deiner Authenticator-App"
+
+msgctxt "Say"
+msgid "Confirm"
+msgstr "Bestätigen"
+
+msgctxt "Say"
+msgid "The recovery email becomes {{value}}."
+msgstr "Die Wiederherstellungs-E-Mail wird {{value}}."
+
+msgctxt "Say"
+msgid "The recovery email will be removed."
+msgstr "Die Wiederherstellungs-E-Mail wird entfernt."
+
+msgctxt "Say"
+msgid "Your password can no longer be reset by email."
+msgstr "Dein Passwort lässt sich dann nicht mehr per E-Mail zurücksetzen."
+
+msgctxt "Say"
+msgid "Your password can then be reset by email."
+msgstr "Dein Passwort lässt sich dann per E-Mail zurücksetzen."
+
+msgctxt "Say"
+msgid "Changing the sign-in log needs your password."
+msgstr "Für das Ändern des Anmeldeprotokolls brauchst du dein Passwort."
+
+msgctxt "Say"
+msgid "Account password"
+msgstr "Kontopasswort"
+
+msgctxt "Say"
+msgid "The recovery phone becomes {{value}}."
+msgstr "Das Wiederherstellungstelefon wird {{value}}."
+
+msgctxt "Say"
+msgid "The recovery phone will be removed."
+msgstr "Das Wiederherstellungstelefon wird entfernt."
+
+msgctxt "Say"
+msgid "Your password can no longer be reset by phone."
+msgstr "Dein Passwort lässt sich dann nicht mehr per Telefon zurücksetzen."
+
+msgctxt "Say"
+msgid "Your password can then be reset by phone."
+msgstr "Dein Passwort lässt sich dann per Telefon zurücksetzen."
+
+msgctxt "Say"
+msgid "Proton Sentinel will be turned off."
+msgstr "Proton Sentinel wird ausgeschaltet."
+
+msgctxt "Say"
+msgid "Proton Sentinel will be turned on."
+msgstr "Proton Sentinel wird eingeschaltet."
+
+msgctxt "Say"
+msgid "Confirm with your password"
+msgstr "Mit deinem Passwort bestätigen"
+
+msgctxt "Say"
+msgid "The authenticator app stops protecting this account."
+msgstr "Die Authenticator-App schützt dieses Konto dann nicht mehr."
+
+msgctxt "Say"
+msgid "You will set up an authenticator app next."
+msgstr "Als Nächstes richtest du eine Authenticator-App ein."
+
+msgctxt "Say"
+msgid "A detailed record of what the app does, for finding out what went wrong. It holds no passwords, addresses or mail. It is encrypted and only this app can read it, and it is erased when you quit the app and after 24 hours at most."
+msgstr "Ein detailliertes Protokoll der App, um herauszufinden, was schiefgelaufen ist. Es enthält keine Passwörter, Adressen oder E-Mails. Es ist verschlüsselt, nur diese App kann es lesen, und es wird beim Beenden der App gelöscht, spätestens nach 24 Stunden."
+
+msgctxt "Say"
+msgid "All"
+msgstr "Alle"
+
+msgctxt "Say"
+msgid "Clear the journal"
+msgstr "Protokoll löschen"
+
+msgctxt "Say"
+msgid "All records will be erased."
+msgstr "Alle Einträge werden gelöscht."
+
+msgctxt "Say"
+msgid "Nothing here yet."
+msgstr "Noch keine Einträge."
+
+msgctxt "Say"
+msgid "Errors"
+msgstr "Fehler"
+
+msgctxt "Say"
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+msgctxt "Say"
+msgid "Search the journal"
+msgstr "Protokoll durchsuchen"
+
+msgctxt "Say"
+msgid "Warnings"
+msgstr "Warnungen"
+
+msgctxt "Say"
+msgid "The keys this app has open. Compare a fingerprint to be sure a key is yours."
+msgstr "Die in dieser App geöffneten Schlüssel. Vergleichen Sie den Fingerabdruck, um sicherzugehen, dass ein Schlüssel Ihrer ist."
+
+msgctxt "Say"
+msgid "Account key"
+msgstr "Kontoschlüssel"
+
+msgctxt "Say"
+msgid "Creating, importing and exporting keys happen on Proton's website."
+msgstr "Schlüssel erzeugen, importieren und exportieren Sie auf der Proton-Website."
+
+msgctxt "Say"
+msgid "Primary"
+msgstr "Primär"
+
+msgctxt "Say"
+msgid "German"
+msgstr "Deutsch"
+
+msgctxt "Say"
+msgid "English"
+msgstr "English"
+
+msgctxt "Say"
+msgid "Russian"
+msgstr "Русский"
+
+msgctxt "Say"
+msgid "Encrypts the saved session. Once locked, the app holds neither keys nor mail in memory."
+msgstr "Verschlüsselt die gespeicherte Sitzung. Nach dem Sperren hält die App weder Schlüssel noch E-Mails im Speicher."
+
+msgctxt "Say"
+msgid "Lock when the window is inactive"
+msgstr "Sperren, wenn das Fenster inaktiv ist"
+
+msgctxt "Say"
+msgid "Current password"
+msgstr "Aktuelles Passwort"
+
+msgctxt "Say"
+msgid "{{count}} min"
+msgstr "{{count}} Min."
+
+msgctxt "Say"
+msgid "New password"
+msgstr "Neues Passwort"
+
+msgctxt "Say"
+msgid "Remove password"
+msgstr "Passwort entfernen"
+
+msgctxt "Say"
+msgid "App password removed"
+msgstr "App-Passwort entfernt"
+
+msgctxt "Say"
+msgid "Repeat the password"
+msgstr "Passwort wiederholen"
+
+msgctxt "Say"
+msgid "App password set"
+msgstr "App-Passwort festgelegt"
+
+msgctxt "Say"
+msgid "App password"
+msgstr "App-Passwort"
+
+msgctxt "Say"
+msgid "Set password"
+msgstr "Passwort festlegen"
+
+msgctxt "Say"
+msgid "The system checks your fingerprint. The app never sees it."
+msgstr "Das System prüft den Fingerabdruck. Die App sieht ihn nie."
+
+msgctxt "Say"
+msgid "Unlock with Touch ID"
+msgstr "Mit Touch ID entsperren"
+
+msgctxt "Say"
+msgid "unlock your mail"
+msgstr "deine E-Mails entsperren"
+
+msgctxt "Say"
+msgid "It cannot be recovered. If you lose it, you will need to sign in to Proton again."
+msgstr "Es lässt sich nicht wiederherstellen. Bei Verlust musst du dich erneut bei Proton anmelden."
+
+msgctxt "Say"
+msgid "Wrong password"
+msgstr "Falsches Passwort"
+
+msgctxt "Say"
+msgid "Password accepted, awaiting second factor"
+msgstr "Passwort akzeptiert, zweiter Faktor ausstehend"
+
+msgctxt "Say"
+msgid "Sign-in blocked"
+msgstr "Anmeldung blockiert"
+
+msgctxt "Say"
+msgid "Sign-in failed: wrong code"
+msgstr "Anmeldung fehlgeschlagen: falscher Code"
+
+msgctxt "Say"
+msgid "Sign-in failed: wrong password"
+msgstr "Anmeldung fehlgeschlagen: falsches Passwort"
+
+msgctxt "Say"
+msgid "All sessions ended"
+msgstr "Alle Sitzungen beendet"
+
+msgctxt "Say"
+msgid "Session ended"
+msgstr "Sitzung beendet"
+
+msgctxt "Say"
+msgid "Signed in"
+msgstr "Angemeldet"
+
+msgctxt "Say"
+msgid "Signed out"
+msgstr "Abgemeldet"
+
+msgctxt "Say"
+msgid "Unofficial client. Not affiliated with Proton AG."
+msgstr "Inoffizieller Client. Keine Verbindung zu Proton AG."
+
+msgctxt "Say"
+msgid "Blue"
+msgstr "Blau"
+
+msgctxt "Say"
+msgid "Stay in the tray when the window closes"
+msgstr "Beim Schließen des Fensters im Tray bleiben"
+
+msgctxt "Say"
+msgid "Colours"
+msgstr "Farben"
+
+msgctxt "Say"
+msgid "Beside the list"
+msgstr "Neben der Liste"
+
+msgctxt "Say"
+msgid "Comfortable"
+msgstr "Großzügig"
+
+msgctxt "Say"
+msgid "Compact"
+msgstr "Kompakt"
+
+msgctxt "Say"
+msgid "Contrast"
+msgstr "Kontrast"
+
+msgctxt "Say"
+msgid "List density"
+msgstr "Listendichte"
+
+msgctxt "Say"
+msgid "Forest"
+msgstr "Wald"
+
+msgctxt "Say"
+msgid "Graphite"
+msgstr "Graphit"
+
+msgctxt "Say"
+msgid "Large"
+msgstr "Groß"
+
+msgctxt "Say"
+msgid "Messages open"
+msgstr "E-Mails öffnen"
+
+msgctxt "Say"
+msgid "Mail text"
+msgstr "E-Mail-Text"
+
+msgctxt "Say"
+msgid "Style"
+msgstr "Stil"
+
+msgctxt "Say"
+msgid "Plum"
+msgstr "Pflaume"
+
+msgctxt "Say"
+msgid "Below the list"
+msgstr "Unter der Liste"
+
+msgctxt "Say"
+msgid "Sand"
+msgstr "Sand"
+
+msgctxt "Say"
+msgid "Sizes"
+msgstr "Größen"
+
+msgctxt "Say"
+msgid "Small"
+msgstr "Klein"
+
+msgctxt "Say"
+msgid "Window"
+msgstr "Fenster"
+
+msgctxt "Say"
+msgid "Interface scale"
+msgstr "Skalierung"
+
+msgctxt "Say"
+msgid "Leave spam and trash out of All mail"
+msgstr "Spam und Papierkorb aus „Alle Nachrichten“ ausblenden"
+
+msgctxt "Say"
+msgid "Searches in All mail skip them too."
+msgstr "Auch die Suche in „Alle Nachrichten“ überspringt sie."
+
+msgctxt "Say"
+msgid "Attach your public key"
+msgstr "Öffentlichen Schlüssel anhängen"
+
+msgctxt "Say"
+msgid "Lets recipients with PGP write back encrypted."
+msgstr "Empfänger mit PGP können verschlüsselt antworten."
+
+msgctxt "Say"
+msgid "Block senders without asking"
+msgstr "Absender ohne Rückfrage blockieren"
+
+msgctxt "Say"
+msgid "Marking a message as spam no longer asks about its sender."
+msgstr "Beim Markieren als Spam entfällt die Frage zum Absender."
+
+msgctxt "Say"
+msgid "Maximized"
+msgstr "Maximiert"
+
+msgctxt "Say"
+msgid "Writing window"
+msgstr "Schreibfenster"
+
+msgctxt "Say"
+msgid "Conversations"
+msgstr "Unterhaltungen"
+
+msgctxt "Say"
+msgid "Text direction"
+msgstr "Textrichtung"
+
+msgctxt "Say"
+msgid "Plain text"
+msgstr "Nur Text"
+
+msgctxt "Say"
+msgid "Formatted"
+msgstr "Formatiert"
+
+msgctxt "Say"
+msgid "New messages are"
+msgstr "Neue Nachrichten"
+
+msgctxt "Say"
+msgid "Colour folders"
+msgstr "Ordner einfärben"
+
+msgctxt "Say"
+msgid "Default font"
+msgstr "Standardschrift"
+
+msgctxt "Say"
+msgid "Default font size"
+msgstr "Standardschriftgröße"
+
+msgctxt "Say"
+msgid "Hide embedded images"
+msgstr "Eingebettete Bilder ausblenden"
+
+msgctxt "Say"
+msgid "Pictures carried inside a message wait until you ask for them."
+msgstr "Bilder in einer Nachricht erscheinen erst, wenn du sie anforderst."
+
+msgctxt "Say"
+msgid "Hide sender images"
+msgstr "Absenderbilder ausblenden"
+
+msgctxt "Say"
+msgid "Lists show initials instead of logos."
+msgstr "Listen zeigen Initialen statt Logos."
+
+msgctxt "Say"
+msgid "Images"
+msgstr "Bilder"
+
+msgctxt "Say"
+msgid "Folders take the colour of their parent"
+msgstr "Ordner übernehmen die Farbe des übergeordneten Ordners"
+
+msgctxt "Say"
+msgid "Layout and lists"
+msgstr "Ansicht und Listen"
+
+msgctxt "Say"
+msgid "Left to right"
+msgstr "Von links nach rechts"
+
+msgctxt "Say"
+msgid "Both"
+msgstr "Beide"
+
+msgctxt "Say"
+msgid "Drafts"
+msgstr "Entwürfe"
+
+msgctxt "Say"
+msgid "Neither"
+msgstr "Nirgends"
+
+msgctxt "Say"
+msgid "Sent"
+msgstr "Gesendet"
+
+msgctxt "Say"
+msgid "100"
+msgstr "100"
+
+msgctxt "Say"
+msgid "200"
+msgstr "200"
+
+msgctxt "Say"
+msgid "50"
+msgstr "50"
+
+msgctxt "Say"
+msgid "Messages per page"
+msgstr "Nachrichten pro Seite"
+
+msgctxt "Say"
+msgid "External PGP"
+msgstr "Externes PGP"
+
+msgctxt "Say"
+msgid "Inline"
+msgstr "Inline"
+
+msgctxt "Say"
+msgid "PGP/MIME"
+msgstr "PGP/MIME"
+
+msgctxt "Say"
+msgid "PGP format"
+msgstr "PGP-Format"
+
+msgctxt "Say"
+msgid "Offer to trust new keys"
+msgstr "Vertrauen für neue Schlüssel anbieten"
+
+msgctxt "Say"
+msgid "Asks when a signed message arrives with a key you have not trusted yet."
+msgstr "Fragt nach, wenn eine signierte Nachricht mit einem noch nicht vertrauten Schlüssel eintrifft."
+
+msgctxt "Say"
+msgid "Proton footer in new messages"
+msgstr "Proton-Fußzeile in neuen Nachrichten"
+
+msgctxt "Say"
+msgid "Free plans cannot turn it off."
+msgstr "Im Gratis-Tarif lässt sie sich nicht abschalten."
+
+msgctxt "Say"
+msgid "Remove image metadata"
+msgstr "Bild-Metadaten entfernen"
+
+msgctxt "Say"
+msgid "Location and camera details leave pictures you attach."
+msgstr "Ort und Kameradaten verschwinden aus angehängten Bildern."
+
+msgctxt "Say"
+msgid "Right to left"
+msgstr "Von rechts nach links"
+
+msgctxt "Say"
+msgid "Safety"
+msgstr "Sicherheit"
+
+msgctxt "Say"
+msgid "Kept in your account for Proton's own apps. This client does not follow these yet."
+msgstr "Bleibt in deinem Konto für Protons eigene Apps. Dieser Client folgt diesen Einstellungen noch nicht."
+
+msgctxt "Say"
+msgid "Keep messages in Sent and Drafts when moved"
+msgstr "Beim Verschieben in „Gesendet“ und „Entwürfe“ behalten"
+
+msgctxt "Say"
+msgid "Sign external messages"
+msgstr "Externe Nachrichten signieren"
+
+msgctxt "Say"
+msgid "Recipients can see the message really came from you."
+msgstr "Empfänger sehen, dass die Nachricht wirklich von dir stammt."
+
+msgctxt "Say"
+msgid "Single messages"
+msgstr "Einzelne Nachrichten"
+
+msgctxt "Say"
+msgid "After marking as spam"
+msgstr "Nach dem Markieren als Spam"
+
+msgctxt "Say"
+msgid "Ask"
+msgstr "Fragen"
+
+msgctxt "Say"
+msgid "Only spam"
+msgstr "Nur Spam"
+
+msgctxt "Say"
+msgid "Also unsubscribe"
+msgstr "Auch abmelden"
+
+msgctxt "Say"
+msgid "Sticky labels"
+msgstr "Haftende Labels"
+
+msgctxt "Say"
+msgid "A label stays on the whole conversation, new messages included."
+msgstr "Ein Label bleibt auf der ganzen Unterhaltung, auch auf neuen Nachrichten."
+
+msgctxt "Say"
+msgid "Group messages"
+msgstr "Nachrichten gruppieren"
+
+msgctxt "Say"
+msgid "New folder"
+msgstr "Neuer Ordner"
+
+msgctxt "Say"
+msgid "New label"
+msgstr "Neues Label"
+
+msgctxt "Say"
+msgid "Delete"
+msgstr "Löschen"
+
+msgctxt "Say"
+msgid "Your messages stay where they are."
+msgstr "Deine Nachrichten bleiben erhalten."
+
+msgctxt "Say"
+msgid "Delete “{{name}}”?"
+msgstr "„{{name}}“ löschen?"
+
+msgctxt "Say"
+msgid "Folders"
+msgstr "Ordner"
+
+msgctxt "Say"
+msgid "Labels"
+msgstr "Labels"
+
+msgctxt "Say"
+msgid "Name"
+msgstr "Name"
+
+msgctxt "Say"
+msgid "Rename"
+msgstr "Umbenennen"
+
+msgctxt "Say"
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgctxt "Say"
+msgid "Important announcements"
+msgstr "Wichtige Ankündigungen"
+
+msgctxt "Say"
+msgid "Beta programme"
+msgstr "Beta-Programm"
+
+msgctxt "Say"
+msgid "Business news"
+msgstr "Business-Neuigkeiten"
+
+msgctxt "Say"
+msgid "Drive news"
+msgstr "Drive-Neuigkeiten"
+
+msgctxt "Say"
+msgid "Mail and Calendar news"
+msgstr "Neuigkeiten zu Mail und Kalender"
+
+msgctxt "Say"
+msgid "Daily new mail reminders"
+msgstr "Tägliche Erinnerungen an neue E-Mails"
+
+msgctxt "Say"
+msgid "Newsletter"
+msgstr "Newsletter"
+
+msgctxt "Say"
+msgid "Offers"
+msgstr "Angebote"
+
+msgctxt "Say"
+msgid "Getting started tips"
+msgstr "Tipps für den Einstieg"
+
+msgctxt "Say"
+msgid "Pass news"
+msgstr "Pass-Neuigkeiten"
+
+msgctxt "Say"
+msgid "Account recovery notices"
+msgstr "Hinweise zur Kontowiederherstellung"
+
+msgctxt "Say"
+msgid "Surveys"
+msgstr "Umfragen"
+
+msgctxt "Say"
+msgid "Emails from Proton"
+msgstr "E-Mails von Proton"
+
+msgctxt "Say"
+msgid "VPN news"
+msgstr "VPN-Neuigkeiten"
+
+msgctxt "Say"
+msgid "Addresses"
+msgstr "Adressen"
+
+msgctxt "Say"
+msgid "Admin"
+msgstr "Admin"
+
+msgctxt "Say"
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+msgctxt "Say"
+msgid "Domains"
+msgstr "Domains"
+
+msgctxt "Say"
+msgid "Invited"
+msgstr "Eingeladen"
+
+msgctxt "Say"
+msgid "Adding users depends on your plan and is done on Proton's site."
+msgstr "Benutzer fügst du je nach Tarif auf der Proton-Website hinzu."
+
+msgctxt "Say"
+msgid "Member"
+msgstr "Mitglied"
+
+msgctxt "Say"
+msgid "This account has no other users."
+msgstr "Dieses Konto hat keine weiteren Benutzer."
+
+msgctxt "Say"
+msgid "{{used}} of {{max}}"
+msgstr "{{used}} von {{max}}"
+
+msgctxt "Say"
+msgid "Seats"
+msgstr "Plätze"
+
+msgctxt "Say"
+msgid "Users"
+msgstr "Benutzer"
+
+msgctxt "Say"
+msgid "You"
+msgstr "Du"
+
+msgctxt "Say"
+msgid "Language: {{name}}"
+msgstr "Sprache: {{name}}"
+
+msgctxt "Say"
+msgid "Dark theme"
+msgstr "Dunkles Design"
+
+msgctxt "Say"
+msgid "Light theme"
+msgstr "Helles Design"
+
+msgctxt "Say"
+msgid "System theme"
+msgstr "System-Design"
+
+msgctxt "Say"
+msgid "This type of file cannot be shown here. You can save it."
+msgstr "Dieser Dateityp kann hier nicht angezeigt werden. Du kannst die Datei speichern."
+
+msgctxt "Say"
+msgid "{{name}} can hold macros, which run on your computer once allowed. Save it only if you trust the sender, and do not enable macros in it."
+msgstr "{{name}} kann Makros enthalten, die nach dem Erlauben auf deinem Computer laufen. Speichere die Datei nur, wenn du dem Absender vertraust, und aktiviere keine Makros."
+
+msgctxt "Say"
+msgid "This file is not what its name says. Be careful with it."
+msgstr "Diese Datei ist nicht das, was ihr Name sagt. Sei vorsichtig damit."
+
+msgctxt "Say"
+msgid "This is a program, not a document, so it is not opened here. Save it only if you trust the sender."
+msgstr "Das ist ein Programm und kein Dokument, deshalb wird es hier nicht geöffnet. Speichere es nur, wenn du dem Absender vertraust."
+
+msgctxt "Say"
+msgid "Attachments"
+msgstr "Anhänge"
+
+msgctxt "Say"
+msgid "Check code (QR)"
+msgstr "Prüfcode (QR)"
+
+msgctxt "Say"
+msgid "Later, this app can bring up the original message for comparing with the sheet."
+msgstr "Später kann die App die Originalnachricht zum Vergleich mit dem Blatt anzeigen."
+
+msgctxt "Say"
+msgid "%Y-%m-%d %H:%M"
+msgstr "%d.%m.%Y %H:%M"
+
+msgctxt "Say"
+msgid "Earlier messages from this address: {{count}}"
+msgstr "Frühere Nachrichten von dieser Adresse: {{count}}"
+
+msgctxt "Say"
+msgid "Encryption"
+msgstr "Verschlüsselung"
+
+msgctxt "Say"
+msgid "First message from this address"
+msgstr "Erste Nachricht von dieser Adresse"
+
+msgctxt "Say"
+msgid "DIN form A"
+msgstr "DIN Form A"
+
+msgctxt "Say"
+msgid "DIN form B"
+msgstr "DIN Form B"
+
+msgctxt "Say"
+msgid "Fold marks (A4)"
+msgstr "Falzmarken (A4)"
+
+msgctxt "Say"
+msgid "None"
+msgstr "Keine"
+
+msgctxt "Say"
+msgid "Black and white"
+msgstr "Schwarzweiß"
+
+msgctxt "Say"
+msgid "Sender, recipients and date"
+msgstr "Absender, Empfänger und Datum"
+
+msgctxt "Say"
+msgid "Earlier mail from this sender"
+msgstr "Frühere Nachrichten dieses Absenders"
+
+msgctxt "Say"
+msgid "Says how many messages came from this address before."
+msgstr "Zeigt, wie viele Nachrichten bereits von dieser Adresse kamen."
+
+msgctxt "Say"
+msgid "Punch mark at the middle"
+msgstr "Lochmarke in der Mitte"
+
+msgctxt "Say"
+msgid "Remote images"
+msgstr "Externe Bilder"
+
+msgctxt "Say"
+msgid "Message ID"
+msgstr "Nachrichten-ID"
+
+msgctxt "Say"
+msgid "Start each message on a new sheet"
+msgstr "Jede Nachricht auf neuem Blatt"
+
+msgctxt "Say"
+msgid "Save ink"
+msgstr "Tinte sparen"
+
+msgctxt "Say"
+msgid "Drops backgrounds and turns all text black."
+msgstr "Entfernt Hintergründe und macht allen Text schwarz."
+
+msgctxt "Say"
+msgid "This message"
+msgstr "Diese Nachricht"
+
+msgctxt "Say"
+msgid "Selected ({{count}})"
+msgstr "Ausgewählte ({{count}})"
+
+msgctxt "Say"
+msgid "Their threads"
+msgstr "Ihre Unterhaltungen"
+
+msgctxt "Say"
+msgid "Whole thread"
+msgstr "Ganze Unterhaltung"
+
+msgctxt "Say"
+msgid "Digital seal (OpenPGP)"
+msgstr "Digitales Siegel (OpenPGP)"
+
+msgctxt "Say"
+msgid "Key fingerprint"
+msgstr "Schlüssel-Fingerabdruck"
+
+msgctxt "Say"
+msgid "Adds a sheet with a code signed by your address's key. Any OpenPGP app can check it."
+msgstr "Fügt ein Blatt mit einem Code hinzu, signiert mit dem Schlüssel Ihrer Adresse. Jede OpenPGP-App kann ihn prüfen."
+
+msgctxt "Say"
+msgid "Public key"
+msgstr "Öffentlicher Schlüssel"
+
+msgctxt "Say"
+msgid "The message is longer than one code. The rest of its text is in these codes, which Proton Mail Light reads."
+msgstr "Die Nachricht ist länger als ein Code. Der übrige Text steht in diesen Codes, die Proton Mail Light liest."
+
+msgctxt "Say"
+msgid "The first code holds this message with an OpenPGP signature. Scan it, check it in any OpenPGP app with the public key below, then compare its text with the letter on paper."
+msgstr "Der erste Code enthält diese Nachricht mit OpenPGP-Signatur. Scannen Sie ihn, prüfen Sie ihn in einer OpenPGP-App mit dem öffentlichen Schlüssel unten und vergleichen Sie den Text mit dem Papier."
+
+msgctxt "Say"
+msgid "Digital seal"
+msgstr "Digitales Siegel"
+
+msgctxt "Say"
+msgid "Move marks down, mm"
+msgstr "Marken nach unten verschieben, mm"
+
+msgctxt "Say"
+msgid "Size"
+msgstr "Größe"
+
+msgctxt "Say"
+msgid "Paper size, orientation and scale are set in the system's print dialog. To place marks exactly, print a test sheet and compare it with a ruler."
+msgstr "Papierformat, Ausrichtung und Skalierung legen Sie im Druckdialog des Systems fest. Für exakte Marken drucken Sie ein Testblatt und vergleichen es mit einem Lineal."
+
+msgctxt "Say"
+msgid "Technical details"
+msgstr "Technische Angaben"
+
+msgctxt "Say"
+msgid "Encryption, size, message ID and sender checks."
+msgstr "Verschlüsselung, Größe, Nachrichten-ID und Absenderprüfungen."
+
+msgctxt "Say"
+msgid "Test sheet"
+msgstr "Testblatt"
+
+msgctxt "Say"
+msgid "Lay a ruler against the numbers on the left. If they are off, enter the difference in the shift field."
+msgstr "Legen Sie ein Lineal an die Zahlen links. Weichen sie ab, tragen Sie die Differenz im Verschiebungsfeld ein."
+
+msgctxt "Say"
+msgid "This message is too long for a digital seal."
+msgstr "Diese Nachricht ist zu lang für ein digitales Siegel."
+
+msgctxt "Say"
+msgid "Too many messages at once. Print at most {{limit}}."
+msgstr "Zu viele Nachrichten auf einmal. Höchstens {{limit}} möglich."
+
+msgctxt "Say"
+msgid "What to print"
+msgstr "Was drucken"
+
+msgctxt "Say"
+msgid "Load a scan or a photo of the sheets. The app reads their codes, checks the signature, and shows the sealed text beside the paper."
+msgstr "Laden Sie einen Scan oder ein Foto der Blätter. Die App liest die Codes, prüft die Signatur und zeigt den versiegelten Text neben dem Papier."
+
+msgctxt "Say"
+msgid "Check"
+msgstr "Prüfen"
+
+msgctxt "Say"
+msgid "A signature cannot see the paper. Compare the sheet with the sealed text: any difference means the paper was changed."
+msgstr "Eine Signatur sieht das Papier nicht. Vergleichen Sie das Blatt mit dem versiegelten Text: Jeder Unterschied bedeutet, dass das Papier verändert wurde."
+
+msgctxt "Say"
+msgid "The codes do not fit together: they are damaged, or from different seals."
+msgstr "Die Codes passen nicht zusammen: Sie sind beschädigt oder stammen aus verschiedenen Siegeln."
+
+msgctxt "Say"
+msgid "The code does not match: the message changed after printing, or the code is false"
+msgstr "Der Code passt nicht: Die Nachricht wurde nach dem Druck geändert oder der Code ist gefälscht"
+
+msgctxt "Say"
+msgid "The signature is not from {{signer}}. Do not trust this sheet."
+msgstr "Die Signatur stammt nicht von {{signer}}. Vertrauen Sie diesem Blatt nicht."
+
+msgctxt "Say"
+msgid "Genuine signature by {{signer}}"
+msgstr "Echte Signatur von {{signer}}"
+
+msgctxt "Say"
+msgid "Part of the text could not be read: {{have}} of {{need}} codes. Load another scan, or paste what a phone read from the codes."
+msgstr "Der Text konnte nur teilweise gelesen werden: {{have}} von {{need}} Codes. Lade einen anderen Scan oder füge ein, was ein Telefon aus den Codes gelesen hat."
+
+msgctxt "Say"
+msgid "The code is genuine, and the message is unchanged"
+msgstr "Der Code ist echt, die Nachricht ist unverändert"
+
+msgctxt "Say"
+msgid "Proton has no public key for {{signer}}, so the signature cannot be checked."
+msgstr "Proton hat keinen öffentlichen Schlüssel für {{signer}}, die Signatur lässt sich nicht prüfen."
+
+msgctxt "Say"
+msgid "The code with the signature could not be read, so nothing can be confirmed. Load a better scan, or paste what a phone read from it."
+msgstr "Der Code mit der Signatur konnte nicht gelesen werden, daher lässt sich nichts bestätigen. Lade einen besseren Scan oder füge ein, was ein Telefon daraus gelesen hat."
+
+msgctxt "Say"
+msgid "No check codes were found."
+msgstr "Keine Prüfcodes gefunden."
+
+msgctxt "Say"
+msgid "Or paste what a phone read from the codes"
+msgstr "Oder fügen Sie ein, was ein Telefon aus den Codes gelesen hat"
+
+msgctxt "Say"
+msgid "On a phone: scan the first code, then check the text in any OpenPGP app, with the public key printed on the sheet."
+msgstr "Am Telefon: Scannen Sie den ersten Code und prüfen Sie den Text in einer OpenPGP-App mit dem auf dem Blatt gedruckten öffentlichen Schlüssel."
+
+msgctxt "Say"
+msgid "Reading…"
+msgstr "Wird gelesen…"
+
+msgctxt "Say"
+msgid "Load scans"
+msgstr "Scans laden"
+
+msgctxt "Say"
+msgid "This account holds no such message."
+msgstr "Dieses Konto enthält keine solche Nachricht."
+
+msgctxt "Say"
+msgid "This file could not be read. PNG, JPEG and PDF scans work."
+msgstr "Diese Datei konnte nicht gelesen werden. PNG, JPEG und PDF-Scans funktionieren."
+
+msgctxt "Say"
+msgid "Dark web monitoring"
+msgstr "Dark-Web-Überwachung"
+
+msgctxt "Say"
+msgid "Proton tells you when your address appears in a leak."
+msgstr "Proton meldet, wenn deine Adresse in einem Datenleck auftaucht."
+
+msgctxt "Say"
+msgid "Send crash reports"
+msgstr "Absturzberichte senden"
+
+msgctxt "Say"
+msgid "Applies to Proton's own apps. This client sends none."
+msgstr "Gilt für Protons eigene Apps. Dieser Client sendet nichts."
+
+msgctxt "Say"
+msgid "Point at the email or phone number to see it."
+msgstr "Zeige auf die E-Mail-Adresse oder Telefonnummer, um sie zu sehen."
+
+msgctxt "Say"
+msgid "Point at the payment details to see them."
+msgstr "Zeige auf die Zahlungsdaten, um sie zu sehen."
+
+msgctxt "Say"
+msgid "Share usage statistics"
+msgstr "Nutzungsstatistiken teilen"
+
+msgctxt "Say"
+msgid "Data shared with Proton"
+msgstr "Daten für Proton"
+
+msgctxt "Say"
+msgid "Download"
+msgstr "Herunterladen"
+
+msgctxt "Say"
+msgid "Could not open this file"
+msgstr "Datei konnte nicht geöffnet werden"
+
+msgctxt "Say"
+msgid "Reset the password by email"
+msgstr "Passwort per E-Mail zurücksetzen"
+
+msgctxt "Say"
+msgid "Reset the password by phone"
+msgstr "Passwort per Telefon zurücksetzen"
+
+msgctxt "Say"
+msgid "Change"
+msgstr "Ändern"
+
+msgctxt "Say"
+msgid "Device backup"
+msgstr "Gerätesicherung"
+
+msgctxt "Say"
+msgid "Recovery is changed on Proton's website, where it asks for your password."
+msgstr "Die Wiederherstellung ändern Sie auf der Proton-Website, dort wird Ihr Passwort verlangt."
+
+msgctxt "Say"
+msgid "On"
+msgstr "Ein"
+
+msgctxt "Say"
+msgid "Recovery phone"
+msgstr "Wiederherstellungs-Telefon"
+
+msgctxt "Say"
+msgid "Recovery phrase"
+msgstr "Wiederherstellungsphrase"
+
+msgctxt "Say"
+msgid "Outdated, set a new one"
+msgstr "Veraltet, bitte neu festlegen"
+
+msgctxt "Say"
+msgid "Set"
+msgstr "Festgelegt"
+
+msgctxt "Say"
+msgid "Invite friends to Proton. When they subscribe, you both get credit."
+msgstr "Lade Freunde zu Proton ein. Wenn sie ein Abo abschließen, erhaltet ihr beide ein Guthaben."
+
+msgctxt "Say"
+msgid "Copied"
+msgstr "Kopiert"
+
+msgctxt "Say"
+msgid "Copy"
+msgstr "Kopieren"
+
+msgctxt "Say"
+msgid "Free months earned"
+msgstr "Verdiente Gratismonate"
+
+msgctxt "Say"
+msgid "{{months}} of {{limit}}"
+msgstr "{{months}} von {{limit}}"
+
+msgctxt "Say"
+msgid "Invitations by mail left"
+msgstr "Verbleibende E-Mail-Einladungen"
+
+msgctxt "Say"
+msgid "Your invitation link"
+msgstr "Dein Einladungslink"
+
+msgctxt "Say"
+msgid "Nobody has joined through your link yet."
+msgstr "Über deinen Link ist noch niemand beigetreten."
+
+msgctxt "Say"
+msgid "Invited people"
+msgstr "Eingeladene"
+
+msgctxt "Say"
+msgid "You get {{you}} for each friend, up to {{most}}. They get {{friend}}."
+msgstr "Du erhältst {{you}} pro Freund, insgesamt bis zu {{most}}. Dein Freund erhält {{friend}}."
+
+msgctxt "Say"
+msgid "Joined by link"
+msgstr "Über den Link beigetreten"
+
+msgctxt "Say"
+msgid "Subscribed"
+msgstr "Abonniert"
+
+msgctxt "Say"
+msgid "Rewarded"
+msgstr "Belohnt"
+
+msgctxt "Say"
+msgid "Signed up"
+msgstr "Registriert"
+
+msgctxt "Say"
+msgid "On trial"
+msgstr "In der Testphase"
+
+msgctxt "Say"
+msgid "Invitations are not available for this account."
+msgstr "Einladungen sind für dieses Konto nicht verfügbar."
+
+msgctxt "Say"
+msgid "Two-factor authentication"
+msgstr "Zwei-Faktor-Authentifizierung"
+
+msgctxt "Say"
+msgid "App and security key"
+msgstr "App und Schlüssel"
+
+msgctxt "Say"
+msgid "Security key"
+msgstr "Sicherheitsschlüssel"
+
+msgctxt "Say"
+msgid "Authenticator app"
+msgstr "Authenticator-App"
+
+msgctxt "Say"
+msgid "Sign-in log"
+msgstr "Anmeldeprotokoll"
+
+msgctxt "Say"
+msgid "Advanced"
+msgstr "Erweitert"
+
+msgctxt "Say"
+msgid "Basic"
+msgstr "Einfach"
+
+msgctxt "Say"
+msgid "Clear the log"
+msgstr "Protokoll leeren"
+
+msgctxt "Say"
+msgid "The entries are gone for good."
+msgstr "Die Einträge werden endgültig gelöscht."
+
+msgctxt "Say"
+msgid "Entries: {{count}}"
+msgstr "Einträge: {{count}}"
+
+msgctxt "Say"
+msgid "Change your password, two-factor and recovery at"
+msgstr "Passwort, Zwei-Faktor und Wiederherstellung änderst du auf"
+
+msgctxt "Say"
+msgid "Mail from these addresses and domains goes where you say, whatever the filters decide."
+msgstr "Post von diesen Adressen und Domains landet dort, wo Sie es festlegen, unabhängig von Filtern."
+
+msgctxt "Say"
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgctxt "Say"
+msgid "Allowed"
+msgstr "Zugelassen"
+
+msgctxt "Say"
+msgid "Blocked"
+msgstr "Gesperrt"
+
+msgctxt "Say"
+msgid "Nothing here."
+msgstr "Hier ist nichts."
+
+msgctxt "Say"
+msgid "List"
+msgstr "Liste"
+
+msgctxt "Say"
+msgid "And {{count}} more. Search to narrow them down."
+msgstr "Und {{count}} weitere. Suchen Sie gezielter."
+
+msgctxt "Say"
+msgid "Address or domain"
+msgstr "Adresse oder Domain"
+
+msgctxt "Say"
+msgid "Remove"
+msgstr "Entfernen"
+
+msgctxt "Say"
+msgid "Search the lists"
+msgstr "Listen durchsuchen"
+
+msgctxt "Say"
+msgid "Show"
+msgstr "Anzeigen"
+
+msgctxt "Say"
+msgid "Spam"
+msgstr "Spam"
+
+msgctxt "Say"
+msgid "Blocked and allowed senders"
+msgstr "Gesperrte und zugelassene Absender"
+
+msgctxt "Say"
+msgid "Stronger protection against account takeover, reviewed by Proton's security team."
+msgstr "Stärkerer Schutz vor Kontoübernahmen, geprüft vom Sicherheitsteam von Proton."
+
+msgctxt "Say"
+msgid "Proton Sentinel"
+msgstr "Proton Sentinel"
+
+msgctxt "Say"
+msgid "This session"
+msgstr "Diese Sitzung"
+
+msgctxt "Say"
+msgid "End"
+msgstr "Beenden"
+
+msgctxt "Say"
+msgid "End all other sessions"
+msgstr "Alle anderen beenden"
+
+msgctxt "Say"
+msgid "Every device but this one will be signed out."
+msgstr "Alle Geräte außer diesem werden abgemeldet."
+
+msgctxt "Say"
+msgid "Active sessions"
+msgstr "Aktive Sitzungen"
+
+msgctxt "Say"
+msgid "Address saved"
+msgstr "Adresse gespeichert"
+
+msgctxt "Say"
+msgid "The default address is used for new messages. You can change it in each message."
+msgstr "Die Standardadresse gilt für neue Nachrichten. In jeder Nachricht lässt sie sich ändern."
+
+msgctxt "Say"
+msgid "Auto-delete from Spam and Trash"
+msgstr "Automatisch aus Spam und Papierkorb löschen"
+
+msgctxt "Say"
+msgid "Mail is deleted after 30 days. Available on paid plans."
+msgstr "Nachrichten werden nach 30 Tagen gelöscht. In bezahlten Tarifen verfügbar."
+
+msgctxt "Say"
+msgid "Auto-reply"
+msgstr "Automatische Antwort"
+
+msgctxt "Say"
+msgid "Between dates"
+msgstr "Zwischen Daten"
+
+msgctxt "Say"
+msgid "Reply text"
+msgstr "Antworttext"
+
+msgctxt "Say"
+msgid "Reply automatically"
+msgstr "Automatisch antworten"
+
+msgctxt "Say"
+msgid "Until turned off"
+msgstr "Bis zum Ausschalten"
+
+msgctxt "Say"
+msgid "Auto-reply saved"
+msgstr "Automatische Antwort gespeichert"
+
+msgctxt "Say"
+msgid "Until"
+msgstr "Bis"
+
+msgctxt "Say"
+msgid "Save new recipients to contacts"
+msgstr "Neue Empfänger in Kontakten speichern"
+
+msgctxt "Say"
+msgid "Start when you sign in to your computer"
+msgstr "Beim Anmelden am Computer starten"
+
+msgctxt "Say"
+msgid "The app starts in the tray, so that notifications arrive right away."
+msgstr "Die App startet im Tray, damit Benachrichtigungen sofort ankommen."
+
+msgctxt "Say"
+msgid "Ask before opening links"
+msgstr "Vor dem Öffnen von Links fragen"
+
+msgctxt "Say"
+msgid "Shows the full address, which makes phishing easier to spot."
+msgstr "Zeigt die volle Adresse, so fällt Phishing leichter auf."
+
+msgctxt "Say"
+msgid "Display name"
+msgstr "Anzeigename"
+
+msgctxt "Say"
+msgid "Add filter"
+msgstr "Filter hinzufügen"
+
+msgctxt "Say"
+msgid "contains"
+msgstr "enthält"
+
+msgctxt "Say"
+msgid "Sender"
+msgstr "Absender"
+
+msgctxt "Say"
+msgid "If"
+msgstr "Wenn"
+
+msgctxt "Say"
+msgid "Don't move"
+msgstr "Nicht verschieben"
+
+msgctxt "Say"
+msgid "Mark as read"
+msgstr "Als gelesen markieren"
+
+msgctxt "Say"
+msgid "Simple"
+msgstr "Einfach"
+
+msgctxt "Say"
+msgid "No filters yet"
+msgstr "Noch keine Filter"
+
+msgctxt "Say"
+msgid "Filter added"
+msgstr "Filter hinzugefügt"
+
+msgctxt "Say"
+msgid "Star"
+msgstr "Markieren"
+
+msgctxt "Say"
+msgid "Move to"
+msgstr "Verschieben nach"
+
+msgctxt "Say"
+msgid "Recipient"
+msgstr "Empfänger"
+
+msgctxt "Say"
+msgid "Filters"
+msgstr "Filter"
+
+msgctxt "Say"
+msgid "Hide remote images"
+msgstr "Externe Bilder ausblenden"
+
+msgctxt "Say"
+msgid "Images always go through Proton's proxy, so senders never see your address."
+msgstr "Bilder laufen immer über den Proton-Proxy, Absender sehen deine Adresse nicht."
+
+msgctxt "Say"
+msgid "Keyboard"
+msgstr "Tastatur"
+
+msgctxt "Say"
+msgid "Language"
+msgstr "Sprache"
+
+msgctxt "Say"
+msgid "Make default"
+msgstr "Als Standard festlegen"
+
+msgctxt "Say"
+msgid "Going to folders"
+msgstr "Zu Ordnern wechseln"
+
+msgctxt "Say"
+msgid "Open the next message after moving one"
+msgstr "Nach dem Verschieben die nächste Nachricht öffnen"
+
+msgctxt "Say"
+msgid "New mail notifications"
+msgstr "Benachrichtigungen bei neuer Post"
+
+msgctxt "Say"
+msgid "When the window is in the background. Message text never appears in them."
+msgstr "Wenn das Fenster im Hintergrund ist. Der Text der Nachrichten erscheint darin nie."
+
+msgctxt "Say"
+msgid "Reading"
+msgstr "Lesen"
+
+msgctxt "Say"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "Say"
+msgid "Signature"
+msgstr "Signatur"
+
+msgctxt "Say"
+msgid "Theme"
+msgstr "Design"
+
+msgctxt "Say"
+msgid "Dark"
+msgstr "Dunkel"
+
+msgctxt "Say"
+msgid "Light"
+msgstr "Hell"
+
+msgctxt "Say"
+msgid "System"
+msgstr "System"
+
+msgctxt "Say"
+msgid "{{count}} s"
+msgstr "{{count}} s"
+
+msgctxt "Say"
+msgid "Time to undo sending"
+msgstr "Zeit zum Rückgängigmachen"
+
+msgctxt "Say"
+msgid "Writing"
+msgstr "Verfassen"
+
+msgctxt "Say"
+msgid "Save draft (in the composer)"
+msgstr "Entwurf speichern (im Editor)"
+
+msgctxt "Say"
+msgid "Send (in the composer)"
+msgstr "Senden (im Editor)"
+
+msgctxt "Say"
+msgid "Lets other services and devices send mail from your custom domain through Proton."
+msgstr "Lässt andere Dienste und Geräte über Proton E-Mails von deiner eigenen Domain senden."
+
+msgctxt "Say"
+msgid "Email address"
+msgstr "E-Mail-Adresse"
+
+msgctxt "Say"
+msgid "Your mail is encrypted, so other apps reach it through Proton Mail Bridge, which runs on your computer."
+msgstr "Deine E-Mails sind verschlüsselt, daher greifen andere Apps über Proton Mail Bridge auf deinem Computer darauf zu."
+
+msgctxt "Say"
+msgid "IMAP and SMTP in other mail apps"
+msgstr "IMAP und SMTP in anderen Mail-Apps"
+
+msgctxt "Say"
+msgid "Generate token"
+msgstr "Token erstellen"
+
+msgctxt "Say"
+msgid "Whatever uses it will stop sending."
+msgstr "Was dieses Token nutzt, kann dann nichts mehr senden."
+
+msgctxt "Say"
+msgid "Delete token “{{name}}”?"
+msgstr "Token „{{name}}“ löschen?"
+
+msgctxt "Say"
+msgid "Token name"
+msgstr "Token-Name"
+
+msgctxt "Say"
+msgid "Never used"
+msgstr "Nie genutzt"
+
+msgctxt "Say"
+msgid "A token needs an active address on a custom domain."
+msgstr "Für ein Token brauchst du eine aktive Adresse auf einer eigenen Domain."
+
+msgctxt "Say"
+msgid "No tokens yet."
+msgstr "Noch keine Tokens."
+
+msgctxt "Say"
+msgid "Copy the token now. It will not be shown again."
+msgstr "Kopiere das Token jetzt. Es wird nicht noch einmal angezeigt."
+
+msgctxt "Say"
+msgid "SMTP port"
+msgstr "SMTP-Port"
+
+msgctxt "Say"
+msgid "SMTP server"
+msgstr "SMTP-Server"
+
+msgctxt "Say"
+msgid "SMTP submission"
+msgstr "SMTP-Versand"
+
+msgctxt "Say"
+msgid "SMTP token"
+msgstr "SMTP-Token"
+
+msgctxt "Say"
+msgid "Last used {{when}}"
+msgstr "Zuletzt genutzt {{when}}"
+
+msgctxt "Say"
+msgid "SMTP username"
+msgstr "SMTP-Benutzername"
+
+msgctxt "Say"
+msgid "About"
+msgstr "Über"
+
+msgctxt "Say"
+msgid "Account and password"
+msgstr "Konto und Passwort"
+
+msgctxt "Say"
+msgid "Appearance"
+msgstr "Aussehen"
+
+msgctxt "Say"
+msgid "Application"
+msgstr "Anwendung"
+
+msgctxt "Say"
+msgid "Get the apps"
+msgstr "Apps herunterladen"
+
+msgctxt "Say"
+msgid "Back to mail"
+msgstr "Zurück zur Post"
+
+msgctxt "Say"
+msgid "Backup and export"
+msgstr "Sichern und exportieren"
+
+msgctxt "Say"
+msgid "Connection"
+msgstr "Verbindung"
+
+msgctxt "Say"
+msgid "Domain names"
+msgstr "Domainnamen"
+
+msgctxt "Say"
+msgid "Encryption and keys"
+msgstr "Verschlüsselung und Schlüssel"
+
+msgctxt "Say"
+msgid "Folders and labels"
+msgstr "Ordner und Kategorien"
+
+msgctxt "Say"
+msgid "Forwarding and auto-reply"
+msgstr "Weiterleiten und automatisch antworten"
+
+msgctxt "Say"
+msgid "Account"
+msgstr "Konto"
+
+msgctxt "Say"
+msgid "This app"
+msgstr "Diese App"
+
+msgctxt "Say"
+msgid "Proton Mail"
+msgstr "Proton Mail"
+
+msgctxt "Say"
+msgid "Organization"
+msgstr "Organisation"
+
+msgctxt "Say"
+msgid "Identity and addresses"
+msgstr "Identität und E-Mail-Adressen"
+
+msgctxt "Say"
+msgid "IMAP/SMTP"
+msgstr "IMAP/SMTP"
+
+msgctxt "Say"
+msgid "Import with Easy Switch"
+msgstr "Importieren mit Easy Switch"
+
+msgctxt "Say"
+msgid "Journal"
+msgstr "Protokoll"
+
+msgctxt "Say"
+msgid "Language and time"
+msgstr "Sprache und Zeit"
+
+msgctxt "Say"
+msgid "Messages and composing"
+msgstr "Nachrichten und verfassen"
+
+msgctxt "Say"
+msgid "Multi-user support"
+msgstr "Mehrbenutzerunterstützung"
+
+msgctxt "Say"
+msgid "Open on Proton's website"
+msgstr "Auf der Proton-Website öffnen"
+
+msgctxt "Say"
+msgid "Overview"
+msgstr "Startseite"
+
+msgctxt "Say"
+msgid "Check a printout"
+msgstr "Ausdruck prüfen"
+
+msgctxt "Say"
+msgid "Email privacy"
+msgstr "E-Mail-Datenschutz"
+
+msgctxt "Say"
+msgid "Recovery"
+msgstr "Wiederherstellung"
+
+msgctxt "Say"
+msgid "Refer a friend"
+msgstr "Wirb einen Freund"
+
+msgctxt "Say"
+msgid "Search settings"
+msgstr "Einstellungen durchsuchen"
+
+msgctxt "Say"
+msgid "Security and privacy"
+msgstr "Sicherheit und Datenschutz"
+
+msgctxt "Say"
+msgid "Subscription"
+msgstr "Abonnement"
+
+msgctxt "Say"
+msgid "This part lives on Proton's website. It opens in your browser, where you sign in to Proton."
+msgstr "Dieser Bereich liegt auf der Proton-Website. Er öffnet sich im Browser, dort melden Sie sich bei Proton an."
+
+msgctxt "Say"
+msgid "As in the language"
+msgstr "Wie in der Sprache"
+
+msgctxt "Say"
+msgid "Time format"
+msgstr "Zeitformat"
+
+msgctxt "Say"
+msgid "Date format"
+msgstr "Datumsformat"
+
+msgctxt "Say"
+msgid "Monday"
+msgstr "Montag"
+
+msgctxt "Say"
+msgid "Tuesday"
+msgstr "Dienstag"
+
+msgctxt "Say"
+msgid "Wednesday"
+msgstr "Mittwoch"
+
+msgctxt "Say"
+msgid "Thursday"
+msgstr "Donnerstag"
+
+msgctxt "Say"
+msgid "Friday"
+msgstr "Freitag"
+
+msgctxt "Say"
+msgid "Saturday"
+msgstr "Samstag"
+
+msgctxt "Say"
+msgid "Sunday"
+msgstr "Sonntag"
+
+msgctxt "Say"
+msgid "12 hours"
+msgstr "12 Stunden"
+
+msgctxt "Say"
+msgid "24 hours"
+msgstr "24 Stunden"
+
+msgctxt "Say"
+msgid "Now: {{time}}"
+msgstr "Jetzt: {{time}}"
+
+msgctxt "Say"
+msgid "Date and time"
+msgstr "Datum und Uhrzeit"
+
+msgctxt "Say"
+msgid "First day of the week"
+msgstr "Erster Wochentag"
+
+msgctxt "Say"
+msgid "Formats and the first day of the week are kept in your Proton account, the time zone is chosen for this computer. The first day of the week sets when “next week” begins for snoozed mail."
+msgstr "Formate und der erste Wochentag liegen in deinem Proton-Konto, die Zeitzone gilt für diesen Computer. Der erste Wochentag legt fest, wann „nächste Woche“ für verschobene E-Mails beginnt."
+
+msgctxt "Say"
+msgid "Time zone"
+msgstr "Zeitzone"
+
+msgctxt "Say"
+msgid "As in the system ({{zone}})"
+msgstr "Wie im System ({{zone}})"
+
+msgctxt "Say"
+msgid "Save these recovery codes now. Each works once, and they will not be shown again."
+msgstr "Speichere diese Wiederherstellungscodes jetzt. Jeder gilt einmal, und sie werden nicht noch einmal angezeigt."
+
+msgctxt "Say"
+msgid "Turn off"
+msgstr "Ausschalten"
+
+msgctxt "Say"
+msgid "I saved them"
+msgstr "Gespeichert"
+
+msgctxt "Say"
+msgid "Turn on"
+msgstr "Einschalten"
+
+msgctxt "Say"
+msgid "Key"
+msgstr "Schlüssel"
+
+msgctxt "Say"
+msgid "Scan this with an authenticator app, or enter the key by hand. Then type the code it shows."
+msgstr "Scanne dies mit einer Authenticator-App oder gib den Schlüssel von Hand ein. Tippe dann den angezeigten Code ein."
+
+msgctxt "Say"
+msgid "B,KB,MB,GB,TB"
+msgstr "B,KB,MB,GB,TB"
+
+msgctxt "InfoWindow"
+msgid "Message"
+msgstr "Nachricht"
+
+msgctxt "InfoWindow"
+msgid "Sender checks"
+msgstr "Absenderprüfung"
+
+msgctxt "InfoWindow"
+msgid "Headers"
+msgstr "Kopfzeilen"
+
+msgctxt "InfoWindow"
+msgid "Trackers"
+msgstr "Tracker"
+
+msgctxt "InfoWindow"
+msgid "External images"
+msgstr "Externe Bilder"
+
+msgctxt "InfoWindow"
+msgid "Cleaned links"
+msgstr "Bereinigte Links"
+
+msgctxt "InfoWindow"
+msgid "Removed elements"
+msgstr "Entfernte Elemente"
+
+msgctxt "InfoWindow"
+msgid "Valid"
+msgstr "Gültig"
+
+msgctxt "InfoWindow"
+msgid "Invalid"
+msgstr "Ungültig"
+
+msgctxt "InfoWindow"
+msgid "Unknown"
+msgstr "Nicht prüfbar"
+
+msgctxt "InfoWindow"
+msgid "Unsigned"
+msgstr "Nicht signiert"
+
+msgctxt "InfoWindow"
+msgid "Signature"
+msgstr "Signatur"
+
+msgctxt "InfoWindow"
+msgid "Encryption"
+msgstr "Verschlüsselung"
+
+msgctxt "InfoWindow"
+msgid "Size"
+msgstr "Größe"
+
+msgctxt "InfoWindow"
+msgid "Message ID"
+msgstr "Nachrichten-ID"
+
+msgctxt "InfoWindow"
+msgid "What was blocked in this message"
+msgstr "Was in dieser Nachricht blockiert wurde"
+
+msgctxt "InfoWindow"
+msgid "Nothing was blocked in this message."
+msgstr "In dieser Nachricht wurde nichts blockiert."
+
+msgctxt "InfoWindow"
+msgid "End-to-end encrypted"
+msgstr "Ende-zu-Ende-verschlüsselt"
+
+msgctxt "InfoWindow"
+msgid "Encrypted when written"
+msgstr "Beim Schreiben verschlüsselt"
+
+msgctxt "InfoWindow"
+msgid "Encrypted on delivery"
+msgstr "Beim Empfang verschlüsselt"
+
+msgctxt "InfoWindow"
+msgid "Encrypted on import"
+msgstr "Beim Import verschlüsselt"
+
+msgctxt "InfoWindow"
+msgid "Stored encrypted"
+msgstr "Verschlüsselt gespeichert"
+
+msgctxt "App"
+msgid "The system's web engine did not start, so this cannot be shown. On Windows it is the WebView2 Runtime."
+msgstr "Die Web-Engine des Systems ist nicht gestartet, daher kann dies nicht angezeigt werden. Unter Windows ist das die WebView2 Runtime."
+
+msgctxt "Say"
+msgid "Tor"
+msgstr "Tor"
+
+msgctxt "Say"
+msgid "Tor sends the app's connections through three relays run by volunteers, so that Proton and your network cannot see your address."
+msgstr "Tor leitet die Verbindungen der App über drei von Freiwilligen betriebene Relays, sodass weder Proton noch Ihr Netzwerk Ihre Adresse sehen."
+
+msgctxt "Say"
+msgid "Use Tor"
+msgstr "Tor verwenden"
+
+msgctxt "Say"
+msgid "The app starts again to change this."
+msgstr "Für diese Änderung startet die App neu."
+
+msgctxt "Say"
+msgid "Route"
+msgstr "Route"
+
+msgctxt "Say"
+msgid "Proton's onion site"
+msgstr "Onion-Seite von Proton"
+
+msgctxt "Say"
+msgid "Through an exit relay"
+msgstr "Über ein Exit-Relay"
+
+msgctxt "Say"
+msgid "New circuits"
+msgstr "Neue Verbindungswege"
+
+msgctxt "Say"
+msgid "New circuits are used from now on."
+msgstr "Ab jetzt werden neue Verbindungswege genutzt."
+
+msgctxt "Say"
+msgid "Start the app again?"
+msgstr "App neu starten?"
+
+msgctxt "Say"
+msgid "How the app connects changes only at a start, so that nothing of the old way is still under way."
+msgstr "Die Verbindungsart ändert sich nur beim Start, damit nichts mehr über den alten Weg läuft."
+
+msgctxt "Say"
+msgid "Start again"
+msgstr "Neu starten"
+
+msgctxt "Say"
+msgid "Tor · connecting {{percent}}%"
+msgstr "Tor · verbinde {{percent}}%"
+
+msgctxt "Say"
+msgid "Tor · {{path}}"
+msgstr "Tor · {{path}}"
+
+msgctxt "Say"
+msgid "Tor · connected"
+msgstr "Tor · verbunden"
+
+msgctxt "Say"
+msgid "Tor could not connect. Nothing goes out until it does."
+msgstr "Tor konnte keine Verbindung herstellen. Bis dahin geht nichts ins Netz."
+
+msgctxt "Say"
+msgid "Open outside Tor?"
+msgstr "Außerhalb von Tor öffnen?"
+
+msgctxt "Say"
+msgid "The link opens in your browser, which does not go through Tor. The site will see your address."
+msgstr "Der Link öffnet sich in Ihrem Browser, der nicht über Tor geht. Die Seite sieht Ihre Adresse."
+
+msgctxt "App"
+msgid "Connect through Tor?"
+msgstr "Über Tor verbinden?"
+
+msgctxt "App"
+msgid "Tor sends the app's connections through three relays run by volunteers around the world. Proton and your network then cannot see your address, and no one on the way sees both who you are and where you connect."
+msgstr "Tor leitet die Verbindungen der App über drei Relays, die Freiwillige auf der ganzen Welt betreiben. Dann sehen weder Proton noch Ihr Netzwerk Ihre Adresse, und niemand unterwegs sieht zugleich, wer Sie sind und wohin Sie sich verbinden."
+
+msgctxt "App"
+msgid "It is slower, and Proton may ask more often that you show you are a person. Links in mail still open in your browser, outside Tor, and the app asks before each one."
+msgstr "Es ist langsamer, und Proton fragt womöglich öfter nach, ob Sie ein Mensch sind. Links in E-Mails öffnen sich weiterhin im Browser, außerhalb von Tor, und die App fragt vor jedem."
+
+msgctxt "App"
+msgid "Route"
+msgstr "Route"
+
+msgctxt "App"
+msgid "Proton's onion site"
+msgstr "Onion-Seite von Proton"
+
+msgctxt "App"
+msgid "Through an exit relay"
+msgstr "Über ein Exit-Relay"
+
+msgctxt "App"
+msgid "Recommended. The connection never leaves Tor, and Proton's own onion address proves the other end is Proton."
+msgstr "Empfohlen. Die Verbindung verlässt Tor nie, und Protons eigene Onion-Adresse beweist, dass am anderen Ende Proton ist."
+
+msgctxt "App"
+msgid "Leaves Tor at an exit relay for Proton's usual address, where Proton's pinned keys still guard the session."
+msgstr "Verlässt Tor über ein Exit-Relay zu Protons üblicher Adresse, wo Protons festgelegte Schlüssel die Sitzung weiter schützen."
+
+msgctxt "App"
+msgid "Use Tor"
+msgstr "Tor verwenden"
+
+msgctxt "App"
+msgid "Connect directly"
+msgstr "Direkt verbinden"
+
+msgctxt "App"
+msgid "You can change this at any time in Settings, under Connection."
+msgstr "Das können Sie jederzeit in den Einstellungen unter „Verbindung“ ändern."
+
+
+msgctxt "Say"
+msgid "Proton's server"
+msgstr "Proton-Server"
+
+msgctxt "Say"
+msgid "This computer. Only the entry relay sees its address, and the app does not ask anyone for it."
+msgstr "Dieser Computer. Seine Adresse sieht nur das Eingangs-Relay, und die App fragt niemanden danach."
+
+msgctxt "Say"
+msgid "Entry relay"
+msgstr "Eingangs-Relay"
+
+msgctxt "Say"
+msgid "Sees your address, not where you go."
+msgstr "Sieht deine Adresse, aber nicht dein Ziel."
+
+msgctxt "Say"
+msgid "Middle relay"
+msgstr "Mittleres Relay"
+
+msgctxt "Say"
+msgid "Sees neither you nor Proton."
+msgstr "Sieht weder dich noch Proton."
+
+msgctxt "Say"
+msgid "Meeting point"
+msgstr "Treffpunkt"
+
+msgctxt "Say"
+msgid "Your circuit meets Proton's here. It sees neither side."
+msgstr "Hier trifft deine Verbindung auf die von Proton. Es sieht keine der beiden Seiten."
+
+msgctxt "Say"
+msgid "Exit relay"
+msgstr "Ausgangs-Relay"
+
+msgctxt "Say"
+msgid "Sees that Proton is reached, not by whom. What is sent stays encrypted."
+msgstr "Sieht, dass Proton erreicht wird, aber nicht von wem. Was gesendet wird, bleibt verschlüsselt."
+
+msgctxt "Say"
+msgid "Proton's relays"
+msgstr "Protons Relays"
+
+msgctxt "Say"
+msgid "Hidden: an onion site does not show its circuit, nor where its server is."
+msgstr "Verborgen: Eine Onion-Seite zeigt weder ihre Verbindung noch, wo ihr Server steht."
+
+msgctxt "Say"
+msgid "Reached by name: the exit relay looks the address up itself and does not pass it back."
+msgstr "Über den Namen erreicht: Das Ausgangs-Relay schlägt die Adresse selbst nach und meldet sie nicht zurück."
+
+msgctxt "Say"
+msgid "Tor settings and the circuit"
+msgstr "Tor-Einstellungen und Verbindungsweg"
+
+msgctxt "Say"
+msgid "Connection and response times"
+msgstr "Verbindung und Antwortzeiten"
+
+msgctxt "Say"
+msgid "License"
+msgstr "Lizenz"
+
+msgctxt "Say"
+msgid "Free software under the GNU Affero General Public License, version 3, with additional terms: every copy and every changed version keeps the author's name and the link to this repository, and a changed version says that it is changed. It comes with no warranty."
+msgstr "Freie Software unter der GNU Affero General Public License, Version 3, mit zusätzlichen Bedingungen: Jede Kopie und jede geänderte Fassung behält den Namen des Autors und den Link zu diesem Repository, und eine geänderte Fassung sagt, dass sie geändert ist. Ohne jede Gewährleistung."
+
+msgctxt "Say"
+msgid "Read the license"
+msgstr "Lizenz lesen"
+
+msgctxt "Say"
+msgid "Components"
+msgstr "Komponenten"
+
+msgctxt "Say"
+msgid "Built from {{count}} open-source components. Their licenses allow this use, and their texts come with the program."
+msgstr "Aus {{count}} Open-Source-Komponenten gebaut. Ihre Lizenzen erlauben diese Nutzung, und ihre Texte liegen dem Programm bei."
+
+msgctxt "Say"
+msgid "Search by name or license"
+msgstr "Nach Name oder Lizenz suchen"
+
+msgctxt "Say"
+msgid "Read the licenses of the components"
+msgstr "Lizenzen der Komponenten lesen"
+
+msgctxt "Say"
+msgid "{{count}} more: search to find them."
+msgstr "{{count}} weitere: Suche, um sie zu finden."
+
+msgctxt "Say"
+msgid "Nothing found."
+msgstr "Nichts gefunden."
+
+msgctxt "AuthScreen"
+msgid "Trying to reconnect…"
+msgstr "Verbindung wird wiederhergestellt…"
+
+msgctxt "AuthScreen"
+msgid "No connection to Proton yet. You are still signed in."
+msgstr "Noch keine Verbindung zu Proton. Du bleibst angemeldet."
+
+msgctxt "Auth"
+msgid "Connect without Tor?"
+msgstr "Ohne Tor verbinden?"
+
+msgctxt "Auth"
+msgid "Proton and your network will then see your computer's address, and your network will see that you use Proton. The app starts again without Tor, and you can turn it back on in Settings."
+msgstr "Dann sehen Proton und dein Netzwerk die Adresse deines Computers, und dein Netzwerk sieht, dass du Proton nutzt. Die App startet ohne Tor neu, und du kannst ihn in den Einstellungen wieder einschalten."
+
+msgctxt "Auth"
+msgid "Connect without Tor"
+msgstr "Ohne Tor verbinden"
+
+msgctxt "AccountPanel"
+msgid "Your account"
+msgstr "Dein Konto"
+
+msgctxt "AccountPanel"
+msgid "Account settings"
+msgstr "Kontoeinstellungen"
+
+msgctxt "AccountPanel"
+msgid "Lock the app"
+msgstr "App sperren"
+
+msgctxt "AccountPanel"
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgctxt "Say"
+msgid "Tour"
+msgstr "Rundgang"
+
+msgctxt "Say"
+msgid "A short look at where things are in the window."
+msgstr "Ein kurzer Blick darauf, wo im Fenster was ist."
+
+msgctxt "Say"
+msgid "Take the tour"
+msgstr "Rundgang starten"
+
+msgctxt "App"
+msgid "Skip"
+msgstr "Überspringen"
+
+msgctxt "App"
+msgid "Back"
+msgstr "Zurück"
+
+msgctxt "App"
+msgid "Next"
+msgstr "Weiter"
+
+msgctxt "App"
+msgid "Show me around"
+msgstr "Zeig es mir"
+
+msgctxt "App"
+msgid "Start"
+msgstr "Los geht's"
+
+msgctxt "App"
+msgid "Folders and labels"
+msgstr "Ordner und Labels"
+
+msgctxt "App"
+msgid "Inbox, drafts, sent mail and the rest, with your own folders and labels below them. A number is the mail not yet read."
+msgstr "Posteingang, Entwürfe, Gesendet und der Rest, darunter deine eigenen Ordner und Labels. Eine Zahl ist die noch ungelesene Post."
+
+msgctxt "App"
+msgid "How things stand"
+msgstr "Wie es steht"
+
+msgctxt "App"
+msgid "Whether Tor is on and through which countries, when mail last came in, and how much memory the app takes. Click the Tor line for its settings."
+msgstr "Ob Tor an ist und über welche Länder, wann zuletzt Post kam und wie viel Speicher die App braucht. Klick auf die Tor-Zeile öffnet seine Einstellungen."
+
+msgctxt "App"
+msgid "Search"
+msgstr "Suche"
+
+msgctxt "App"
+msgid "Type to search your mail. The button at its right builds a search by sender, date, attachments and more. Command K, or Control K on Windows, finds any command by its name."
+msgstr "Tippe, um deine Post zu durchsuchen. Die Schaltfläche rechts baut eine Suche nach Absender, Datum, Anhängen und mehr. Command K, unter Windows Control K, findet jeden Befehl über seinen Namen."
+
+msgctxt "App"
+msgid "Your mail"
+msgstr "Deine Post"
+
+msgctxt "App"
+msgid "The pen writes a new message, and the arrows look for new mail now: it also comes by itself every 30 seconds. The buttons below show only unread mail, or mail with attachments."
+msgstr "Der Stift schreibt eine neue Nachricht, die Pfeile suchen jetzt nach neuer Post: Sie kommt auch von selbst alle 30 Sekunden. Die Schaltflächen darunter zeigen nur ungelesene Post oder Post mit Anhängen."
+
+msgctxt "App"
+msgid "Settings and contacts"
+msgstr "Einstellungen und Kontakte"
+
+msgctxt "App"
+msgid "Settings hold your account, your mail, Tor and this app. Contacts are your address book. The question mark at the bottom lists the keyboard shortcuts."
+msgstr "Die Einstellungen enthalten dein Konto, deine Post, Tor und diese App. Kontakte sind dein Adressbuch. Das Fragezeichen unten zeigt die Tastenkürzel."
+
+msgctxt "App"
+msgid "Your account"
+msgstr "Dein Konto"
+
+msgctxt "App"
+msgid "Your plan and the space you use, locking the app, and signing out."
+msgstr "Dein Tarif und der belegte Speicher, App sperren und Abmelden."
+
+msgctxt "App"
+msgid "That is all"
+msgstr "Das war's"
+
+msgctxt "App"
+msgid "You can take this tour again in Settings, under Application."
+msgstr "Du kannst den Rundgang in den Einstellungen unter Anwendung wiederholen."
+
+msgctxt "App"
+msgid "Welcome to Proton Mail Light"
+msgstr "Willkommen bei Proton Mail Light"
+
+msgctxt "App"
+msgid "A short look at where things are. It takes a minute, and you can leave it at any step."
+msgstr "Ein kurzer Blick darauf, wo was ist. Es dauert eine Minute, und du kannst bei jedem Schritt aufhören."
+
+msgctxt "Say"
+msgid "Tor is off"
+msgstr "Tor ist aus"
+
+msgctxt "Say"
+msgid "Privacy on screen"
+msgstr "Privatsphäre am Bildschirm"
+
+msgctxt "Say"
+msgid "Cover private details"
+msgstr "Private Angaben verdecken"
+
+msgctxt "Say"
+msgid "Addresses, IP addresses and the like stay covered until you point at them, for a screen others can see."
+msgstr "Adressen, IP-Adressen und Ähnliches bleiben verdeckt, bis du darauf zeigst, für einen Bildschirm, den andere sehen."
+
+msgctxt "Say"
+msgid "Off"
+msgstr "Aus"
+
+msgctxt "Say"
+msgid "Paid"
+msgstr "Bezahlt"
+
+msgctxt "Say"
+msgid "Default"
+msgstr "Standard"
+
+msgctxt "Say"
+msgid "From"
+msgstr "Von"
+
+msgctxt "Say"
+msgid "Done"
+msgstr "Erledigt"
+
+msgctxt "Say"
+msgid "Normal"
+msgstr "Normal"
+
+msgctxt "Say"
+msgid "Print"
+msgstr "Drucken"
+
+msgctxt "Say"
+msgid "Recovery email"
+msgstr "Wiederherstellungs-E-Mail"
+
+msgctxt "Say"
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgctxt "Say"
+msgid "Not set"
+msgstr "Nicht festgelegt"
+
+msgctxt "recovery.phraseOff"
+msgid "Off"
+msgstr "Aus"
+
+msgctxt "security.2faOff"
+msgid "Off"
+msgstr "Aus"
+
+msgctxt "security.logOff"
+msgid "Off"
+msgstr "Aus"
+
+msgctxt "settings.undoOff"
+msgid "Off"
+msgstr "Aus"
+
+msgctxt "billing.paid"
+msgid "Paid"
+msgstr "Bezahlt"
+
+msgctxt "mail.asDefault"
+msgid "Default"
+msgstr "Standard"
+
+msgctxt "settings.autoReplyFrom"
+msgid "From"
+msgstr "Ab"
+
+msgctxt "smtp.done"
+msgid "Done"
+msgstr "Fertig"
+
+msgctxt "mail.composerPopup"
+msgid "Normal"
+msgstr "Normal"
+
+msgctxt "reader.print"
+msgid "Print"
+msgstr "Drucken"
+
+msgctxt "App"
+msgid "Messages that have been in the trash and spam for more than 30 days are deleted by themselves."
+msgstr "Nachrichten, die länger als 30 Tage im Papierkorb und Spam liegen, werden von selbst gelöscht."
+
+msgctxt "MailItem"
+msgid "<1 d"
+msgstr "<1 Tg."
+
+msgctxt "MailItem"
+msgid "{} d"
+msgstr "{} Tg."
+
+msgctxt "App"
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgctxt "App"
+msgid "Clear the selection"
+msgstr "Auswahl aufheben"
+
+msgctxt "App"
+msgid "Close"
+msgstr "Schließen"
+
+msgctxt "App"
+msgid "Contacts"
+msgstr "Kontakte"
+
+msgctxt "App"
+msgid "Delete for good"
+msgstr "Endgültig löschen"
+
+msgctxt "App"
+msgid "Edit the draft"
+msgstr "Entwurf bearbeiten"
+
+msgctxt "App"
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgctxt "App"
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+msgctxt "App"
+msgid "More"
+msgstr "Mehr"
+
+msgctxt "App"
+msgid "Move to folder"
+msgstr "In Ordner verschieben"
+
+msgctxt "App"
+msgid "Move to spam"
+msgstr "In Spam verschieben"
+
+msgctxt "App"
+msgid "Move to trash"
+msgstr "In den Papierkorb"
+
+msgctxt "App"
+msgid "Not spam"
+msgstr "Kein Spam"
+
+msgctxt "App"
+msgid "Remove the star"
+msgstr "Markierung entfernen"
+
+msgctxt "App"
+msgid "Save"
+msgstr "Speichern"
+
+msgctxt "App"
+msgid "Search options"
+msgstr "Suchoptionen"
+
+msgctxt "App"
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgctxt "App"
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgctxt "App"
+msgid "Snooze"
+msgstr "Zurückstellen"
+
+msgctxt "App"
+msgid "Star"
+msgstr "Markieren"
+
+msgctxt "App"
+msgid "Wake it now"
+msgstr "Jetzt zurückholen"
+
+msgctxt "SideItem"
+msgid "Remove"
+msgstr "Entfernen"
+
+msgctxt "SideItem"
+msgid "Rename"
+msgstr "Umbenennen"
+
+msgctxt "App"
+msgid "This message is deleted by itself on {}."
+msgstr "Diese Nachricht wird am {} automatisch gelöscht."
+
+msgctxt "Say"
+msgid "Icon in the menu bar"
+msgstr "Symbol in der Menüleiste"
+
+msgctxt "Say"
+msgid "Shows the mail not yet read, and opens the app. The Dock does both too."
+msgstr "Zeigt ungelesene Post und öffnet die App. Das Dock kann beides auch."
+
+msgctxt "Say"
+msgid "The system does not allow this app notifications, so neither they nor the count on its icon are shown. Only you can allow them, in the system's settings."
+msgstr "Das System erlaubt dieser App keine Mitteilungen, daher sind weder sie noch die Zahl am Symbol zu sehen. Nur du kannst sie erlauben, in den Systemeinstellungen."
+
+msgctxt "Say"
+msgid "Open the system's notification settings"
+msgstr "Mitteilungseinstellungen des Systems öffnen"
+
+msgctxt "Say"
+msgid "Pictures from Gravatar"
+msgstr "Bilder von Gravatar"
+
+msgctxt "Say"
+msgid "For senders with no logo. Gravatar learns, in coded form, who writes to you."
+msgstr "Für Absender ohne Logo. Gravatar erfährt in verschlüsselter Form, wer dir schreibt."
+
+msgctxt "Say"
+msgid "Ask Gravatar for pictures?"
+msgstr "Bilder bei Gravatar anfragen?"
+
+msgctxt "Say"
+msgid "For each sender without a logo, the app asks Gravatar, a service of Automattic, for a picture. The request goes through Proton, so Gravatar does not see your address, but it gets each sender's address in coded form, which is enough to tell who you write with. Proton sees the requests too."
+msgstr "Für jeden Absender ohne Logo fragt die App Gravatar, einen Dienst von Automattic, nach einem Bild. Die Anfrage geht über Proton, daher sieht Gravatar deine Adresse nicht, erhält aber die Adresse jedes Absenders in verschlüsselter Form – genug, um zu erkennen, mit wem du schreibst. Auch Proton sieht diese Anfragen."
+
+msgctxt "Say"
+msgid "Ask Gravatar"
+msgstr "Anfragen"
+
+msgctxt "Say"
+msgid "Mail in a folder"
+msgstr "E-Mails im Ordner"
+
+msgctxt "Say"
+msgid "One long list"
+msgstr "Eine lange Liste"
+
+msgctxt "Say"
+msgid "Pages"
+msgstr "Seiten"
+
+msgctxt "Pager"
+msgid "Newer mail"
+msgstr "Neuere E-Mails"
+
+msgctxt "Pager"
+msgid "Older mail"
+msgstr "Ältere E-Mails"
+
+msgctxt "Option"
+msgid "Like Proton's own client"
+msgstr "Wie in Protons eigenem Client"
+
+msgctxt "ListChoice"
+msgid "How should a folder be shown?"
+msgstr "Wie soll ein Ordner angezeigt werden?"
+
+msgctxt "ListChoice"
+msgid "Pages"
+msgstr "Seiten"
+
+msgctxt "ListChoice"
+msgid "A page of mail at a time. The arrows beside the folder's name turn the pages, and the number between them opens a list of them."
+msgstr "Eine Seite E-Mails auf einmal. Die Pfeile neben dem Ordnernamen blättern um, und die Zahl dazwischen öffnet eine Liste der Seiten."
+
+msgctxt "ListChoice"
+msgid "One long list"
+msgstr "Eine lange Liste"
+
+msgctxt "ListChoice"
+msgid "Older mail comes as you scroll down, with no pages to turn."
+msgstr "Ältere E-Mails erscheinen beim Herunterscrollen, ohne Seiten zum Umblättern."
+
+msgctxt "ListChoice"
+msgid "You can change this at any time in Settings, under Appearance."
+msgstr "Das lässt sich jederzeit in den Einstellungen unter Aussehen ändern."
+
+msgctxt "App"
+msgid "Picture of the mail copied"
+msgstr "Bild der E-Mail kopiert"
+
+msgctxt "App"
+msgid "The mail is long: the picture holds its beginning"
+msgstr "Die E-Mail ist lang: Das Bild zeigt ihren Anfang"
+
+msgctxt "App"
+msgid "Copy as a picture"
+msgstr "Als Bild kopieren"
+
+msgctxt "App"
+msgid "Share…"
+msgstr "Teilen…"
+
+msgctxt "Say"
+msgid "Make the picture"
+msgstr "Bild erstellen"
+
+msgctxt "Say"
+msgid "A picture of a mail is no longer encrypted. Whoever gets it, and the app it goes through, can read it. This is said only once."
+msgstr "Ein Bild einer E-Mail ist nicht mehr verschlüsselt. Wer es bekommt, und die App, über die es geht, können es lesen. Dieser Hinweis erscheint nur einmal."
+
+msgctxt "Say"
+msgid "The picture leaves Proton's encryption"
+msgstr "Das Bild verlässt die Verschlüsselung von Proton"

@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in the client does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Please **leave out anything personal**: addresses, subjects, mail text, tokens.
+        Security problems go to the [security policy](https://github.com/koval01/pm-light/security/advisories/new),
+        not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown in Settings, About.
+      placeholder: v0.1.0 (ce4e8d6)
+    validations:
+      required: true
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options:
+        - macOS
+        - Windows 11
+        - Windows 10 22H2
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: system-version
+    attributes:
+      label: System version
+      placeholder: macOS 15.4, Windows 11 24H2, Ubuntu 24.04 …
+  - type: dropdown
+    id: tor
+    attributes:
+      label: Connection
+      options:
+        - Direct
+        - Tor, Proton's onion site
+        - Tor, through an exit relay
+  - type: textarea
+    id: journal
+    attributes:
+      label: Journal
+      description: From Settings, Journal. It holds no personal data, but please read it before pasting.
+      render: text

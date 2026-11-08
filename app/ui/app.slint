@@ -1,0 +1,3192 @@
+// The main window, drawn by the toolkit on every system alike. The body of an HTML mail is the one
+// thing it does not draw: a webview without scripts sits over `body-area`, while such a mail is open.
+
+import { ListView, ScrollView } from "std-widgets.slint";
+import { FileIcons, Theme, Icon, IconButton, Logo } from "base.slint";
+import { Auth, AuthScreen } from "auth.slint";
+import { ContactRow, CommandRow, ContactsWindow, PaletteWindow, Words } from "panels.slint";
+import { Say } from "say.slint";
+import { CodeLine, CodePiece, Field, Segmented, Settings, SettingsMode, SettingsRow, SettingsSection, SmallButton, Switch, TabRow } from "settings.slint";
+import { DayCell, MomentWindow } from "moment.slint";
+import { NameWindow } from "name.slint";
+import { AccountCard, AccountPanel } from "account.slint";
+import { Tour, TourSpot } from "tour.slint";
+import { ListChoice, Pager } from "list_pages.slint";
+import { PreviewWindow } from "preview.slint";
+import { PrintWindow } from "print.slint";
+import "fonts/InterVariable.ttf";
+
+export struct FolderRow {
+    id: string,
+    name: string,
+    unread: int,
+    active: bool,
+    // 1 puts the heading for folders above this row, 2 the one for labels.
+    section: int,
+    dot: color,
+    custom: bool,
+}
+
+export struct MailRow {
+    id: string,
+    sender: string,
+    subject: string,
+    date: string,
+    // 0 for no heading above this row, otherwise which one: today, yesterday, this week, earlier.
+    group: int,
+    initials: string,
+    tint: color,
+    logo: image,
+    has-logo: bool,
+    logo-pending: bool,
+    // Came in with the last update, and lights up for a moment.
+    fresh: bool,
+    checked: bool,
+    starred: bool,
+    // Which age the mail is, so that headings can be worked out again when a row goes.
+    age: int,
+    unread: bool,
+    selected: bool,
+    has-files: bool,
+    // How many mails a conversation holds, and 0 for a single message.
+    thread: int,
+    // Days until Proton deletes it by itself: 0 for less than one, -1 when it stays.
+    expires: int,
+}
+
+// `kind` picks the heading, so that the words stay in the translations.
+export struct InfoItem {
+    // 0 when `title` is the text itself, otherwise which label it gets from the translations.
+    label: int,
+    title: string,
+    detail: string,
+}
+
+export struct InfoGroup {
+    kind: int,
+    items: [InfoItem],
+}
+
+// One piece of a plain text mail: a run of text, or a link to open.
+export struct BodyLine {
+    text: string,
+    link: string,
+}
+
+export struct FileRow {
+    name: string,
+    size: string,
+    // `FileKind::number` in the core, which picks the icon until there is a picture.
+    kind: int,
+    thumbnail: image,
+    has-thumbnail: bool,
+}
+
+export struct SearchSpan {
+    text: string,
+    part: int,
+}
+
+export struct SearchHint {
+    insert: string,
+    explain: int,
+}
+
+export struct PersonRow {
+    text: string,
+    email: string,
+}
+
+export struct ThreadRow {
+    id: string,
+    sender: string,
+    date: string,
+    current: bool,
+}
+
+struct HeaderRow {
+    text: string,
+    name: bool,
+}
+
+export struct Chip {
+    text: string,
+    index: int,
+    bad: bool,
+}
+
+export struct ChipLine {
+    chips: [Chip],
+}
+
+export struct ChipLines {
+    lines: [ChipLine],
+    last: [Chip],
+}
+
+export struct ContactHint {
+    name: string,
+    email: string,
+}
+
+export { Auth, CodeLine, CodePiece, DayCell, MomentWindow, NameWindow, PreviewWindow, PrintWindow, Theme, ContactRow, CommandRow, ContactsWindow, PaletteWindow, Say, Settings, SettingsRow, SettingsSection, TabRow, Words }
+
+// What the menu bar says. The menu is the system's, so its words travel through Rust.
+export global Menus {
+    out property <string> about: @tr("About Proton Mail Light");
+    out property <string> services: @tr("Services");
+    out property <string> hide: @tr("Hide Proton Mail Light");
+    out property <string> hide-others: @tr("Hide Others");
+    out property <string> show-all: @tr("Show All");
+    out property <string> quit: @tr("Quit Proton Mail Light");
+    out property <string> file: @tr("File");
+    out property <string> compose: @tr("New Message");
+    out property <string> close-window: @tr("Close Window");
+    out property <string> edit: @tr("Edit");
+    out property <string> undo: @tr("Undo");
+    out property <string> redo: @tr("Redo");
+    out property <string> cut: @tr("Cut");
+    out property <string> copy: @tr("Copy");
+    out property <string> paste: @tr("Paste");
+    out property <string> select-all: @tr("Select All");
+    out property <string> view: @tr("View");
+    out property <string> sync: @tr("Check for New Mail");
+    out property <string> palette: @tr("All Commands");
+    out property <string> fullscreen: @tr("Enter Full Screen");
+    out property <string> window: @tr("Window");
+    out property <string> minimize: @tr("Minimize");
+    out property <string> zoom: @tr("Zoom");
+}
+
+// Two texts over each other, so that one fades into the other when the state changes.
+component Fading {
+    in property <string> idle;
+    in property <string> busy;
+    in property <bool> working;
+    in property <color> tint: Theme.muted;
+    in property <length> size: 12px;
+    private property <float> shown: root.working ? 1 : 0;
+    animate shown { duration: 260ms; easing: ease-in-out; }
+    min-height: 16px;
+    Text { x: 0; width: 100%; text: root.idle; color: root.tint; font-size: root.size; opacity: 1 - root.shown; overflow: elide; vertical-alignment: center; }
+    Text { x: 0; width: 100%; text: root.busy; color: Theme.accent; font-size: root.size; opacity: root.shown; overflow: elide; vertical-alignment: center; }
+}
+
+// A line of addresses: each copies itself on a click, and what does not fit is in the details.
+component PeopleLine {
+    in property <string> label;
+    in property <[PersonRow]> people;
+    in property <int> left;
+    callback copied(string);
+    callback more();
+    HorizontalLayout {
+        spacing: 2px;
+        alignment: start;
+        Text { text: root.label; color: Theme.faint; font-size: 12px; vertical-alignment: center; }
+        for person in root.people: Rectangle {
+            border-radius: 6px;
+            background: person-touch.has-hover ? Theme.hover : transparent;
+            HorizontalLayout {
+                padding-left: 5px;
+                padding-right: 5px;
+                padding-top: 1px;
+                padding-bottom: 1px;
+                Text { text: person.text; color: Theme.muted; font-size: 12px; overflow: elide; }
+            }
+            person-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.copied(person.email); }
+            }
+        }
+        if root.left > 0: Rectangle {
+            border-radius: 6px;
+            background: more-touch.has-hover ? Theme.hover : transparent;
+            HorizontalLayout {
+                padding-left: 5px;
+                padding-right: 5px;
+                Text { text: "+" + root.left; color: Theme.accent; font-size: 12px; font-weight: 600; vertical-alignment: center; }
+            }
+            more-touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.more(); }
+            }
+        }
+    }
+}
+
+// A request from the sender, with the one thing that can be done about it.
+component Notice {
+    in property <string> text;
+    in property <string> action;
+    callback clicked();
+    Rectangle {
+        border-radius: 10px;
+        background: Theme.field;
+        HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 6px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            spacing: 10px;
+            Text {
+                text: root.text;
+                color: Theme.muted;
+                font-size: 12px;
+                vertical-alignment: center;
+                overflow: elide;
+                horizontal-stretch: 1;
+            }
+            Rectangle {
+                horizontal-stretch: 0;
+                width: notice-label.preferred-width + 20px;
+                height: 26px;
+                border-radius: 8px;
+                background: notice-touch.has-hover ? Theme.hover : transparent;
+                notice-label := Text { text: root.action; color: Theme.foreground; font-size: 12px; font-weight: 600; }
+                notice-touch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+            }
+        }
+    }
+}
+
+component ReplyButton {
+    in property <image> icon;
+    in property <string> label;
+    callback clicked();
+    Rectangle {
+        border-radius: 8px;
+        background: reply-touch.has-hover ? Theme.hover : transparent;
+        HorizontalLayout {
+            padding-left: 9px;
+            padding-right: 11px;
+            spacing: 7px;
+            Icon { source: root.icon; tint: Theme.muted; width: 15px; height: 15px; y: 8px; }
+            Text { text: root.label; color: Theme.foreground; font-size: 12px; font-weight: 500; vertical-alignment: center; }
+        }
+        reply-touch := TouchArea { mouse-cursor: pointer; clicked => { root.clicked(); } }
+    }
+}
+
+component SideItem {
+    in property <string> label;
+    in property <int> unread;
+    in property <bool> active;
+    in property <bool> compact;
+    in property <image> icon;
+    in property <color> dot;
+    in property <bool> custom;
+    in property <bool> editable;
+    callback clicked;
+    callback rename();
+    callback remove();
+    height: 34px;
+    Rectangle {
+        border-radius: 8px;
+        background: root.active ? Theme.side-active : touch.has-hover ? Theme.hover : transparent;
+        animate background { duration: 120ms; }
+        if !root.custom: Icon {
+            source: root.icon;
+            x: root.compact ? (parent.width - self.width) / 2 : 9px;
+        }
+        if root.custom: Rectangle {
+            x: root.compact ? (parent.width - self.width) / 2 : 13px;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background: root.dot;
+        }
+        if !root.compact: Text {
+            x: 36px;
+            width: parent.width - 36px - 40px;
+            text: root.label;
+            color: Theme.foreground;
+            font-size: 13px;
+            font-weight: root.active || root.unread > 0 ? 600 : 400;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+        if !root.compact && root.unread > 0 && !(root.editable && touch.has-hover): Text {
+            x: parent.width - self.width - 10px;
+            text: root.unread;
+            color: Theme.muted;
+            font-size: 12px;
+            vertical-alignment: center;
+        }
+        touch := TouchArea {
+            clicked => { root.clicked(); }
+            if root.editable && !root.compact && touch.has-hover: HorizontalLayout {
+                x: parent.width - self.preferred-width - 4px;
+                y: (parent.height - self.preferred-height) / 2;
+                IconButton {
+                    width: 26px;
+                    height: 26px;
+                    icon: @image-url("icons/pencil.svg");
+                    hint: @tr("Rename");
+                    clicked => { root.rename(); }
+                }
+                IconButton {
+                    width: 26px;
+                    height: 26px;
+                    icon: @image-url("icons/x.svg");
+                    hint: @tr("Remove");
+                    clicked => { root.remove(); }
+                }
+            }
+        }
+    }
+}
+
+component Skeleton inherits Rectangle {
+    in property <duration> tick;
+    border-radius: 5px;
+    background: Theme.skeleton;
+    opacity: 0.55 + 0.45 * abs(sin(mod(tick / 1ms, 1400) / 1400 * 180deg));
+}
+
+// Letters or a logo, and a shimmer while it is not yet known which. Both fade in, so that nothing
+// pops up out of nowhere when the answer arrives.
+component Avatar {
+    in property <string> initials;
+    in property <color> tint;
+    in property <image> logo;
+    in property <bool> has-logo;
+    in property <bool> pending;
+    in property <duration> tick;
+    in property <length> size: 34px;
+    // The letters stand while a logo is looked for, which through Tor can take seconds, and give way if one comes:
+    // a blank circle in the meantime looked like a picture that failed.
+    private property <float> letters: !root.pending && root.has-logo ? 0 : 1;
+    private property <float> picture: !root.pending && root.has-logo ? 1 : 0;
+    animate letters { duration: 220ms; easing: ease-out; }
+    animate picture { duration: 220ms; easing: ease-out; }
+    width: size;
+    height: size;
+    Rectangle {
+        opacity: root.letters;
+        border-radius: root.size / 2;
+        background: root.tint;
+        Text { text: root.initials; color: #fff; font-size: root.size * 0.36; font-weight: 600; }
+    }
+    Image { source: root.logo; width: 100%; height: 100%; image-fit: fill; opacity: root.picture; }
+}
+
+component MailItem {
+    in property <MailRow> mail;
+    // The room the days left take beside the date, when there are any.
+    private property <length> expiry-width: root.mail.expires >= 0 ? expiry.preferred-width + 20px : 0;
+    in property <string> heading;
+    in property <duration> tick;
+    in property <float> glow;
+    callback clicked;
+    callback toggled();
+    callback starred();
+    height: (root.heading != "" ? 32px : 0px) + (Theme.compact ? 50px : 62px);
+    if root.heading != "": Text {
+        x: 14px;
+        y: 10px;
+        text: root.heading;
+        color: Theme.faint;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    Rectangle {
+        x: 6px;
+        y: parent.height - 62px;
+        width: parent.width - 12px;
+        height: 60px;
+        border-radius: 10px;
+        background: mail.selected || mail.checked ? Theme.selected
+            : touch.has-hover || avatar-touch.has-hover || star-touch.has-hover ? Theme.hover : transparent;
+        animate background { duration: 120ms; }
+        if root.glow > 0: Rectangle {
+            border-radius: 10px;
+            background: Theme.accent;
+            opacity: root.glow * 0.22;
+        }
+        Avatar {
+            x: 10px;
+            y: 13px;
+            initials: mail.initials;
+            tint: mail.tint;
+            logo: mail.logo;
+            has-logo: mail.has-logo;
+            pending: mail.logo-pending;
+            tick: root.tick;
+        }
+        Text {
+            x: 54px;
+            y: 12px;
+            width: parent.width - 54px - date.preferred-width - root.expiry-width - 34px;
+            text: mail.thread > 1 ? mail.sender + " (" + mail.thread + ")" : mail.sender;
+            color: Theme.foreground;
+            font-size: 13px;
+            font-weight: mail.unread ? 700 : 500;
+            overflow: elide;
+        }
+        // When Proton deletes it by itself, as its web client shows it: an hourglass and the days left.
+        if mail.expires >= 0: Icon {
+            x: parent.width - date.preferred-width - expiry.preferred-width - 32px;
+            y: 12px;
+            source: @image-url("icons/hourglass.svg");
+            tint: mail.expires == 0 ? Theme.danger : Theme.faint;
+            width: 12px;
+            height: 12px;
+        }
+        expiry := Text {
+            x: parent.width - date.preferred-width - self.preferred-width - 18px;
+            y: 12px;
+            visible: mail.expires >= 0;
+            text: mail.expires == 0 ? @tr("<1 d") : @tr("{} d", mail.expires);
+            color: mail.expires == 0 ? Theme.danger : Theme.faint;
+            font-size: 12px;
+        }
+        if mail.has-files: Icon {
+            x: parent.width - date.preferred-width - root.expiry-width - 32px;
+            y: 11px;
+            source: @image-url("icons/paperclip.svg");
+            tint: Theme.faint;
+            width: 13px;
+            height: 13px;
+        }
+        date := Text {
+            x: parent.width - self.preferred-width - 12px;
+            y: 12px;
+            text: mail.date;
+            color: Theme.faint;
+            font-size: 12px;
+        }
+        Text {
+            x: 54px;
+            y: 31px;
+            width: parent.width - 92px;
+            text: mail.subject;
+            color: mail.unread ? Theme.foreground : Theme.muted;
+            font-size: 13px;
+            font-weight: mail.unread ? 600 : 400;
+            overflow: elide;
+        }
+        touch := TouchArea { clicked => { root.clicked(); } }
+        // Over the avatar, as in `main`: the picture turns into the box that selects the row.
+        if mail.checked || avatar-touch.has-hover: Rectangle {
+            x: 10px;
+            y: 13px;
+            width: 34px;
+            height: 34px;
+            border-radius: 17px;
+            background: mail.checked ? Theme.accent : Theme.field;
+            border-width: mail.checked ? 0 : 1px;
+            border-color: Theme.muted;
+            if mail.checked: Icon { source: @image-url("icons/check.svg"); tint: #ffffff; width: 18px; height: 18px; }
+        }
+        avatar-touch := TouchArea {
+            x: 10px;
+            y: 13px;
+            width: 34px;
+            height: 34px;
+            mouse-cursor: pointer;
+            clicked => { root.toggled(); }
+        }
+        if mail.starred || touch.has-hover || star-touch.has-hover: Icon {
+            x: parent.width - 28px;
+            y: 33px;
+            source: @image-url("icons/star.svg");
+            tint: mail.starred ? Theme.accent : Theme.faint;
+            width: 15px;
+            height: 15px;
+        }
+        star-touch := TouchArea {
+            x: parent.width - 32px;
+            y: 29px;
+            width: 24px;
+            height: 24px;
+            mouse-cursor: pointer;
+            clicked => { root.starred(); }
+        }
+    }
+}
+
+component Tab {
+    in property <string> label;
+    in property <bool> on;
+    callback clicked;
+    min-width: text.preferred-width + 24px;
+    height: 28px;
+    Rectangle {
+        border-radius: 8px;
+        background: root.on ? Theme.strong : transparent;
+        border-width: root.on ? 0 : 1px;
+        border-color: Theme.border;
+        animate background { duration: 120ms; }
+        text := Text {
+            text: root.label;
+            color: root.on ? Theme.on-strong : Theme.foreground;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        TouchArea { clicked => { root.clicked(); } }
+    }
+}
+
+export component App inherits Window {
+    in property <[FolderRow]> folders;
+    in property <[MailRow]> rows;
+    in property <string> folder-id: "inbox";
+    // The account deletes what has lain in the trash and spam for 30 days.
+    in property <bool> auto-delete;
+    in property <string> folder-title;
+    in property <int> inbox-unread;
+    in property <int> folder-unread;
+    in property <int> stage;
+    in property <string> updated;
+    in property <string> version-text;
+    in property <string> commit-text;
+    in property <string> commit-link;
+    in property <int> memory-megabytes;
+    // The account panel under the picture at the top right, and the letters in that picture.
+    in-out property <bool> account-open;
+    in property <AccountCard> account-card;
+    in property <string> account-initials;
+    callback account-chosen(string);
+    // The first-start tour: 0 when it is not shown, then its steps from 1.
+    in-out property <int> tour-step;
+    callback tour-ended(bool, int);
+    in property <bool> failed;
+    in property <bool> loading: true;
+    in property <bool> ready;
+    // A picture of the mail's page, standing in for it while a panel is over it.
+    in property <image> page-picture;
+    in property <bool> page-frozen;
+    // The splash's envelope, drawn by `splash.rs` for this screen: one turn, and the flight to the logo.
+    in property <[image]> splash-frames;
+    in property <[image]> flight-frames;
+    in property <bool> has-mail;
+    in property <bool> opening;
+    in property <bool> plain;
+    in property <bool> empty-body;
+    in property <bool> images-held;
+    in property <bool> images-loading;
+    in property <string> subject;
+    // When Proton deletes the open mail by itself, written out; empty when it stays.
+    in property <string> expires-at;
+    in property <string> sender;
+    in property <[PersonRow]> to-people;
+    in property <int> to-left;
+    in property <[PersonRow]> cc-people;
+    in property <int> cc-left;
+    in property <int> signature;
+    in property <bool> unsubscribable;
+    in-out property <bool> receipt-asked;
+    in property <[ThreadRow]> thread;
+    in-out property <bool> thread-open;
+    in property <string> address;
+    in property <string> sender-initials;
+    in property <color> sender-tint;
+    in property <image> sender-logo;
+    in property <bool> sender-has-logo;
+    in property <string> date;
+    in property <[BodyLine]> lines;
+    in property <bool> has-more;
+    // The page on screen, from 0, and how many there are. No pages: one list that grows as it is scrolled.
+    in property <int> list-page;
+    in property <int> list-pages;
+    // Pages or one long list, asked once at the first start.
+    in-out property <bool> asking-list-style;
+    callback go-to-page(int);
+    callback choose-page();
+    callback list-style-chosen(bool);
+    in property <[FileRow]> files;
+    in property <int> threats;
+    /// Room for the window's own buttons, on systems that put them inside the window.
+    in property <length> buttons-inset: 8px;
+
+    // Where each step of the tour points, measured from the same properties that place those parts.
+    pure function tour-spot(step: int) -> TourSpot {
+        if step == 2 {
+            return {
+                x: 8px, y: root.brand-y + 40px, width: root.side-width - 8px, height: max(80px, root.height - root.brand-y - 40px - 120px),
+                title: @tr("Folders and labels"),
+                text: @tr("Inbox, drafts, sent mail and the rest, with your own folders and labels below them. A number is the mail not yet read."),
+            };
+        }
+        if step == 3 {
+            return {
+                x: 8px, y: root.height - 104px, width: root.side-width - 8px, height: 96px,
+                title: @tr("How things stand"),
+                text: @tr("Whether Tor is on and through which countries, when mail last came in, and how much memory the app takes. Click the Tor line for its settings."),
+            };
+        }
+        if step == 4 {
+            return {
+                x: max(root.side-width + 8px, root.buttons-inset), y: 8px, width: root.width - max(root.side-width + 8px, root.buttons-inset) - 54px, height: 34px,
+                title: @tr("Search"),
+                text: @tr("Type to search your mail. The button at its right builds a search by sender, date, attachments and more. Command K, or Control K on Windows, finds any command by its name."),
+            };
+        }
+        if step == 5 {
+            return {
+                x: root.side-width + 8px, y: 50px, width: root.panel-width, height: 112px,
+                title: @tr("Your mail"),
+                text: @tr("The pen writes a new message, and the arrows look for new mail now: it also comes by itself every 30 seconds. The buttons below show only unread mail, or mail with attachments."),
+            };
+        }
+        if step == 6 {
+            return {
+                x: root.width - 42px, y: 50px, width: 34px, height: 76px,
+                title: @tr("Settings and contacts"),
+                text: @tr("Settings hold your account, your mail, Tor and this app. Contacts are your address book. The question mark at the bottom lists the keyboard shortcuts."),
+            };
+        }
+        if step == 7 {
+            return {
+                x: root.width - 42px, y: 8px, width: 34px, height: 34px,
+                title: @tr("Your account"),
+                text: @tr("Your plan and the space you use, locking the app, and signing out."),
+            };
+        }
+        if step == 8 {
+            return {
+                x: 0, y: 0, width: 0, height: 0,
+                title: @tr("That is all"),
+                text: @tr("You can take this tour again in Settings, under Application."),
+            };
+        }
+        return {
+            x: 0, y: 0, width: 0, height: 0,
+            title: @tr("Welcome to Proton Mail Light"),
+            text: @tr("A short look at where things are. It takes a minute, and you can leave it at any step."),
+        };
+    }
+    in-out property <bool> only-unread;
+    in-out property <bool> only-files;
+    out property <length> body-x: body-area.absolute-position.x;
+    out property <length> body-y: body-area.absolute-position.y;
+    out property <length> body-width: body-area.width;
+    out property <length> body-height: body-area.height;
+    callback open-folder(string);
+    callback tool-chosen(string);
+    in-out property <int> undo-seconds;
+    callback undo-send();
+    callback open-mail(string);
+    callback close-mail();
+    callback step(int);
+    callback search(string);
+    callback account-requested();
+    callback shortcut(string) -> bool;
+    in-out property <int> list-scrolls;
+    // How Proton answers: 0 well, 1 not at all, 2 with trouble, 3 with a key that is not its own.
+    in property <int> link;
+    // Tor: 0 off, 1 starting, 2 ready, 3 failed, and one line about it.
+    in property <int> tor-state;
+    in property <string> tor-text;
+    // Asked whenever Tor was never asked about: at a first start, and at the first start of a version with Tor.
+    in-out property <bool> asking-tor;
+    private property <int> tor-route-choice: 0;
+    callback answer-tor(bool, bool);
+    callback open-tor-settings();
+    in-out property <int> list-scroll;
+    callback row-toggled(string);
+    callback row-starred(string, bool);
+    callback check-all(bool);
+    in property <int> checked-count;
+    out property <string> word-empty-title: @tr("Empty this folder?");
+    out property <string> word-empty-text: @tr("Everything in it will be deleted for good.");
+    out property <string> word-empty: @tr("Empty folder");
+    callback hint-chosen(string);
+    callback builder-requested();
+    in-out property <string> query-text;
+    in property <[SearchSpan]> query-spans;
+    in property <[SearchHint]> query-hints;
+    in property <int> query-problem;
+    in property <string> query-word;
+    private property <length> caret-x;
+    private property <bool> caret-on: true;
+    private property <bool> query-coloured: query.text != "" && query-pieces.preferred-width < query.width - 4px;
+    public function caret-to-end() {
+        query.focus();
+        query.set-selection-offsets(1000000, 1000000);
+    }
+    pure function problem-text() -> string {
+        if root.query-problem == 1 { return @tr("A quotation mark is not closed."); }
+        if root.query-problem == 2 { return @tr("A pattern must end with a slash, as in /word/."); }
+        if root.query-problem == 3 { return @tr("This regular expression is not valid."); }
+        if root.query-problem == 4 { return @tr("This regular expression is too long."); }
+        if root.query-problem == 5 { return @tr("{} needs a value.", root.query-word); }
+        if root.query-problem == 6 { return @tr("\"{}\" is not a date. Use 2026-11-30.", root.query-word); }
+        if root.query-problem == 7 { return @tr("\"{}\" is not a known value here.", root.query-word); }
+        if root.query-problem == 8 { return @tr("Did you mean {}?", root.query-word); }
+        if root.query-problem == 9 { return @tr("The start date comes after the end date."); }
+        return "";
+    }
+    pure function hint-text(explain: int) -> string {
+        if explain == 1 { return @tr("Sent by"); }
+        if explain == 2 { return @tr("Sent to"); }
+        if explain == 3 { return @tr("In the subject"); }
+        if explain == 4 { return @tr("With attachments"); }
+        if explain == 5 { return @tr("Not read yet"); }
+        if explain == 6 { return @tr("Starred"); }
+        if explain == 7 { return @tr("From this date on, 2026-11-30"); }
+        if explain == 8 { return @tr("Before this date"); }
+        if explain == 9 { return @tr("A regular expression"); }
+        return "";
+    }
+    callback filters-changed();
+    callback reload();
+    callback load-more();
+    callback open-link(string);
+    callback show-images();
+    // 1 is the details of the open mail, 2 what was blocked in it.
+    callback info-requested(int);
+    callback more-requested();
+    callback act(string);
+    callback compose(string);
+    out property <string> word-forwarded: @tr("Forwarded message");
+    out property <string> word-from: @tr("From");
+    out property <string> word-date: @tr("Date");
+    out property <string> word-subject: @tr("Subject");
+    out property <string> word-to: @tr("To");
+    callback menu(string);
+    callback save-file(int);
+    callback open-file(int);
+    callback add-folder(int);
+    callback rename-folder(string);
+    callback remove-folder(string);
+    in property <bool> starred;
+    in property <bool> can-spam: true;
+    in property <bool> has-labels;
+    in-out property <int> toast;
+    public pure function block-title(email: string) -> string { return @tr("Block {}?", email); }
+    public pure function risky-text(kind: int, name: string) -> string {
+        return kind == 1 ? @tr("{} is a program. Save it only if you trust the sender.", name)
+            : @tr("{} is a program dressed up as a document. It is probably dangerous.", name);
+    }
+    out property <string> word-inbox: @tr("Inbox");
+    out property <string> word-later: @tr("For 3 hours");
+    out property <string> word-tomorrow: @tr("Until tomorrow");
+    out property <string> word-next-week: @tr("Until next week");
+    out property <string> word-delete-title: @tr("Delete this message for good?");
+    out property <string> word-delete-text: @tr("This cannot be undone.");
+    out property <string> word-delete: @tr("Delete");
+    out property <string> word-cancel: @tr("Cancel");
+    out property <string> word-block-text: @tr("Mail from this address will go straight to spam.");
+    out property <string> word-block: @tr("Block");
+    out property <string> word-block-sender: @tr("Block sender");
+    out property <string> word-file-warning: @tr("This file can run on your computer");
+    out property <string> word-file-save: @tr("Save anyway");
+    // The system draws its menus, and these are the words it gets.
+    out property <string> word-open: @tr("Open");
+    out property <string> word-quit: @tr("Quit");
+    out property <string> word-details: @tr("Message details");
+    out property <string> word-protection: @tr("What was blocked");
+    out property <string> word-headers: @tr("Headers");
+    out property <string> word-source: @tr("Message source");
+    out property <string> word-compose: @tr("New message");
+    out property <string> word-sync: @tr("Check for new mail");
+    out property <string> word-unsubscribe-title: @tr("Unsubscribe from this list?");
+    out property <string> word-unsubscribe: @tr("Unsubscribe");
+    out property <string> word-save-eml: @tr("Save as .eml");
+    out property <string> word-print: @tr("Print…");
+    out property <string> word-copy-picture: @tr("Copy as a picture");
+    out property <string> word-share: @tr("Share…");
+    callback body-moved();
+    changed body-x => { root.body-moved(); }
+    changed body-y => { root.body-moved(); }
+    changed body-width => { root.body-moved(); }
+    changed body-height => { root.body-moved(); }
+
+    private property <bool> rail: root.width < 1120px;
+    // Where the reader can have the width, or the two would be too narrow to read.
+    private property <bool> stacked: Theme.rows && root.width >= 1181px;
+    private property <length> side-width: root.rail ? 52px : 212px;
+    private property <length> panel-width: root.width - root.side-width - 66px;
+    private property <duration> tick: animation-tick();
+    private property <duration> splash-from;
+    // These two carry the motion. The widths are worked out from them, not animated themselves:
+    // otherwise everything would drift behind the window while it is being resized.
+    private property <float> opened: root.has-mail ? 1 : 0;
+    private property <float> landed: root.ready ? 1 : 0;
+    // The flight in the steps its pictures were drawn for.
+    private property <float> flown: root.flight-frames.length > 1
+        ? round(root.landed * (root.flight-frames.length - 1)) / (root.flight-frames.length - 1)
+        : root.landed;
+    animate opened { duration: 220ms; easing: ease-out; }
+    animate landed { duration: 520ms; easing: ease-in-out; }
+    private property <length> list-open-width: min(420px, root.panel-width * 0.44);
+    private property <bool> brand-text: !root.rail;
+    // Under the window's own buttons, where the logo has always been.
+    private property <length> brand-x: root.rail ? 19px : 18px;
+    private property <length> brand-y: 40px;
+
+    in-out property <bool> paging;
+    private property <bool> glowing;
+    private property <duration> glow-from;
+    private property <float> glow: root.glowing ? clamp(1 - (root.tick - root.glow-from) / 1800ms, 0, 1) : 0;
+    private property <color> status-color: root.failed || root.link == 3 ? #e0545e : root.link > 0 ? #e0a23c : root.loading ? Theme.accent : #3fae6b;
+    private property <bool> stripe-on;
+    private property <duration> stripe-from;
+
+    function copy-address(email: string) {
+        root.copy-quietly(email);
+        root.toast = 6;
+    }
+
+    public function copy-quietly(text: string) {
+        copying.text = text;
+        copying.select-all();
+        copying.copy();
+        copying.text = "";
+    }
+
+    public pure function unsubscribe-text(kind: int, url: string) -> string {
+        if kind == 1 { return @tr("The sender will get a request to unsubscribe you."); }
+        if kind == 2 { return @tr("The sender's page will open: {}", url); }
+        return "";
+    }
+
+    // The clock runs from the start of the program, and the window comes half a second later.
+    public function light-new-mail() {
+        root.glow-from = root.tick;
+        root.glowing = true;
+    }
+
+    public function begin-splash() {
+        root.splash-from = root.tick;
+    }
+
+    public function pulse() {
+        if !root.stripe-on {
+            root.stripe-from = root.tick;
+            root.stripe-on = true;
+        }
+    }
+
+    pure function folder-icon(id: string) -> image {
+        if id == "starred" { return @image-url("icons/star.svg"); }
+        if id == "drafts" { return @image-url("icons/file-pen.svg"); }
+        if id == "scheduled" { return @image-url("icons/clock.svg"); }
+        if id == "snoozed" { return @image-url("icons/alarm-clock.svg"); }
+        if id == "sent" { return @image-url("icons/send.svg"); }
+        if id == "archive" { return @image-url("icons/archive.svg"); }
+        if id == "spam" { return @image-url("icons/octagon-alert.svg"); }
+        if id == "trash" { return @image-url("icons/trash.svg"); }
+        if id == "all" { return @image-url("icons/mails.svg"); }
+        return @image-url("icons/inbox.svg");
+    }
+
+    public pure function folder-name(id: string, custom: string) -> string {
+        if id == "inbox" { return @tr("Inbox"); }
+        if id == "starred" { return @tr("Starred"); }
+        if id == "drafts" { return @tr("Drafts"); }
+        if id == "scheduled" { return @tr("Scheduled"); }
+        if id == "snoozed" { return @tr("Snoozed"); }
+        if id == "sent" { return @tr("Sent"); }
+        if id == "archive" { return @tr("Archive"); }
+        if id == "spam" { return @tr("Spam"); }
+        if id == "trash" { return @tr("Trash"); }
+        if id == "all" { return @tr("All mail"); }
+        return custom;
+    }
+
+    pure function heading(group: int) -> string {
+        if group == 1 { return @tr("Today"); }
+        if group == 2 { return @tr("Yesterday"); }
+        if group == 3 { return @tr("This week"); }
+        if group == 4 { return @tr("Earlier"); }
+        return "";
+    }
+
+    pure function stage-text(stage: int) -> string {
+        if stage == 1 { return @tr("Opening the saved session…"); }
+        if stage == 2 { return @tr("Connecting to the servers…"); }
+        if stage == 3 { return @tr("Decrypting your keys…"); }
+        if stage == 4 { return @tr("Loading your mail…"); }
+        return "";
+    }
+
+    pure function status-text() -> string {
+        if root.failed { return @tr("Could not update"); }
+        if root.loading { return @tr("Updating…"); }
+        return root.updated == "" ? "" : @tr("Updated {}", root.updated);
+    }
+
+    title: "Proton Mail Light";
+    preferred-width: 1280px;
+    preferred-height: 820px;
+    // Below this the toolbar no longer fits beside the list. This is a desktop app.
+    min-width: 900px;
+    min-height: 580px;
+    icon: @image-url("../icons/64x64.png");
+    background: Theme.window;
+    default-font-family: "Inter Variable";
+
+    forward-focus: keys;
+    keys := FocusScope {
+        width: 0px;
+        height: 0px;
+        key-pressed(event) => {
+            if (event.modifiers.control || event.modifiers.meta) && event.text == "k" {
+                root.shortcut("Command+K");
+                return accept;
+            }
+            if event.modifiers.control || event.modifiers.meta || event.modifiers.alt {
+                return reject;
+            }
+            if root.shortcut(
+                event.text == Key.DownArrow ? "ArrowDown"
+                : event.text == Key.UpArrow ? "ArrowUp"
+                : event.text == Key.Escape ? "Escape"
+                : event.text == Key.Return ? "Enter"
+                : event.text == " " ? (event.modifiers.shift ? "Shift+Space" : "Space")
+                : event.text) {
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    // The search runs across the top, where the window's own buttons sit beside it.
+    Rectangle {
+        x: max(root.side-width + 8px, root.buttons-inset);
+        y: 8px;
+        width: parent.width - self.x - 54px;
+        height: 34px;
+        border-radius: 9px;
+        background: Theme.field;
+        IconButton {
+            x: parent.width - 34px;
+            y: 0;
+            icon: @image-url("icons/sliders-horizontal.svg");
+            hint: @tr("Search options"); hint-left: true;
+            clicked => { root.builder-requested(); }
+        }
+        Icon { x: 12px; source: @image-url("icons/search.svg"); tint: Theme.muted; width: 15px; height: 15px; }
+        // Below the coloured pieces, which stand in for its own text while they fit.
+        query := TextInput {
+            x: 36px;
+            width: parent.width - 76px;
+            height: 100%;
+            text <=> root.query-text;
+            vertical-alignment: center;
+            color: root.query-coloured ? transparent : Theme.foreground;
+            selection-foreground-color: root.query-coloured ? transparent : Theme.foreground;
+            font-size: 13px;
+            single-line: true;
+            edited => { root.search(self.text); }
+            cursor-position-changed(point) => { root.caret-x = point.x; }
+            key-pressed(event) => {
+                if event.text == Key.Escape { keys.focus(); return accept; }
+                return reject;
+            }
+        }
+        query-pieces := HorizontalLayout {
+            x: 36px;
+            height: 100%;
+            visible: root.query-coloured;
+            spacing: 0;
+            alignment: start;
+            for piece in root.query-spans: Text {
+                text: piece.text;
+                font-size: 13px;
+                vertical-alignment: center;
+                color: piece.part == 1 ? Theme.accent : piece.part == 2 ? #4fb286 : piece.part == 3 ? #c58af9
+                    : piece.part == 4 ? #e0a23c : piece.part == 5 ? #e0545e : Theme.foreground;
+            }
+        }
+        // The field's own caret takes the colour of its text, which is transparent here.
+        if root.query-coloured && query.has-focus && root.caret-on: Rectangle {
+            x: 36px + root.caret-x;
+            y: 9px;
+            width: 1px;
+            height: parent.height - 18px;
+            background: Theme.foreground;
+        }
+        Timer {
+            interval: 530ms;
+            running: query.has-focus;
+            triggered => { root.caret-on = !root.caret-on; }
+        }
+        if query.text == "": Text { x: 36px; text: @tr("Search mail"); color: Theme.muted; font-size: 13px; vertical-alignment: center; height: 100%; }
+    }
+    Avatar {
+        x: parent.width - 42px;
+        y: 8px;
+        size: 34px;
+        initials: root.account-initials;
+        tint: Theme.accent;
+    }
+    TouchArea {
+        x: parent.width - 42px;
+        y: 8px;
+        width: 34px;
+        height: 34px;
+        mouse-cursor: pointer;
+        clicked => { root.account-requested(); }
+    }
+
+    // Folders, floating on the window itself.
+    Rectangle {
+        x: 8px;
+        y: root.brand-y + 40px;
+        width: root.side-width - 8px;
+        height: parent.height - self.y - 8px;
+        VerticalLayout {
+            spacing: 1px;
+            ListView {
+                vertical-stretch: 1;
+                for folder in root.folders: VerticalLayout {
+                    if folder.section > 0 && !root.rail: Rectangle {
+                        height: 30px;
+                        Text {
+                            x: 10px;
+                            y: parent.height - self.height;
+                            text: folder.section == 1 ? @tr("Folders") : @tr("Labels");
+                            color: Theme.faint;
+                            font-size: 11px;
+                            font-weight: 600;
+                        }
+                        IconButton {
+                            x: parent.width - self.width - 8px;
+                            y: parent.height - self.height + 4px;
+                            width: 24px;
+                            height: 24px;
+                            icon: @image-url("icons/plus.svg");
+                            hint: @tr("Add");
+                            clicked => { root.add-folder(folder.section); }
+                        }
+                    }
+                    // A group with nothing in it comes as a row with no id, for the sake of its heading.
+                    if folder.id != "": SideItem {
+                        editable: folder.custom;
+                        rename => { root.rename-folder(folder.id); }
+                        remove => { root.remove-folder(folder.id); }
+                        label: root.folder-name(folder.id, folder.name);
+                        unread: folder.unread;
+                        active: folder.active;
+                        compact: root.rail;
+                        icon: root.folder-icon(folder.id);
+                        dot: folder.dot;
+                        custom: folder.custom;
+                        clicked => { root.pulse(); root.open-folder(folder.id); }
+                    }
+                }
+            }
+            // The narrow rail has room for how things stand, not for a sentence about it.
+            if root.rail: VerticalLayout {
+                vertical-stretch: 0;
+                padding-top: 6px;
+                padding-bottom: 4px;
+                spacing: 4px;
+                Rectangle {
+                    height: 6px;
+                    Rectangle {
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 3px;
+                        background: root.status-color;
+                        animate background { duration: 260ms; }
+                    }
+                }
+                Text {
+                    text: root.updated;
+                    color: Theme.faint;
+                    font-size: 10px;
+                    horizontal-alignment: center;
+                    overflow: elide;
+                }
+            }
+            if !root.rail: VerticalLayout {
+                vertical-stretch: 0;
+                padding-top: 6px;
+                padding-left: 10px;
+                padding-right: 6px;
+                padding-bottom: 2px;
+                spacing: 1px;
+                if root.tor-state > 0: HorizontalLayout {
+                    spacing: 6px;
+                    height: 16px;
+                    Rectangle {
+                        y: 5px;
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 3px;
+                        background: root.tor-state == 2 ? Theme.success : root.tor-state == 3 ? Theme.danger : Theme.faint;
+                        animate background { duration: 260ms; }
+                    }
+                    Text {
+                        text: root.tor-text;
+                        color: tor-touch.has-hover ? Theme.accent : root.tor-state == 3 ? Theme.danger : Theme.muted;
+                        font-size: 11px;
+                        overflow: elide;
+                        tor-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.open-tor-settings(); }
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 6px;
+                    height: 16px;
+                    Rectangle {
+                        y: 5px;
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 3px;
+                        background: root.status-color;
+                        animate background { duration: 260ms; }
+                    }
+                    Fading {
+                        idle: root.failed ? @tr("Could not update") : root.updated == "" ? @tr("Connected") : @tr("Updated {}", root.updated);
+                        busy: @tr("Updating…");
+                        working: root.loading;
+                        size: 11px;
+                    }
+                }
+                HorizontalLayout {
+                    alignment: start;
+                    spacing: 3px;
+                    Text {
+                        text: root.version-text + " ·";
+                        color: Theme.faint;
+                        font-size: 10px;
+                        opacity: 0.75;
+                    }
+                    Text {
+                        text: root.commit-text;
+                        color: commit-touch.has-hover ? Theme.accent : Theme.faint;
+                        font-size: 10px;
+                        opacity: commit-touch.has-hover ? 1 : 0.75;
+                        commit-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.open-link(root.commit-link); }
+                        }
+                    }
+                    if root.memory-megabytes > 0: Text {
+                        text: "· " + @tr("RAM {} MB", root.memory-megabytes);
+                        color: Theme.faint;
+                        font-size: 10px;
+                        opacity: 0.75;
+                    }
+                }
+                Text {
+                    text: @tr("Unofficial client by Yaroslav Koval. Not affiliated with Proton AG.");
+                    color: Theme.faint;
+                    font-size: 10px;
+                    opacity: 0.75;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+
+    // The panel holding the list and the open mail.
+    Rectangle {
+        x: root.side-width + 8px;
+        y: 50px;
+        width: root.panel-width;
+        height: parent.height - 58px;
+        border-radius: 14px;
+        background: Theme.panel;
+        clip: true;
+
+        list := Rectangle {
+            x: 0;
+            width: root.stacked ? parent.width : parent.width + (root.list-open-width - parent.width) * root.opened;
+            height: root.stacked ? parent.height * (1 - 0.6 * root.opened) : parent.height;
+            clip: true;
+            VerticalLayout {
+                VerticalLayout {
+                    padding-left: 18px;
+                    padding-right: 12px;
+                    padding-top: 14px;
+                    padding-bottom: 10px;
+                    spacing: 10px;
+                    HorizontalLayout {
+                        VerticalLayout {
+                            horizontal-stretch: 1;
+                            Text { text: root.folder-name(root.folder-id, root.folder-title); color: Theme.foreground; overflow: elide; font-size: 19px; font-weight: 700; }
+                            Fading {
+                                idle: root.folder-unread > 0 ? @tr("{} unread", root.folder-unread) : root.status-text();
+                                busy: @tr("Updating…");
+                                working: root.loading;
+                            }
+                        }
+                        // Beside the folder's name, where a narrow list still has room for it. One page needs no pager.
+                        if root.list-pages > 1: Pager {
+                            page: root.list-page;
+                            pages: root.list-pages;
+                            go(page) => { root.go-to-page(page); }
+                            choose => { root.choose-page(); }
+                        }
+                        if root.list-pages > 1: Rectangle { width: 6px; }
+                        IconButton {
+                            icon: @image-url("icons/refresh-cw.svg");
+                            tint: root.loading ? Theme.accent : Theme.muted;
+                            strength: root.loading ? 0.45 + 0.55 * abs(sin(root.tick / 1ms * 0.15deg)) : 1;
+                            hint: @tr("Check for new mail");
+                            clicked => { root.pulse(); root.reload(); }
+                        }
+                        IconButton { icon: @image-url("icons/square-pen.svg"); hint: @tr("New message"); clicked => { root.compose("new"); } }
+                    }
+                    if root.auto-delete && (root.folder-id == "trash" || root.folder-id == "spam"): Text {
+                        text: @tr("Messages that have been in the trash and spam for more than 30 days are deleted by themselves.");
+                        color: Theme.muted;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                        height: self.preferred-height;
+                    }
+                    if root.link > 0: Rectangle {
+                        border-radius: 8px;
+                        background: root.link == 3 ? #e0545e2e : Theme.field;
+                        VerticalLayout {
+                            padding: 8px;
+                            Text {
+                                text: root.link == 1 ? @tr("No connection to Proton. New mail will appear once it is back.")
+                                    : root.link == 2 ? @tr("Proton is having trouble. You are still signed in, and new mail will appear once it passes.")
+                                    : @tr("This connection failed its security check, so nothing was sent.");
+                                color: root.link == 3 ? #e0545e : Theme.muted;
+                                font-size: 12px;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+                    if root.checked-count > 0: HorizontalLayout {
+                        height: 28px;
+                        spacing: 2px;
+                        Text {
+                            text: @tr("Selected: {}", root.checked-count);
+                            color: Theme.foreground;
+                            font-size: 13px;
+                            font-weight: 600;
+                            vertical-alignment: center;
+                            horizontal-stretch: 1;
+                        }
+                        IconButton { y: -3px; icon: @image-url("icons/check.svg"); hint: @tr("Select all"); clicked => { root.check-all(true); } }
+                        IconButton { y: -3px; icon: @image-url("icons/mail-open.svg"); hint: @tr("Mark as unread"); clicked => { root.act("unread"); } }
+                        if root.folder-id != "archive": IconButton { y: -3px; icon: @image-url("icons/archive.svg"); hint: @tr("Archive"); clicked => { root.act("archive"); } }
+                        IconButton {
+                            y: -3px;
+                            icon: @image-url("icons/trash.svg");
+                            hint: root.folder-id == "trash" || root.folder-id == "spam" ? @tr("Delete for good") : @tr("Move to trash");
+                            clicked => { root.act(root.folder-id == "trash" || root.folder-id == "spam" ? "delete" : "trash"); }
+                        }
+                        IconButton { y: -3px; icon: @image-url("icons/folder-input.svg"); hint: @tr("Move to folder"); clicked => { root.menu("move"); } }
+                        if root.has-labels: IconButton { y: -3px; icon: @image-url("icons/tag.svg"); hint: @tr("Labels"); clicked => { root.menu("labels"); } }
+                        IconButton { y: -3px; icon: @image-url("icons/x.svg"); hint: @tr("Clear the selection"); clicked => { root.check-all(false); } }
+                    }
+                    if root.checked-count == 0: HorizontalLayout {
+                        spacing: 6px;
+                        alignment: start;
+                        Tab {
+                            label: @tr("All");
+                            on: !root.only-unread && !root.only-files;
+                            clicked => { root.only-unread = false; root.only-files = false; root.filters-changed(); }
+                        }
+                        Tab {
+                            label: @tr("Unread");
+                            on: root.only-unread;
+                            clicked => { root.only-unread = !root.only-unread; root.filters-changed(); }
+                        }
+                        Tab {
+                            label: @tr("With attachments");
+                            on: root.only-files;
+                            clicked => { root.only-files = !root.only-files; root.filters-changed(); }
+                        }
+                        if (root.folder-id == "trash" || root.folder-id == "spam") && root.rows.length > 0: Tab {
+                            label: @tr("Empty folder");
+                            clicked => { root.act("empty"); }
+                        }
+                    }
+                }
+                if root.rows.length > 0: Rectangle {
+                    property <int> asked-to-scroll: root.list-scrolls;
+                    // A new page is read from its top.
+                    property <int> page-shown: root.list-page;
+                    changed page-shown => { mails.content-y = 0; }
+                    changed asked-to-scroll => {
+                        mails.content-y = min(0px, max(mails.height - mails.content-height, mails.content-y - root.list-scroll * mails.height * 0.85));
+                    }
+                    mails := ListView {
+                        changed content-y => {
+                            if root.has-more && root.list-pages == 0 && !root.loading && !root.paging
+                                && self.height - self.content-y > self.content-height - 500px {
+                                root.paging = true;
+                                root.load-more();
+                            }
+                        }
+                        for mail in root.rows: MailItem {
+                            mail: mail;
+                            heading: root.heading(mail.group);
+                            tick: mail.logo-pending ? root.tick : 0ms;
+                            glow: mail.fresh ? root.glow : 0;
+                            toggled => { root.row-toggled(mail.id); }
+                            starred => { root.row-starred(mail.id, !mail.starred); }
+                            clicked => {
+                                keys.focus();
+                                root.pulse();
+                                root.open-mail(mail.id);
+                            }
+                        }
+                    }
+                    // The next page on its way: a row taking shape at the bottom edge.
+                    if root.paging: Rectangle {
+                        y: parent.height - self.height;
+                        height: 62px;
+                        background: Theme.panel;
+                        HorizontalLayout {
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            spacing: 12px;
+                            alignment: start;
+                            VerticalLayout {
+                                alignment: center;
+                                Skeleton { tick: root.tick; width: 34px; height: 34px; border-radius: 17px; }
+                            }
+                            VerticalLayout {
+                                alignment: center;
+                                spacing: 8px;
+                                Skeleton { tick: root.tick; width: 120px; height: 11px; }
+                                Skeleton { tick: root.tick; width: 180px; height: 11px; }
+                            }
+                        }
+                    }
+                    // Back to the newest mail, once the list has gone far enough to want it.
+                    Rectangle {
+                        property <float> shown: -mails.content-y > 600px ? 1 : 0;
+                        animate shown { duration: 160ms; easing: ease-out; }
+                        visible: self.shown > 0;
+                        opacity: self.shown;
+                        x: (parent.width - self.width) / 2;
+                        y: parent.height - 48px - (root.paging ? 62px : 0px) + (1 - self.shown) * 10px;
+                        width: to-top-row.preferred-width + 28px;
+                        height: 34px;
+                        border-radius: 17px;
+                        background: to-top.has-hover ? Theme.foreground : Theme.strong;
+                        to-top-row := HorizontalLayout {
+                            alignment: center;
+                            spacing: 6px;
+                            Icon {
+                                y: 10px;
+                                source: @image-url("icons/arrow-up.svg");
+                                tint: Theme.on-strong;
+                                width: 14px;
+                                height: 14px;
+                            }
+                            Text {
+                                text: @tr("Back to top");
+                                color: Theme.on-strong;
+                                font-size: 12px;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
+                        }
+                        to-top := TouchArea {
+                            mouse-cursor: pointer;
+                            enabled: parent.shown > 0.5;
+                            clicked => { mails.content-y = 0; }
+                        }
+                    }
+                }
+                if root.rows.length == 0 && root.loading: VerticalLayout {
+                    padding: 16px;
+                    spacing: 20px;
+                    alignment: start;
+                    for line in [62, 48, 74, 55, 68, 44, 70]: HorizontalLayout {
+                        spacing: 12px;
+                        Skeleton { tick: root.tick; width: 34px; height: 34px; border-radius: 17px; }
+                        VerticalLayout {
+                            spacing: 8px;
+                            alignment: center;
+                            Skeleton { tick: root.tick; width: 120px; height: 11px; }
+                            Skeleton { tick: root.tick; width: line * 3px; height: 11px; }
+                        }
+                    }
+                }
+                if root.rows.length == 0 && !root.loading && root.has-more: VerticalLayout {
+                    alignment: center;
+                    spacing: 10px;
+                    Text {
+                        text: @tr("No matches so far in what was read.");
+                        color: Theme.muted;
+                        font-size: 13px;
+                        horizontal-alignment: center;
+                    }
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            width: more-label.preferred-width + 28px;
+                            height: 32px;
+                            border-radius: 10px;
+                            background: Theme.field;
+                            more-label := Text { text: @tr("Keep searching"); color: Theme.foreground; font-size: 12px; font-weight: 500; }
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => {
+                                    root.paging = true;
+                                    root.load-more();
+                                }
+                            }
+                        }
+                    }
+                }
+                if root.rows.length == 0 && !root.loading && !root.has-more: Text {
+                    text: @tr("Nothing here");
+                    color: Theme.muted;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        // A stripe that runs the whole way, however fast the answer came, and fades as it arrives.
+        if root.stripe-on: Rectangle {
+            // Inside the straight part of the top edge: a software clip ignores the panel's corners.
+            x: 14px;
+            y: 0;
+            width: parent.width - 28px;
+            height: 2px;
+            clip: true;
+            Rectangle {
+                property <float> run: min((root.tick - root.stripe-from) / 1000ms, 1);
+                x: (parent.width * 1.3) * run - 0.3 * parent.width;
+                width: parent.width * 0.3;
+                background: Theme.accent;
+                opacity: run < 0.6 ? 1 : (1 - run) / 0.4;
+            }
+        }
+        Timer {
+            interval: 1000ms;
+            running: root.stripe-on;
+            triggered => {
+                if root.loading || root.opening {
+                    root.stripe-from = root.tick;
+                } else {
+                    root.stripe-on = false;
+                }
+            }
+        }
+
+        // The mail slides in as the list makes way for it.
+        reader := Rectangle {
+            x: root.stacked ? 0 : list.width;
+            y: root.stacked ? list.height : 0;
+            width: root.stacked ? parent.width : parent.width - list.width;
+            height: parent.height - self.y;
+            opacity: root.opened;
+            clip: true;
+            Rectangle {
+                x: 0;
+                y: 0;
+                width: root.stacked ? parent.width : 1px;
+                height: root.stacked ? 1px : parent.height;
+                background: Theme.border;
+            }
+            VerticalLayout {
+                HorizontalLayout {
+                    height: 48px;
+                    vertical-stretch: 0;
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    padding-top: 8px;
+                    padding-bottom: 8px;
+                    spacing: 2px;
+                    if root.folder-id == "drafts": IconButton {
+                        icon: @image-url("icons/square-pen.svg");
+                        hint: @tr("Edit the draft");
+                        clicked => { root.compose("draft"); }
+                    }
+                    if root.folder-id != "drafts": IconButton { icon: @image-url("icons/reply.svg"); hint: @tr("Reply"); clicked => { root.compose("reply"); } }
+                    if root.folder-id != "drafts": IconButton { icon: @image-url("icons/reply-all.svg"); hint: @tr("Reply all"); clicked => { root.compose("replyAll"); } }
+                    if root.folder-id != "drafts": IconButton { icon: @image-url("icons/forward.svg"); hint: @tr("Forward"); clicked => { root.compose("forward"); } }
+                    Rectangle { horizontal-stretch: 1; }
+                    IconButton { icon: @image-url("icons/mail-open.svg"); hint: @tr("Mark as unread"); clicked => { root.act("unread"); } }
+                    IconButton {
+                        icon: @image-url("icons/star.svg");
+                        tint: root.starred ? Theme.accent : Theme.muted;
+                        hint: root.starred ? @tr("Remove the star") : @tr("Star");
+                        clicked => { root.act("star"); }
+                    }
+                    if root.folder-id != "archive": IconButton {
+                        icon: @image-url("icons/archive.svg");
+                        hint: @tr("Archive");
+                        clicked => { root.act("archive"); }
+                    }
+                    if root.folder-id == "spam": IconButton {
+                        icon: @image-url("icons/shield-check.svg");
+                        hint: @tr("Not spam");
+                        clicked => { root.act("not-spam"); }
+                    }
+                    if root.folder-id != "spam" && root.can-spam: IconButton {
+                        icon: @image-url("icons/octagon-alert.svg");
+                        hint: @tr("Move to spam");
+                        clicked => { root.act("spam"); }
+                    }
+                    IconButton {
+                        icon: @image-url("icons/trash.svg");
+                        hint: root.folder-id == "trash" || root.folder-id == "spam" ? @tr("Delete for good") : @tr("Move to trash");
+                        clicked => { root.act(root.folder-id == "trash" || root.folder-id == "spam" ? "delete" : "trash"); }
+                    }
+                    if root.folder-id == "inbox" || root.folder-id == "snoozed": IconButton {
+                        icon: @image-url("icons/clock.svg");
+                        tint: root.folder-id == "snoozed" ? Theme.accent : Theme.muted;
+                        hint: root.folder-id == "snoozed" ? @tr("Wake it now") : @tr("Snooze");
+                        clicked => {
+                            if root.folder-id == "snoozed" { root.act("unsnooze"); } else { root.menu("snooze"); }
+                        }
+                    }
+                    IconButton { icon: @image-url("icons/folder-input.svg"); hint: @tr("Move to folder"); clicked => { root.menu("move"); } }
+                    if root.has-labels: IconButton { icon: @image-url("icons/tag.svg"); hint: @tr("Labels"); clicked => { root.menu("labels"); } }
+                    IconButton {
+                        icon: @image-url("icons/ellipsis.svg");
+                        hint: @tr("More");
+                        clicked => { root.more-requested(); }
+                    }
+                    // Closing does not depend on knowing Escape.
+                    IconButton {
+                        icon: @image-url("icons/x.svg");
+                        hint: @tr("Close");
+                        clicked => { root.close-mail(); }
+                    }
+                }
+                VerticalLayout {
+                    vertical-stretch: 0;
+                    padding-left: 22px;
+                    padding-right: 22px;
+                    padding-top: 6px;
+                    padding-bottom: 12px;
+                    spacing: 12px;
+                    if root.opening: VerticalLayout {
+                        spacing: 10px;
+                        Skeleton { tick: root.tick; width: 62%; height: 20px; }
+                        Skeleton { tick: root.tick; width: 34%; height: 12px; }
+                    }
+                    if !root.opening: Text {
+                        text: root.subject;
+                        color: Theme.foreground;
+                        font-size: 19px;
+                        font-weight: 700;
+                        wrap: word-wrap;
+                    }
+                    if !root.opening: HorizontalLayout {
+                        spacing: 12px;
+                        Avatar {
+                            initials: root.sender-initials;
+                            tint: root.sender-tint;
+                            logo: root.sender-logo;
+                            has-logo: root.sender-has-logo;
+                            size: 38px;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 1px;
+                            horizontal-stretch: 1;
+                            HorizontalLayout {
+                                // Whatever follows the name stands beside it, not at the far end.
+                                alignment: start;
+                                padding-left: 5px;
+                                spacing: 6px;
+                                Text { text: root.sender; color: Theme.foreground; font-size: 13px; font-weight: 600; overflow: elide; }
+                                if root.signature == 1: Icon {
+                                    source: @image-url("icons/shield-check.svg");
+                                    tint: #4fb286;
+                                    width: 14px;
+                                    height: 14px;
+                                    y: 2px;
+                                }
+                                if root.signature == 2: Text {
+                                    text: @tr("Signature is not valid");
+                                    color: #e0545e;
+                                    font-size: 12px;
+                                    font-weight: 600;
+                                }
+                            }
+                            HorizontalLayout {
+                                alignment: start;
+                                Rectangle {
+                                    border-radius: 6px;
+                                    background: address-touch.has-hover ? Theme.hover : transparent;
+                                    animate background { duration: 120ms; }
+                                    HorizontalLayout {
+                                        padding-left: 5px;
+                                        padding-right: 5px;
+                                        padding-top: 1px;
+                                        padding-bottom: 1px;
+                                        spacing: 5px;
+                                        Text { text: root.address; color: Theme.muted; font-size: 12px; overflow: elide; }
+                                        Icon {
+                                            source: @image-url("icons/copy.svg");
+                                            tint: Theme.muted;
+                                            width: 12px;
+                                            height: 12px;
+                                            y: 2px;
+                                            opacity: address-touch.has-hover ? 1 : 0;
+                                            animate opacity { duration: 120ms; }
+                                        }
+                                    }
+                                    address-touch := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { root.copy-address(root.address); }
+                                    }
+                                }
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            horizontal-stretch: 0;
+                            Text { text: root.date; color: Theme.faint; font-size: 12px; horizontal-alignment: right; }
+                            if root.threats > 0: HorizontalLayout {
+                                alignment: end;
+                                Rectangle {
+                                    border-radius: 6px;
+                                    background: shield-touch.has-hover ? Theme.hover : transparent;
+                                    animate background { duration: 120ms; }
+                                    HorizontalLayout {
+                                        padding-left: 6px;
+                                        padding-right: 6px;
+                                        padding-top: 2px;
+                                        padding-bottom: 2px;
+                                        spacing: 4px;
+                                        Icon { source: @image-url("icons/shield-check.svg"); tint: Theme.accent; width: 13px; height: 13px; }
+                                        Text {
+                                            text: @tr("Protection: {}", root.threats);
+                                            color: Theme.accent;
+                                            font-size: 12px;
+                                            font-weight: 500;
+                                        }
+                                    }
+                                    shield-touch := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { root.info-requested(2); }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if !root.opening && root.to-people.length > 0: PeopleLine {
+                        label: @tr("to");
+                        people: root.to-people;
+                        left: root.to-left;
+                        copied(email) => { root.copy-address(email); }
+                        more => { root.info-requested(1); }
+                    }
+                    if !root.opening && root.cc-people.length > 0: PeopleLine {
+                        label: @tr("cc");
+                        people: root.cc-people;
+                        left: root.cc-left;
+                        copied(email) => { root.copy-address(email); }
+                        more => { root.info-requested(1); }
+                    }
+                    if !root.opening && root.expires-at != "": HorizontalLayout {
+                        spacing: 8px;
+                        padding-top: 2px;
+                        Icon {
+                            y: (parent.height - self.height) / 2;
+                            width: 14px;
+                            height: 14px;
+                            source: @image-url("icons/hourglass.svg");
+                            tint: Theme.muted;
+                        }
+                        Text {
+                            text: @tr("This message is deleted by itself on {}.", root.expires-at);
+                            color: Theme.muted;
+                            font-size: 12px;
+                            overflow: elide;
+                        }
+                    }
+                    if !root.opening && root.unsubscribable: Notice {
+                        text: @tr("This is a mailing list");
+                        action: @tr("Unsubscribe");
+                        clicked => { root.act("unsubscribe"); }
+                    }
+                    if !root.opening && root.receipt-asked: Notice {
+                        text: @tr("The sender asks you to confirm you read this");
+                        action: @tr("Confirm");
+                        clicked => { root.act("receipt"); }
+                    }
+                    if !root.opening && root.thread.length > 1: VerticalLayout {
+                        spacing: 2px;
+                        HorizontalLayout {
+                            alignment: start;
+                            Rectangle {
+                                border-radius: 6px;
+                                background: thread-touch.has-hover ? Theme.hover : transparent;
+                                HorizontalLayout {
+                                    padding-left: 6px;
+                                    padding-right: 6px;
+                                    padding-top: 3px;
+                                    padding-bottom: 3px;
+                                    Text {
+                                        text: @tr("Conversation: {}", root.thread.length);
+                                        color: Theme.muted;
+                                        font-size: 12px;
+                                        font-weight: 500;
+                                    }
+                                }
+                                thread-touch := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => { root.thread-open = !root.thread-open; }
+                                }
+                            }
+                        }
+                        if root.thread-open: ListView {
+                            height: min(root.thread.length * 30px, 150px);
+                            for row in root.thread: Rectangle {
+                                height: 30px;
+                                border-radius: 8px;
+                                background: row.current ? Theme.selected : row-touch.has-hover ? Theme.hover : transparent;
+                                HorizontalLayout {
+                                    padding-left: 6px;
+                                    padding-right: 10px;
+                                    spacing: 10px;
+                                    Text {
+                                        text: row.sender;
+                                        color: Theme.foreground;
+                                        font-size: 12px;
+                                        font-weight: row.current ? 600 : 400;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                        horizontal-stretch: 1;
+                                    }
+                                    Text {
+                                        text: row.date;
+                                        color: Theme.faint;
+                                        font-size: 11px;
+                                        vertical-alignment: center;
+                                        horizontal-stretch: 0;
+                                    }
+                                }
+                                row-touch := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => {
+                                        if !row.current {
+                                            root.pulse();
+                                            root.open-mail(row.id);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if !root.opening && root.files.length > 0: Rectangle {
+                        // As many as fit in a row, and the rest below: no file may end up out of reach.
+                        property <int> across: max(1, floor((self.width + 8px) / 244px));
+                        height: ceil(root.files.length / self.across) * 54px - 8px;
+                        // The mail below moves with it, so a new row must not arrive all at once.
+                        animate height { duration: 140ms; easing: ease-out; }
+                        for file[index] in root.files: Rectangle {
+                            x: mod(index, parent.across) * 244px;
+                            y: floor(index / parent.across) * 54px;
+                            animate x, y { duration: 140ms; easing: ease-out; }
+                            height: 46px;
+                            width: min(236px, parent.width);
+                            border-radius: 10px;
+                            background: Theme.field;
+                            if file.has-thumbnail: Image { x: 6px; y: 6px; width: 34px; height: 34px; source: file.thumbnail; }
+                            if !file.has-thumbnail: Icon { x: 14px; source: FileIcons.of(file.kind); tint: Theme.muted; }
+                            label := Text { x: 48px; y: 8px; width: parent.width - 84px; text: file.name; color: Theme.foreground; font-size: 12px; font-weight: 500; overflow: elide; }
+                            size := Text { x: 48px; y: 25px; text: file.size; color: Theme.muted; font-size: 11px; }
+                            TouchArea { mouse-cursor: pointer; clicked => { root.open-file(index); } }
+                            IconButton {
+                                x: parent.width - self.width - 7px;
+                                icon: @image-url("icons/download.svg");
+                                hint: @tr("Save");
+                                clicked => { root.save-file(index); }
+                            }
+                        }
+                    }
+                }
+                if root.images-held: Rectangle {
+                    height: 38px;
+                    vertical-stretch: 0;
+                    background: Theme.field;
+                    Text {
+                        x: 22px;
+                        text: root.images-loading ? @tr("Loading images…") : @tr("Images are hidden to protect your privacy.");
+                        color: Theme.muted;
+                        font-size: 12px;
+                    }
+                    if !root.images-loading: Tab {
+                        x: parent.width - self.width - 14px;
+                        label: @tr("Show images");
+                        clicked => { root.show-images(); }
+                    }
+                }
+                body-area := Rectangle {
+                    vertical-stretch: 1;
+                    // The mail's page as a picture, while something is drawn over it: the page itself sits above
+                    // everything the toolkit draws.
+                    if root.page-frozen: Image {
+                        width: parent.width;
+                        height: parent.height;
+                        source: root.page-picture;
+                    }
+                    if !root.opening && root.has-mail && root.empty-body: Text {
+                        text: @tr("This message has no text.");
+                        color: Theme.muted;
+                        font-size: 13px;
+                    }
+                    if !root.opening && root.has-mail && root.plain && !root.empty-body: ScrollView {
+                        content-width: body-area.width;
+                        content-height: letter.preferred-height + 24px;
+                        letter := VerticalLayout {
+                            x: 22px;
+                            y: 0px;
+                            width: body-area.width - 44px;
+                            for line in root.lines: Text {
+                                text: line.text;
+                                color: line.link == "" ? Theme.foreground : Theme.accent;
+                                font-size: 14px * Theme.mail-text;
+                                wrap: char-wrap;
+                                min-height: 18px;
+                                TouchArea {
+                                    enabled: line.link != "";
+                                    mouse-cursor: line.link != "" ? MouseCursor.pointer : MouseCursor.default;
+                                    clicked => { root.open-link(line.link); }
+                                }
+                            }
+                        }
+                    }
+                }
+                if !root.opening && root.has-mail && root.folder-id != "drafts": HorizontalLayout {
+                    vertical-stretch: 0;
+                    height: 46px;
+                    padding-left: 16px;
+                    padding-top: 7px;
+                    padding-bottom: 7px;
+                    spacing: 4px;
+                    alignment: start;
+                    ReplyButton { icon: @image-url("icons/reply.svg"); label: @tr("Reply"); clicked => { root.compose("reply"); } }
+                    ReplyButton { icon: @image-url("icons/reply-all.svg"); label: @tr("Reply all"); clicked => { root.compose("replyAll"); } }
+                    ReplyButton { icon: @image-url("icons/forward.svg"); label: @tr("Forward"); clicked => { root.compose("forward"); } }
+                }
+            }
+        }
+    }
+
+    // A short word about what just happened, gone by itself.
+    // Everything before the mailbox: under the splash, which fades off it.
+    if Auth.step > 0: AuthScreen {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        height: parent.height;
+    }
+
+    Rectangle {
+        property <float> shown: root.toast > 0 ? 1 : 0;
+        animate shown { duration: 180ms; }
+        x: (parent.width - self.width) / 2;
+        y: parent.height - 56px + (1 - self.shown) * 10px;
+        width: note.preferred-width + 28px;
+        height: 34px;
+        border-radius: 10px;
+        background: Theme.strong;
+        opacity: self.shown;
+        note := Text {
+            text: root.toast == 11 ? Say.text("compose.scheduled") : root.toast == 1 ? @tr("That did not work. Try again.") : root.toast == 2 ? @tr("Sender blocked") : root.toast == 3 ? @tr("Saved") : root.toast == 4 ? @tr("Message sent") : root.toast == 5 ? @tr("Draft saved") : root.toast == 6 ? @tr("Address copied") : root.toast == 7 ? @tr("Unsubscribe request sent") : root.toast == 8 ? @tr("Confirmation sent") : root.toast == 9 ? @tr("Something failed inside the app. The details are in the journal.") : root.toast == 10 ? @tr("The app restarted after an internal error.") : root.toast == 12 ? @tr("The system's web engine did not start, so this cannot be shown. On Windows it is the WebView2 Runtime.") : root.toast == 13 ? @tr("Picture of the mail copied") : root.toast == 14 ? @tr("The mail is long: the picture holds its beginning") : "";
+            color: Theme.on-strong;
+            font-size: 12px;
+            font-weight: 500;
+        }
+    }
+    Timer {
+        interval: 3000ms;
+        running: root.toast > 0;
+        triggered => { root.toast = 0; }
+    }
+
+    // During Proton's delay the message has not left yet, and the sender may take it back.
+    if root.undo-seconds > 0: Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - 56px;
+        width: undo-line.preferred-width;
+        height: 34px;
+        border-radius: 10px;
+        background: Theme.strong;
+        undo-line := HorizontalLayout {
+            padding-left: 14px;
+            padding-right: 14px;
+            spacing: 14px;
+            Text {
+                text: Say.text("compose.sent");
+                color: Theme.on-strong;
+                font-size: 12px;
+                font-weight: 500;
+                vertical-alignment: center;
+            }
+            Text {
+                text: Say.text("compose.undo");
+                color: Theme.on-strong;
+                font-size: 12px;
+                font-weight: 700;
+                vertical-alignment: center;
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.undo-send(); }
+                }
+            }
+        }
+    }
+    Timer {
+        interval: root.undo-seconds * 1s;
+        running: root.undo-seconds > 0;
+        triggered => { root.undo-seconds = 0; }
+    }
+
+    Timer {
+        interval: 1800ms;
+        running: root.glowing;
+        triggered => { root.glowing = false; }
+    }
+
+    // Held out of sight: this is how text reaches the clipboard.
+    copying := TextInput {
+        visible: false;
+        width: 0;
+        height: 0;
+        read-only: true;
+    }
+
+    // Under the search field, over the list only: nothing drawn here can cover the mail's webview.
+    if query.has-focus && (query.text == "" || root.query-hints.length > 0 || root.query-problem > 0): Rectangle {
+        x: max(root.side-width + 8px, root.buttons-inset);
+        y: 46px;
+        width: min(560px, root.opened > 0 ? root.list-open-width : root.panel-width);
+        height: hints-column.preferred-height + 12px;
+        border-radius: 12px;
+        background: Theme.window;
+        border-width: 1px;
+        border-color: Theme.border;
+        hints-column := VerticalLayout {
+            y: 6px;
+            height: self.preferred-height;
+            padding-left: 6px;
+            padding-right: 6px;
+            if root.query-problem > 0: Text {
+                height: 30px;
+                x: 10px;
+                text: root.problem-text();
+                color: #e0545e;
+                font-size: 12px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+            for hint in root.query-hints: Rectangle {
+                height: 30px;
+                border-radius: 8px;
+                background: hint-touch.has-hover ? Theme.hover : transparent;
+                HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 10px;
+                    spacing: 12px;
+                    Text {
+                        width: 130px;
+                        text: hint.insert;
+                        color: Theme.accent;
+                        font-family: Theme.mono;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                    }
+                    Text {
+                        text: root.hint-text(hint.explain);
+                        color: Theme.muted;
+                        font-size: 12px;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                }
+                hint-touch := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.hint-chosen(hint.insert); }
+                }
+            }
+        }
+    }
+
+    // Tools along the right edge.
+    if Auth.step == 0: VerticalLayout {
+        x: parent.width - 42px;
+        y: 50px;
+        width: 34px;
+        height: parent.height - 58px;
+        spacing: 4px;
+        IconButton { icon: @image-url("icons/settings.svg"); hint: @tr("Settings"); hint-left: true; clicked => { root.tool-chosen("settings"); } }
+        IconButton { icon: @image-url("icons/users.svg"); hint: @tr("Contacts"); hint-left: true; clicked => { root.tool-chosen("contacts"); } }
+        Rectangle { vertical-stretch: 1; }
+        IconButton { icon: @image-url("icons/circle-help.svg"); hint: @tr("Keyboard shortcuts"); hint-left: true; clicked => { root.tool-chosen("help"); } }
+    }
+
+    if Settings.open: SettingsMode {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        top-inset: root.buttons-inset > 12px ? 38px : 12px;
+    }
+
+    splash := Rectangle {
+        background: Theme.window;
+        opacity: root.ready ? 0 : 1;
+        animate opacity { duration: 260ms; }
+        visible: self.opacity > 0;
+        TouchArea { enabled: !root.ready; }
+        VerticalLayout {
+            alignment: center;
+            spacing: 22px;
+            Rectangle { height: 88px; }
+            Text {
+                text: root.stage-text(root.stage);
+                color: Theme.muted;
+                font-size: 13px;
+                horizontal-alignment: center;
+            }
+            if root.stage == 1: Text {
+                text: @tr("If the system asks for access to its keychain, allow it.");
+                color: Theme.faint;
+                font-size: 12px;
+                horizontal-alignment: center;
+            }
+            if root.tor-state > 0: Text {
+                text: root.tor-text;
+                color: root.tor-state == 3 ? Theme.danger : Theme.faint;
+                font-size: 12px;
+                horizontal-alignment: center;
+            }
+        }
+    }
+
+    // One envelope: it seals on the splash, then flies to its place as the app's logo.
+    Logo {
+        visible: (Auth.step == 0 || !root.ready) && !Settings.open;
+        tick: root.tick - root.splash-from;
+        still: root.landed >= 1;
+        landed: root.landed;
+        frames: root.splash-frames;
+        flight: root.flight-frames;
+        // In steps, one picture of the flight each, so that every picture is shown at the size it was drawn for.
+        size: 88px + (26px - 88px) * root.flown;
+        x: (root.width - 88px) / 2 + (root.brand-x - (root.width - 88px) / 2) * root.flown;
+        y: (root.height - 88px) / 2 - 62px + (root.brand-y + 2px - ((root.height - 88px) / 2 - 62px)) * root.flown;
+    }
+    if root.brand-text && Auth.step == 0 && !Settings.open: HorizontalLayout {
+        x: root.brand-x + 34px;
+        y: root.brand-y;
+        height: 30px;
+        spacing: 4px;
+        alignment: start;
+        opacity: root.landed;
+        Text { text: "Proton Mail"; color: Theme.foreground; font-size: 15px; font-weight: 700; vertical-alignment: center; }
+        Text { text: "Light"; color: Theme.accent; font-size: 15px; font-weight: 300; vertical-alignment: center; }
+    }
+
+    if root.tour-step > 0: Tour {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        step: root.tour-step;
+        steps: 8;
+        spot: root.tour-spot(root.tour-step);
+        word-skip: @tr("Skip");
+        word-back: @tr("Back");
+        word-next: @tr("Next");
+        word-start: @tr("Show me around");
+        word-done: @tr("Start");
+        next => {
+            if root.tour-step >= 8 {
+                root.tour-ended(false, root.tour-step);
+                root.tour-step = 0;
+            } else {
+                root.tour-step += 1;
+            }
+        }
+        back => { root.tour-step = max(1, root.tour-step - 1); }
+        skip => {
+            root.tour-ended(true, root.tour-step);
+            root.tour-step = 0;
+        }
+    }
+
+    if root.asking-list-style: ListChoice {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        chosen(pages) => {
+            root.asking-list-style = false;
+            root.list-style-chosen(pages);
+        }
+    }
+
+    if root.account-open: AccountPanel {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        card: root.account-card;
+        chosen(choice) => { root.account-chosen(choice); }
+    }
+
+    // Tor, told about and offered: over everything, and before anything goes out.
+    // An element behind `if` gets its preferred size, not the window's: it is placed and sized by hand.
+    if root.asking-tor: Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        background: Theme.window;
+        TouchArea { }
+        VerticalLayout {
+            alignment: center;
+            padding-left: max(24px, (root.width - 540px) / 2);
+            padding-right: max(24px, (root.width - 540px) / 2);
+            spacing: 14px;
+            Text {
+                text: @tr("Connect through Tor?");
+                color: Theme.foreground;
+                font-size: 22px;
+                font-weight: 700;
+                wrap: word-wrap;
+            }
+            Text {
+                text: @tr("Tor sends the app's connections through three relays run by volunteers around the world. Proton and your network then cannot see your address, and no one on the way sees both who you are and where you connect.");
+                color: Theme.muted;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+            Text {
+                text: @tr("It is slower, and Proton may ask more often that you show you are a person. Links in mail still open in your browser, outside Tor, and the app asks before each one.");
+                color: Theme.muted;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+            Text {
+                text: @tr("Route");
+                color: Theme.foreground;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            Segmented {
+                options: [@tr("Proton's onion site"), @tr("Through an exit relay")];
+                selected: root.tor-route-choice;
+                chosen(index) => { root.tor-route-choice = index; }
+            }
+            Text {
+                text: root.tor-route-choice == 0
+                    ? @tr("Recommended. The connection never leaves Tor, and Proton's own onion address proves the other end is Proton.")
+                    : @tr("Leaves Tor at an exit relay for Proton's usual address, where Proton's pinned keys still guard the session.");
+                color: Theme.faint;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: start;
+                SmallButton {
+                    text: @tr("Use Tor");
+                    ghost: false;
+                    large: true;
+                    clicked => { root.answer-tor(true, root.tor-route-choice == 0); }
+                }
+                SmallButton {
+                    text: @tr("Connect directly");
+                    large: true;
+                    clicked => { root.answer-tor(false, true); }
+                }
+            }
+            Text {
+                text: @tr("You can change this at any time in Settings, under Connection.");
+                color: Theme.faint;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+        }
+    }
+
+}
+
+// Details of a mail, or what was blocked in it, in a system window laid over the main one, which
+// waits until this one closes. It is a window because nothing the toolkit draws can cover the webview.
+export component InfoWindow inherits Window {
+    in property <int> mode;
+    in property <string> subject;
+    in property <[InfoGroup]> groups;
+    in property <string> raw;
+    in property <bool> own-close;
+    in property <[HeaderRow]> header-rows;
+    private property <bool> copied;
+    // How many letters fit: headers are cut into lines by Rust, so that every row has one height
+    // and the scroller knows exactly how far it goes.
+    out property <int> columns: max(20, floor((root.width - 72px) / (letters.preferred-width / 10)));
+    callback dismissed();
+    callback rewrap(int);
+    changed columns => { root.rewrap(root.columns); }
+
+    pure function heading(kind: int) -> string {
+        if kind == 1 { return @tr("Message"); }
+        if kind == 2 { return @tr("Sender checks"); }
+        if kind == 3 { return @tr("Headers"); }
+        if kind == 6 { return @tr("Trackers"); }
+        if kind == 7 { return @tr("External images"); }
+        if kind == 8 { return @tr("Cleaned links"); }
+        if kind == 9 { return @tr("Removed elements"); }
+        if kind == 10 { return @tr("To"); }
+        if kind == 11 { return @tr("Cc"); }
+        if kind == 12 { return @tr("Keyboard shortcuts"); }
+        if kind == 13 { return @tr("Navigation"); }
+        return "";
+    }
+
+    pure function value(item: InfoItem) -> string {
+        if item.detail == "Valid" { return @tr("Valid"); }
+        if item.detail == "Invalid" { return @tr("Invalid"); }
+        if item.detail == "Unknown" { return @tr("Unknown"); }
+        if item.detail == "Unsigned" { return @tr("Unsigned"); }
+        if item.detail == "endToEnd" { return @tr("End-to-end encrypted"); }
+        if item.detail == "onCompose" { return @tr("Encrypted when written"); }
+        if item.detail == "onDelivery" { return @tr("Encrypted on delivery"); }
+        if item.detail == "onImport" { return @tr("Encrypted on import"); }
+        if item.detail == "stored" { return @tr("Stored encrypted"); }
+        return item.detail;
+    }
+
+    pure function label(item: InfoItem) -> string {
+        if item.label == 1 { return @tr("Signature"); }
+        if item.label == 2 { return @tr("Encryption"); }
+        if item.label == 3 { return @tr("Size"); }
+        if item.label == 4 { return @tr("Message ID"); }
+        return item.title;
+    }
+
+    title: root.mode == 2 ? @tr("What was blocked in this message") : root.mode == 3 ? @tr("Headers") : root.mode == 4 ? @tr("Message source") : root.mode == 5 ? @tr("Keyboard shortcuts") : @tr("Message details");
+    preferred-width: 560px;
+    preferred-height: 620px;
+    min-width: 360px;
+    min-height: 320px;
+    background: Theme.window;
+    default-font-family: "Inter Variable";
+
+    letters := Text {
+        visible: false;
+        text: "0000000000";
+        font-family: Theme.mono;
+        font-size: 12px;
+    }
+    // Held out of sight: selecting it is how the whole text reaches the clipboard.
+    raw-text := TextInput {
+        visible: false;
+        width: 0;
+        height: 0;
+        read-only: true;
+        text: root.raw;
+    }
+    Timer {
+        interval: 1500ms;
+        running: root.copied;
+        triggered => { root.copied = false; }
+    }
+
+    forward-focus: scope;
+    scope := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+        VerticalLayout {
+            padding-top: 16px;
+            spacing: 12px;
+            HorizontalLayout {
+                padding-left: 22px;
+                padding-right: 12px;
+                spacing: 2px;
+                vertical-stretch: 0;
+                VerticalLayout {
+                    spacing: 3px;
+                    horizontal-stretch: 1;
+                    Text { text: root.title; color: Theme.foreground; font-size: 18px; font-weight: 700; }
+                    Text { text: root.subject; color: Theme.muted; font-size: 12px; overflow: elide; }
+                }
+                if root.mode == 3 || root.mode == 4: IconButton {
+                    icon: root.copied ? @image-url("icons/check.svg") : @image-url("icons/copy.svg");
+                    clicked => {
+                        raw-text.select-all();
+                        raw-text.copy();
+                        root.copied = true;
+                    }
+                }
+                if root.own-close: IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => { root.dismissed(); }
+                }
+            }
+            if root.mode == 3 || root.mode == 4: HorizontalLayout {
+                vertical-stretch: 1;
+                padding-left: 16px;
+                padding-right: 16px;
+                padding-bottom: 16px;
+                Rectangle {
+                    border-radius: 12px;
+                    background: Theme.panel;
+                    ListView {
+                        x: 14px;
+                        y: 10px;
+                        width: parent.width - 16px;
+                        height: parent.height - 20px;
+                        for row in root.header-rows: Rectangle {
+                            height: 17px;
+                            Text {
+                                x: 0;
+                                text: row.text;
+                                color: row.name ? Theme.accent : Theme.foreground;
+                                font-family: Theme.mono;
+                                font-size: 12px;
+                                font-weight: row.name ? 700 : 400;
+                            }
+                        }
+                    }
+                }
+            }
+            if root.mode < 3 && root.groups.length == 0: Text {
+                text: @tr("Nothing was blocked in this message.");
+                color: Theme.muted;
+                font-size: 13px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                vertical-stretch: 1;
+            }
+            // A plain scroller: a list that recycles rows guesses their height, and a long header is cut off.
+            if (root.mode < 3 || root.mode == 5) && root.groups.length > 0: scroller := ScrollView {
+                vertical-stretch: 1;
+                content-width: self.visible-width;
+                content-height: cards.preferred-height;
+                cards := VerticalLayout {
+                    width: scroller.visible-width;
+                    padding-left: 16px;
+                    padding-right: 16px;
+                    spacing: 12px;
+                    padding-bottom: 24px;
+                    for group in root.groups: Rectangle {
+                        border-radius: 12px;
+                        background: Theme.panel;
+                        VerticalLayout {
+                            padding: 14px;
+                            spacing: 10px;
+                            HorizontalLayout {
+                                Text { text: root.heading(group.kind); color: Theme.foreground; font-size: 13px; font-weight: 600; horizontal-stretch: 1; }
+                                if group.items.length > 1: Text { text: group.items.length; color: Theme.muted; font-size: 12px; horizontal-stretch: 0; }
+                            }
+                            for item in group.items: VerticalLayout {
+                                spacing: 2px;
+                                Text { text: root.label(item); color: item.label > 0 ? Theme.muted : Theme.foreground; font-size: 12px; font-weight: item.label > 0 ? 400 : 500; wrap: char-wrap; }
+                                if item.detail != "": Text { text: root.value(item); color: item.label > 0 ? Theme.foreground : Theme.muted; font-size: 12px; wrap: char-wrap; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// A date is chosen on a calendar, and can be taken off again.
+component DateChoice {
+    in property <string> label;
+    in property <string> value;
+    callback pick();
+    callback clear();
+    height: 34px;
+    HorizontalLayout {
+        padding-left: 20px;
+        padding-right: 20px;
+        spacing: 12px;
+        Text { text: root.label; color: Theme.muted; font-size: 13px; width: 86px; vertical-alignment: center; }
+        Rectangle {
+            horizontal-stretch: 1;
+            Text {
+                x: 0;
+                text: root.value != "" ? root.value : Say.text("date.choose");
+                color: root.value != "" ? Theme.foreground : Theme.faint;
+                font-size: 13px;
+                vertical-alignment: center;
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.pick(); }
+            }
+        }
+        if root.value != "": IconButton {
+            y: 3px;
+            width: 28px;
+            height: 28px;
+            icon: @image-url("icons/x.svg");
+            clicked => { root.clear(); }
+        }
+    }
+    Rectangle {
+        x: 20px;
+        y: parent.height - 1px;
+        width: parent.width - 40px;
+        height: 1px;
+        background: Theme.border;
+    }
+}
+
+component ComposeField {
+    in property <string> label;
+    in-out property <string> text;
+    callback edited();
+    callback submitted();
+    public function take-focus() { field.focus(); }
+    forward-focus: field;
+    height: 34px;
+    HorizontalLayout {
+        padding-left: 20px;
+        padding-right: 20px;
+        spacing: 12px;
+        Text { text: root.label; color: Theme.muted; font-size: 13px; width: 86px; vertical-alignment: center; }
+        Rectangle {
+            field := TextInput {
+                width: 100%;
+                height: 100%;
+                text <=> root.text;
+                vertical-alignment: center;
+                color: Theme.foreground;
+                font-size: 13px;
+                single-line: true;
+                edited => { root.edited(); }
+                key-pressed(event) => {
+                    if event.text == Key.Return && (event.modifiers.meta || event.modifiers.control) {
+                        root.submitted();
+                        return accept;
+                    }
+                    return reject;
+                }
+            }
+        }
+    }
+    Rectangle { x: 20px; y: parent.height - 1px; width: parent.width - 40px; height: 1px; background: Theme.border; }
+}
+
+component RecipientChip {
+    in property <Chip> chip;
+    callback removed();
+    height: 24px;
+    Rectangle {
+        border-radius: 12px;
+        background: root.chip.bad ? #e0545e2e : Theme.field;
+        HorizontalLayout {
+            padding-left: 10px;
+            padding-right: 3px;
+            spacing: 2px;
+            Text {
+                text: root.chip.text;
+                color: root.chip.bad ? #e0545e : Theme.foreground;
+                font-size: 12px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+            Rectangle {
+                width: 18px;
+                Rectangle {
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 9px;
+                    background: closing.has-hover ? Theme.hover : transparent;
+                    Icon { source: @image-url("icons/x.svg"); tint: Theme.muted; width: 11px; height: 11px; }
+                    closing := TouchArea { clicked => { root.removed(); } }
+                }
+            }
+        }
+    }
+}
+
+// Addresses stand as objects with the place to type after them. That place sits outside the
+// repeater, or it would lose focus each time an address is added.
+component RecipientField {
+    in property <string> label;
+    in property <ChipLines> people;
+    in-out property <string> text;
+    callback typed();
+    callback commit();
+    callback submitted();
+    callback left();
+    callback entered();
+    callback remove(int);
+    callback remove-last();
+    callback step(int);
+    public function take-focus() { input.focus(); }
+    HorizontalLayout {
+        padding-left: 20px;
+        padding-right: 20px;
+        spacing: 12px;
+        Text { text: root.label; color: Theme.muted; font-size: 13px; width: 86px; height: 34px; vertical-alignment: center; }
+        VerticalLayout {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            spacing: 4px;
+            for line in root.people.lines: HorizontalLayout {
+                spacing: 4px;
+                alignment: start;
+                for chip in line.chips: RecipientChip { chip: chip; removed => { root.remove(chip.index); } }
+            }
+            HorizontalLayout {
+                spacing: 4px;
+                for chip in root.people.last: RecipientChip { chip: chip; removed => { root.remove(chip.index); } }
+                input := TextInput {
+                    horizontal-stretch: 1;
+                    height: 24px;
+                    text <=> root.text;
+                    vertical-alignment: center;
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    single-line: true;
+                    edited => { root.typed(); }
+                    changed has-focus => {
+                        if self.has-focus { root.entered(); } else { root.left(); }
+                    }
+                    key-pressed(event) => {
+                        if event.text == " " || event.text == "," || event.text == ";" || event.text == Key.Return {
+                            if event.text == Key.Return && (event.modifiers.meta || event.modifiers.control) {
+                                root.submitted();
+                                return accept;
+                            }
+                            if event.modifiers.meta || event.modifiers.control { return reject; }
+                            if root.text == "" && event.text == Key.Return { return reject; }
+                            root.commit();
+                            return accept;
+                        }
+                        if event.text == Key.Tab && root.text != "" { root.commit(); return accept; }
+                        if event.text == Key.Backspace && root.text == "" { root.remove-last(); return accept; }
+                        if event.text == Key.DownArrow { root.step(1); return accept; }
+                        if event.text == Key.UpArrow { root.step(-1); return accept; }
+                        return reject;
+                    }
+                }
+            }
+        }
+    }
+    Rectangle { x: 20px; y: parent.height - 1px; width: parent.width - 40px; height: 1px; background: Theme.border; }
+}
+
+// The window for writing a message. The body is the webview over `body-area`.
+export component ComposeWindow inherits Window {
+    in-out property <string> from;
+    in-out property <string> to;
+    in-out property <string> cc;
+    in-out property <string> bcc;
+    in-out property <string> subject;
+    in-out property <bool> show-copies;
+    in property <ChipLines> to-people;
+    in property <ChipLines> cc-people;
+    in property <ChipLines> bcc-people;
+    in property <[ContactHint]> hints;
+    in property <int> chosen-hint;
+    in property <int> status;
+    in property <bool> sending;
+    in property <int> failed;
+    in property <bool> own-close;
+    in-out property <bool> confirming;
+    in property <[FileRow]> files;
+    // 0 shows no panel, 1 how the message is protected, 2 when it goes out.
+    in-out property <int> panel;
+    in property <bool> plain;
+    in-out property <string> password;
+    in-out property <string> password-hint;
+    in-out property <int> expires;
+    in-out property <bool> read-receipt;
+    in-out property <string> schedule;
+    in property <string> schedule-text;
+    callback schedule-tomorrow();
+    callback schedule-pick();
+    callback schedule-edited();
+    private property <bool> protected: root.password != "" || root.expires > 0 || root.read-receipt;
+    out property <length> field-room: root.width - 118px - 20px;
+    out property <bool> dark: Theme.dark;
+    out property <length> body-x: body-area.absolute-position.x;
+    out property <length> body-y: body-area.absolute-position.y;
+    out property <length> body-width: body-area.width;
+    out property <length> body-height: body-area.height;
+    private property <bool> linking;
+    callback body-moved();
+    callback fields-changed();
+    callback discard-confirmed();
+    callback typed(int);
+    callback commit(int);
+    callback field-left(int);
+    callback field-entered(int);
+    callback remove(int, int);
+    callback remove-last(int);
+    callback step-hint(int);
+    callback pick-hint(int);
+    callback room-changed();
+    changed field-room => { root.room-changed(); }
+    public function focus-first() { to-field.take-focus(); }
+    callback format(string, string);
+    callback link(string);
+    callback attach();
+    callback remove-file(int);
+    callback send();
+    callback discard();
+    callback dismissed();
+    callback pick-from();
+    changed body-x => { root.body-moved(); }
+    changed body-y => { root.body-moved(); }
+    changed body-width => { root.body-moved(); }
+    changed body-height => { root.body-moved(); }
+
+    pure function status-text() -> string {
+        if root.failed == 1 { return @tr("Could not send. Try again."); }
+        if root.failed == 2 { return @tr("Check the addresses in red"); }
+        if root.failed == 3 { return @tr("Add a recipient"); }
+        if root.failed == 4 { return Say.text("error.badTime"); }
+        if root.failed == 5 { return Say.text("error.pastTime"); }
+        if root.status == 1 { return @tr("Saving…"); }
+        if root.status == 2 { return @tr("Saved"); }
+        if root.status == 3 { return @tr("Could not save"); }
+        return @tr("Not saved");
+    }
+
+    title: root.subject == "" ? @tr("New message") : root.subject;
+    preferred-width: 720px;
+    preferred-height: 640px;
+    min-width: 420px;
+    min-height: 420px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    forward-focus: scope;
+    scope := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Escape { root.dismissed(); return accept; }
+            if event.modifiers.meta || event.modifiers.control {
+                if event.text == Key.Return { root.send(); return accept; }
+            }
+            return reject;
+        }
+        VerticalLayout {
+            padding-top: 10px;
+            HorizontalLayout {
+                height: 34px;
+                vertical-stretch: 0;
+                padding-left: 20px;
+                padding-right: 20px;
+                spacing: 12px;
+                Text { text: @tr("From"); color: Theme.muted; font-size: 13px; width: 86px; vertical-alignment: center; }
+                Text {
+                    text: root.from;
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                    overflow: elide;
+                    TouchArea { mouse-cursor: pointer; clicked => { root.pick-from(); } }
+                }
+                Rectangle { horizontal-stretch: 1; }
+                Text {
+                    text: @tr("Cc, Bcc");
+                    color: Theme.accent;
+                    font-size: 12px;
+                    vertical-alignment: center;
+                    horizontal-stretch: 0;
+                    TouchArea { clicked => { root.show-copies = !root.show-copies; } }
+                }
+                if root.own-close: IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => { root.dismissed(); }
+                }
+            }
+            to-field := RecipientField {
+                vertical-stretch: 0;
+                label: @tr("To");
+                people: root.to-people;
+                text <=> root.to;
+                typed => { root.typed(0); }
+                commit => { root.commit(0); }
+                submitted => { root.send(); }
+                left => { root.field-left(0); }
+                entered => { root.field-entered(0); }
+                remove(index) => { root.remove(0, index); }
+                remove-last => { root.remove-last(0); }
+                step(delta) => { root.step-hint(delta); }
+            }
+            if root.show-copies: RecipientField {
+                vertical-stretch: 0;
+                label: @tr("Cc");
+                people: root.cc-people;
+                text <=> root.cc;
+                typed => { root.typed(1); }
+                commit => { root.commit(1); }
+                submitted => { root.send(); }
+                left => { root.field-left(1); }
+                entered => { root.field-entered(1); }
+                remove(index) => { root.remove(1, index); }
+                remove-last => { root.remove-last(1); }
+                step(delta) => { root.step-hint(delta); }
+            }
+            if root.show-copies: RecipientField {
+                vertical-stretch: 0;
+                label: @tr("Bcc");
+                people: root.bcc-people;
+                text <=> root.bcc;
+                typed => { root.typed(2); }
+                commit => { root.commit(2); }
+                submitted => { root.send(); }
+                left => { root.field-left(2); }
+                entered => { root.field-entered(2); }
+                remove(index) => { root.remove(2, index); }
+                remove-last => { root.remove-last(2); }
+                step(delta) => { root.step-hint(delta); }
+            }
+            // Under the fields, not over the page: nothing the toolkit draws can cover a webview.
+            if root.hints.length > 0: HorizontalLayout {
+                height: 36px;
+                vertical-stretch: 0;
+                padding-left: 118px;
+                padding-right: 20px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                spacing: 4px;
+                alignment: start;
+                for hint[index] in root.hints: Rectangle {
+                    border-radius: 13px;
+                    background: index == root.chosen-hint ? Theme.selected : hint-touch.has-hover ? Theme.hover : transparent;
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        spacing: 6px;
+                        if hint.name != "": Text { text: hint.name; color: Theme.foreground; font-size: 12px; font-weight: 500; vertical-alignment: center; }
+                        Text { text: hint.email; color: Theme.muted; font-size: 12px; vertical-alignment: center; }
+                    }
+                    hint-touch := TouchArea { mouse-cursor: pointer; clicked => { root.pick-hint(index); } }
+                }
+            }
+            ComposeField {
+                label: @tr("Subject");
+                text <=> root.subject;
+                edited => { root.fields-changed(); }
+                submitted => { root.send(); }
+            }
+            // Text has no bold, and nothing here would reach the letter.
+            if !root.plain: HorizontalLayout {
+                height: 40px;
+                vertical-stretch: 0;
+                padding-left: 16px;
+                padding-right: 16px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                spacing: 2px;
+                alignment: start;
+                for tool in [
+                    { label: "B", command: "bold", value: "" },
+                    { label: "I", command: "italic", value: "" },
+                    { label: "U", command: "underline", value: "" },
+                    { label: "•", command: "insertUnorderedList", value: "" },
+                    { label: "1.", command: "insertOrderedList", value: "" },
+                    { label: "”", command: "formatBlock", value: "blockquote" },
+                    { label: "×", command: "removeFormat", value: "" },
+                ]: Rectangle {
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 7px;
+                    background: touch.has-hover ? Theme.hover : transparent;
+                    Text { text: tool.label; color: Theme.muted; font-size: 13px; font-weight: 700; }
+                    touch := TouchArea { clicked => { root.format(tool.command, tool.value); } }
+                }
+                Rectangle {
+                    width: 46px;
+                    height: 30px;
+                    border-radius: 7px;
+                    background: linker.has-hover ? Theme.hover : transparent;
+                    Text { text: @tr("Link"); color: Theme.muted; font-size: 12px; font-weight: 600; }
+                    linker := TouchArea { clicked => { root.linking = !root.linking; } }
+                }
+                if root.linking: Rectangle {
+                    width: 240px;
+                    height: 30px;
+                    border-radius: 7px;
+                    background: Theme.field;
+                    address := TextInput {
+                        x: 8px;
+                        width: parent.width - 16px;
+                        height: 100%;
+                        text: "https://";
+                        vertical-alignment: center;
+                        color: Theme.foreground;
+                        font-size: 12px;
+                        single-line: true;
+                        accepted => { root.link(self.text); root.linking = false; }
+                    }
+                }
+            }
+            Rectangle { height: 1px; vertical-stretch: 0; background: Theme.border; }
+            body-area := Rectangle { vertical-stretch: 1; }
+            if root.files.length > 0: Rectangle {
+                // As many as fit in a row, and the rest below, so that each can still be taken off.
+                property <int> across: max(1, floor((self.width - 16px) / 188px));
+                height: ceil(root.files.length / self.across) * 50px + 8px;
+                animate height { duration: 140ms; easing: ease-out; }
+                vertical-stretch: 0;
+                for file[index] in root.files: Rectangle {
+                    x: 16px + mod(index, parent.across) * 188px;
+                    y: 8px + floor(index / parent.across) * 50px;
+                    animate x, y { duration: 140ms; easing: ease-out; }
+                    width: 180px;
+                    height: 42px;
+                    border-radius: 10px;
+                    background: Theme.field;
+                    Icon { x: 11px; source: FileIcons.of(file.kind); tint: Theme.muted; }
+                    Text { x: 38px; y: 6px; width: parent.width - 66px; text: file.name; color: Theme.foreground; font-size: 12px; font-weight: 500; overflow: elide; }
+                    Text { x: 38px; y: 23px; text: file.size; color: Theme.muted; font-size: 11px; }
+                    IconButton {
+                        x: parent.width - 34px;
+                        y: 5px;
+                        icon: @image-url("icons/x.svg");
+                        clicked => { root.remove-file(index); }
+                    }
+                }
+            }
+            // Nothing the toolkit draws can lie over the webview, so these take their room from it.
+            if root.schedule-text != "": HorizontalLayout {
+                vertical-stretch: 0;
+                height: 34px;
+                padding-left: 16px;
+                padding-right: 10px;
+                spacing: 6px;
+                Icon {
+                    y: (parent.height - self.height) / 2;
+                    width: 14px;
+                    height: 14px;
+                    source: @image-url("icons/calendar-clock.svg");
+                    tint: Theme.accent;
+                }
+                Text {
+                    horizontal-stretch: 1;
+                    text: root.schedule-text;
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                }
+                IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => {
+                        root.schedule = "";
+                        root.schedule-edited();
+                    }
+                }
+            }
+            if root.panel == 1: VerticalLayout {
+                vertical-stretch: 0;
+                padding: 16px;
+                spacing: 10px;
+                Field {
+                    label: Say.text("compose.password");
+                    text <=> root.password;
+                    secret: true;
+                    lines: 1;
+                }
+                Text {
+                    text: Say.text("compose.passwordHelp");
+                    color: Theme.muted;
+                    font-size: 12px;
+                }
+                Field {
+                    label: Say.text("compose.passwordHint");
+                    text <=> root.password-hint;
+                    lines: 1;
+                }
+                HorizontalLayout {
+                    spacing: 12px;
+                    Text {
+                        horizontal-stretch: 1;
+                        text: Say.text("compose.expires");
+                        color: Theme.foreground;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                    Segmented {
+                        options: [Say.text("compose.expiresNever"), Say.text("compose.expiresHour"), Say.text("compose.expiresDay"), Say.text("compose.expiresWeek"), Say.text("compose.expiresFourWeeks")];
+                        selected: root.expires;
+                        chosen(index) => { root.expires = index; }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 12px;
+                    Text {
+                        horizontal-stretch: 1;
+                        text: Say.text("compose.readReceipt");
+                        color: Theme.foreground;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                    Switch {
+                        on: root.read-receipt;
+                        toggled => { root.read-receipt = !root.read-receipt; }
+                    }
+                }
+            }
+            if root.panel == 2: VerticalLayout {
+                vertical-stretch: 0;
+                padding: 16px;
+                spacing: 10px;
+                HorizontalLayout {
+                    alignment: start;
+                    spacing: 8px;
+                    SmallButton {
+                        text: Say.text("compose.tomorrowMorning");
+                        clicked => {
+                            root.schedule-tomorrow();
+                            root.panel = 0;
+                        }
+                    }
+                    SmallButton {
+                        text: Say.text("compose.pickTime");
+                        icon: @image-url("icons/calendar.svg");
+                        has-icon: true;
+                        clicked => {
+                            root.panel = 0;
+                            root.schedule-pick();
+                        }
+                    }
+                }
+            }
+            Rectangle { height: 1px; vertical-stretch: 0; background: Theme.border; }
+            HorizontalLayout {
+                height: 56px;
+                vertical-stretch: 0;
+                padding: 10px;
+                padding-left: 14px;
+                padding-right: 16px;
+                spacing: 4px;
+                if root.confirming: Text {
+                    text: @tr("Delete this draft?");
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    font-weight: 500;
+                    vertical-alignment: center;
+                }
+                if root.confirming: Rectangle { horizontal-stretch: 1; }
+                if root.confirming: Rectangle {
+                    width: keep-label.preferred-width + 24px;
+                    border-radius: 10px;
+                    background: keep-touch.has-hover ? Theme.hover : transparent;
+                    keep-label := Text { text: @tr("Cancel"); color: Theme.foreground; font-size: 13px; font-weight: 500; }
+                    keep-touch := TouchArea { mouse-cursor: pointer; clicked => { root.confirming = false; } }
+                }
+                if root.confirming: Rectangle {
+                    width: delete-label.preferred-width + 28px;
+                    border-radius: 10px;
+                    background: #d8434e;
+                    delete-label := Text { text: @tr("Delete"); color: #ffffff; font-size: 13px; font-weight: 600; }
+                    TouchArea { mouse-cursor: pointer; clicked => { root.discard-confirmed(); } }
+                }
+                if !root.confirming: IconButton { icon: @image-url("icons/trash.svg"); y: 2px; clicked => { root.discard(); } }
+                if !root.confirming: IconButton { icon: @image-url("icons/paperclip.svg"); y: 2px; clicked => { root.attach(); } }
+                if !root.confirming: IconButton {
+                    y: 2px;
+                    icon: @image-url("icons/lock.svg");
+                    tint: root.protected ? Theme.accent : Theme.muted;
+                    clicked => { root.panel = root.panel == 1 ? 0 : 1; }
+                }
+                if !root.confirming: Text {
+                    text: root.status-text();
+                    color: root.failed > 0 ? #e0545e : Theme.muted;
+                    font-size: 12px;
+                    vertical-alignment: center;
+                    horizontal-alignment: right;
+                    horizontal-stretch: 1;
+                }
+                if !root.confirming: Rectangle { width: 10px; }
+                if !root.confirming: Rectangle {
+                    width: send-label.preferred-width + 32px;
+                    border-radius: 10px;
+                    background: root.sending ? Theme.field : Theme.strong;
+                    send-label := Text {
+                        text: root.sending ? @tr("Sending…") : root.schedule != "" ? Say.text("compose.schedule") : @tr("Send");
+                        color: root.sending ? Theme.muted : Theme.on-strong;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                    TouchArea { enabled: !root.sending; clicked => { root.send(); } }
+                }
+                if !root.confirming: Rectangle {
+                    width: 30px;
+                    border-radius: 10px;
+                    background: Theme.strong;
+                    Icon {
+                        width: 16px;
+                        height: 16px;
+                        source: @image-url("icons/chevron-down.svg");
+                        tint: Theme.on-strong;
+                    }
+                    TouchArea {
+                        enabled: !root.sending;
+                        mouse-cursor: pointer;
+                        clicked => { root.panel = root.panel == 2 ? 0 : 2; }
+                    }
+                }
+            }
+        }
+    }
+}
+
+component SearchSwitch {
+    in property <string> label;
+    in-out property <bool> on;
+    callback toggled();
+    height: 32px;
+    Rectangle {
+        x: 20px;
+        y: 8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border-width: root.on ? 0 : 1px;
+        border-color: Theme.muted;
+        background: root.on ? Theme.accent : transparent;
+        if root.on: Icon { source: @image-url("icons/check.svg"); tint: #ffffff; width: 12px; height: 12px; }
+    }
+    Text {
+        x: 46px;
+        height: 100%;
+        text: root.label;
+        color: Theme.foreground;
+        font-size: 13px;
+        vertical-alignment: center;
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.on = !root.on;
+            root.toggled();
+        }
+    }
+}
+
+// Writes a search for those who would rather not learn its language, and shows them the words.
+export component SearchBuilder inherits Window {
+    in-out property <string> words;
+    in-out property <string> from;
+    in-out property <string> to;
+    in-out property <string> subject;
+    in-out property <string> pattern;
+    in-out property <string> after;
+    in-out property <string> before;
+    callback pick-date(string, int);
+    in-out property <bool> has-attachment;
+    in-out property <bool> unread;
+    in-out property <bool> starred;
+    in property <string> preview;
+    in property <int> problem;
+    in property <string> word;
+    in property <bool> own-close;
+    callback changed();
+    callback apply();
+    callback dismissed();
+    public function begin() { first.take-focus(); }
+
+    pure function problem-text() -> string {
+        if root.problem == 1 { return @tr("A quotation mark is not closed."); }
+        if root.problem == 3 || root.problem == 2 { return @tr("This regular expression is not valid."); }
+        if root.problem == 4 { return @tr("This regular expression is too long."); }
+        if root.problem == 6 { return @tr("\"{}\" is not a date. Use 2026-11-30.", root.word); }
+        if root.problem == 9 { return @tr("The start date comes after the end date."); }
+        return root.problem > 0 ? @tr("Something here is not right.") : "";
+    }
+
+    title: @tr("Build a search");
+    preferred-width: 520px;
+    preferred-height: 560px;
+    min-width: 420px;
+    min-height: 480px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    forward-focus: scope;
+    scope := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Escape { root.dismissed(); return accept; }
+            if event.text == Key.Return { root.apply(); return accept; }
+            return reject;
+        }
+        VerticalLayout {
+            padding-top: 14px;
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 12px;
+                padding-bottom: 8px;
+                vertical-stretch: 0;
+                Text { text: root.title; color: Theme.foreground; font-size: 16px; font-weight: 700; vertical-alignment: center; horizontal-stretch: 1; }
+                if root.own-close: IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => { root.dismissed(); }
+                }
+            }
+            first := ComposeField { label: @tr("Words"); text <=> root.words; edited => { root.changed(); } submitted => { root.apply(); } }
+            ComposeField { label: @tr("From"); text <=> root.from; edited => { root.changed(); } submitted => { root.apply(); } }
+            ComposeField { label: @tr("To"); text <=> root.to; edited => { root.changed(); } submitted => { root.apply(); } }
+            ComposeField { label: @tr("Subject"); text <=> root.subject; edited => { root.changed(); } submitted => { root.apply(); } }
+            ComposeField { label: @tr("Pattern"); text <=> root.pattern; edited => { root.changed(); } submitted => { root.apply(); } }
+            DateChoice {
+                label: @tr("From date");
+                value: root.after;
+                pick => { root.pick-date(self.label, 0); }
+                clear => { root.after = ""; root.changed(); }
+            }
+            DateChoice {
+                label: @tr("To date");
+                value: root.before;
+                pick => { root.pick-date(self.label, 1); }
+                clear => { root.before = ""; root.changed(); }
+            }
+            Rectangle { height: 6px; vertical-stretch: 0; }
+            SearchSwitch { label: @tr("With attachments"); on <=> root.has-attachment; toggled => { root.changed(); } }
+            SearchSwitch { label: @tr("Unread"); on <=> root.unread; toggled => { root.changed(); } }
+            SearchSwitch { label: @tr("Starred"); on <=> root.starred; toggled => { root.changed(); } }
+            Rectangle { vertical-stretch: 1; }
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 20px;
+                vertical-stretch: 0;
+                Text {
+                    text: root.problem > 0 ? root.problem-text() : root.preview;
+                    color: root.problem > 0 ? #e0545e : Theme.accent;
+                    font-family: root.problem > 0 ? "Inter Variable" : Theme.mono;
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+            }
+            HorizontalLayout {
+                padding: 12px;
+                padding-left: 20px;
+                padding-right: 16px;
+                alignment: end;
+                vertical-stretch: 0;
+                spacing: 6px;
+                Rectangle {
+                    width: cancel-label.preferred-width + 24px;
+                    height: 36px;
+                    border-radius: 10px;
+                    background: cancel-touch.has-hover ? Theme.hover : transparent;
+                    cancel-label := Text { text: @tr("Cancel"); color: Theme.foreground; font-size: 13px; font-weight: 500; }
+                    cancel-touch := TouchArea { mouse-cursor: pointer; clicked => { root.dismissed(); } }
+                }
+                Rectangle {
+                    width: apply-label.preferred-width + 32px;
+                    height: 36px;
+                    border-radius: 10px;
+                    background: root.problem > 0 ? Theme.field : Theme.strong;
+                    apply-label := Text {
+                        text: @tr("Search");
+                        color: root.problem > 0 ? Theme.muted : Theme.on-strong;
+                        font-size: 13px;
+                        font-weight: 600;
+                    }
+                    TouchArea { enabled: root.problem == 0; mouse-cursor: pointer; clicked => { root.apply(); } }
+                }
+            }
+        }
+    }
+}
+

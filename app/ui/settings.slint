@@ -1,0 +1,1200 @@
+// Settings are a mode of the main window, not a dialog: the mail goes away while they are open. A page
+// is a list of sections that Rust puts together, and this file only knows how to draw each kind of row,
+// so a tab costs nothing until it is opened.
+
+import { ScrollView } from "std-widgets.slint";
+import { Theme, Icon, IconButton } from "base.slint";
+import { CodeField } from "auth.slint";
+import { Say } from "say.slint";
+
+// A run of text of one colour, of the kinds `code-colour` knows.
+export struct CodePiece {
+    text: string,
+    kind: int,
+}
+
+export struct CodeLine {
+    pieces: [CodePiece],
+}
+
+export struct SettingsRow {
+    // See the `Kind` constants in `settings/rows.rs`.
+    kind: int,
+    id: string,
+    title: string,
+    detail: string,
+    value: string,
+    tag: string,
+    tag-bad: bool,
+    tag-good: bool,
+    // Hidden until pointed at: a screen can be seen by more than its owner.
+    hidden: bool,
+    hidden-detail: bool,
+    // A line above it, for entries of a list.
+    ruled: bool,
+    mono: bool,
+    bad: bool,
+    on: bool,
+    options: [string],
+    selected: int,
+    text: string,
+    secret: bool,
+    lines: int,
+    button: string,
+    second: string,
+    ghost: bool,
+    enabled: bool,
+    share: float,
+    picture: image,
+    code: [CodeLine],
+}
+
+export struct SettingsSection {
+    id: string,
+    title: string,
+    action: string,
+    // Drawn as a card of its own, for things of the same kind one after another.
+    card: bool,
+    rows: [SettingsRow],
+}
+
+export struct TabRow {
+    id: string,
+    title: string,
+    icon: string,
+    heading: string,
+}
+
+export global Settings {
+    in-out property <bool> open;
+    in property <string> tab;
+    in property <string> title;
+    in property <[TabRow]> tabs;
+    in-out property <string> query;
+    in property <[SettingsSection]> sections;
+    in property <bool> loading;
+    // Goes up when a new page opens, which sends the view back to the top.
+    in property <int> page;
+    // A word about what just happened, or went wrong.
+    in-out property <string> notice;
+    callback search(string);
+    callback go(string);
+    callback back();
+    // Which row, which of its parts, and what it now says.
+    callback event(string, int, int);
+    callback edited(string);
+}
+
+component Caption inherits Text {
+    color: Theme.foreground;
+    font-size: 14px;
+    vertical-alignment: center;
+}
+
+component Small inherits Text {
+    color: Theme.muted;
+    font-size: 13px;
+    wrap: word-wrap;
+    // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+    height: self.preferred-height;
+    vertical-alignment: center;
+}
+
+export component SmallButton {
+    in property <string> text;
+    in property <bool> ghost: true;
+    in property <bool> enabled: true;
+    in property <bool> large;
+    in property <image> icon;
+    in property <bool> has-icon;
+    callback clicked;
+    height: root.large ? 38px : 30px;
+    Rectangle {
+        border-radius: self.height / 2;
+        border-width: root.ghost ? 1px : 0;
+        border-color: Theme.border;
+        background: !root.ghost ? Theme.strong : touch.has-hover && root.enabled ? Theme.hover : transparent;
+        opacity: !root.enabled ? 0.45 : !root.ghost && touch.has-hover ? 0.88 : 1;
+        animate background { duration: 120ms; }
+    }
+    HorizontalLayout {
+        padding-left: root.large ? 18px : 12px;
+        padding-right: self.padding-left;
+        spacing: 8px;
+        alignment: center;
+        if root.has-icon: Icon {
+            y: (parent.height - self.height) / 2;
+            width: 16px;
+            height: 16px;
+            source: root.icon;
+            tint: root.ghost ? Theme.foreground : Theme.on-strong;
+        }
+        Text {
+            text: root.text;
+            color: root.ghost ? Theme.foreground : Theme.on-strong;
+            font-size: root.large ? 14px : 13px;
+            font-weight: 600;
+            vertical-alignment: center;
+            opacity: root.enabled ? 1 : 0.45;
+        }
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Segmented {
+    in property <[string]> options;
+    in property <int> selected;
+    callback chosen(int);
+    // Fixed: inside a layout with room to spare it would swell.
+    height: 30px;
+    Rectangle {
+        border-radius: self.height / 2;
+        background: Theme.hover;
+    }
+    HorizontalLayout {
+        padding: 3px;
+        for option[index] in root.options: Rectangle {
+            border-radius: self.height / 2;
+            background: index == root.selected ? Theme.panel : transparent;
+            animate background { duration: 150ms; }
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                Text {
+                    text: option;
+                    color: index == root.selected ? Theme.foreground : Theme.muted;
+                    font-size: 13px;
+                    font-weight: 600;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.chosen(index); }
+            }
+        }
+    }
+}
+
+export component Switch {
+    in property <bool> on;
+    callback toggled();
+    width: 40px;
+    height: 24px;
+    Rectangle {
+        border-radius: 12px;
+        background: root.on ? Theme.accent : Theme.border;
+        animate background { duration: 180ms; }
+        Rectangle {
+            x: root.on ? 18px : 2px;
+            y: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            background: #fff;
+            animate x { duration: 180ms; easing: ease-out; }
+        }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.toggled(); }
+    }
+}
+
+component Tag {
+    in property <string> text;
+    in property <bool> bad;
+    in property <bool> good;
+    private property <color> tone: root.bad ? Theme.danger : root.good ? Theme.success : Theme.accent;
+    height: 22px;
+    Rectangle {
+        border-radius: self.height / 2;
+        background: root.tone.transparentize(0.86);
+    }
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        Text {
+            text: root.text;
+            color: root.tone;
+            font-size: 12px;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// Under moving dust until pointed at, like a spoiler in a chat. The loop is baked into the tiles in
+// `ui/dust`, which join at their edges, so a strip of any width is one tile
+// repeated, and a page at rest pays for a few pictures a second.
+component Dust {
+    in property <color> color;
+    private property <int> frame;
+    private property <[image]> frames: [@image-url("dust/0.png"), @image-url("dust/1.png"), @image-url("dust/2.png"), @image-url("dust/3.png"), @image-url("dust/4.png"), @image-url("dust/5.png"), @image-url("dust/6.png"), @image-url("dust/7.png"), @image-url("dust/8.png"), @image-url("dust/9.png"), @image-url("dust/10.png"), @image-url("dust/11.png"), @image-url("dust/12.png"), @image-url("dust/13.png"), @image-url("dust/14.png"), @image-url("dust/15.png"), @image-url("dust/16.png"), @image-url("dust/17.png"), @image-url("dust/18.png"), @image-url("dust/19.png"), @image-url("dust/20.png"), @image-url("dust/21.png"), @image-url("dust/22.png"), @image-url("dust/23.png"), @image-url("dust/24.png"), @image-url("dust/25.png"), @image-url("dust/26.png"), @image-url("dust/27.png"), @image-url("dust/28.png"), @image-url("dust/29.png"), @image-url("dust/30.png"), @image-url("dust/31.png"), @image-url("dust/32.png"), @image-url("dust/33.png"), @image-url("dust/34.png"), @image-url("dust/35.png"), @image-url("dust/36.png"), @image-url("dust/37.png"), @image-url("dust/38.png"), @image-url("dust/39.png"), @image-url("dust/40.png"), @image-url("dust/41.png"), @image-url("dust/42.png"), @image-url("dust/43.png"), @image-url("dust/44.png"), @image-url("dust/45.png"), @image-url("dust/46.png"), @image-url("dust/47.png")];
+    Timer {
+        interval: 66ms;
+        running: true;
+        triggered => { root.frame = mod(root.frame + 1, root.frames.length); }
+    }
+    Image {
+        width: 100%;
+        height: 100%;
+        source: root.frames[root.frame];
+        colorize: root.color;
+        horizontal-tiling: repeat;
+    }
+}
+
+export component Secret {
+    in property <string> text;
+    in property <bool> hidden;
+    in property <bool> mono;
+    in property <color> color: Theme.muted;
+    in property <length> size: 13px;
+    in property <TextHorizontalAlignment> align: left;
+    private property <bool> shown: !root.hidden || touch.has-hover || Theme.reveal-private;
+    private property <length> covered: min(line.preferred-width, root.width);
+    line := Text {
+        width: 100%;
+        text: root.text;
+        color: root.shown ? root.color : transparent;
+        font-size: root.size;
+        font-family: root.mono ? Theme.mono : "";
+        overflow: elide;
+        horizontal-alignment: root.align;
+        vertical-alignment: center;
+        animate color { duration: 150ms; }
+    }
+    if !root.shown: Dust {
+        x: root.align == TextHorizontalAlignment.right ? root.width - self.width : 0;
+        y: (root.height - self.height) / 2;
+        width: root.covered;
+        height: root.size + 2px;
+        color: root.color;
+    }
+    touch := TouchArea { enabled: root.hidden; }
+}
+
+// Sieve in colour. The field stays a real one, with its text transparent over a coloured copy, so
+// typing, selection and undo are the toolkit's own. Both use one fixed-width font in one weight, or
+// the colours would drift from the caret. A line never wraps, and the field scrolls sideways.
+component CodeArea {
+    in-out property <string> text;
+    in property <[CodeLine]> code;
+    in property <int> lines;
+    callback edited();
+    private property <length> caret-x;
+    private property <length> caret-y;
+    private property <bool> caret-on: true;
+    private property <length> line-height: sizing.preferred-height / 10;
+
+    pure function code-colour(kind: int) -> color {
+        if kind == 1 { return Theme.muted; }
+        if kind == 2 { return #00a372; }
+        if kind == 3 { return Theme.accent; }
+        if kind == 4 { return #c2571a; }
+        if kind == 5 { return #b5179e; }
+        return Theme.foreground;
+    }
+
+    // A field sets its lines closer than single `Text`s do, and a difference a pixel small adds up.
+    sizing := TextInput {
+        visible: false;
+        enabled: false;
+        single-line: false;
+        text: "M\nM\nM\nM\nM\nM\nM\nM\nM\nM";
+        font-size: 13px;
+        font-family: Theme.mono;
+    }
+    height: max(root.lines * 20px, input.preferred-height) + 18px;
+    Rectangle {
+        border-radius: 8px;
+        border-width: 1px;
+        border-color: input.has-focus ? Theme.accent : Theme.border;
+        clip: true;
+        scroller := Flickable {
+            x: 10px;
+            y: 9px;
+            width: parent.width - 20px;
+            height: parent.height - 18px;
+            content-width: max(self.width, input.preferred-width + 8px);
+            content-height: self.height;
+            VerticalLayout {
+                alignment: start;
+                for line in root.code: HorizontalLayout {
+                    alignment: start;
+                    height: root.line-height;
+                    for piece in line.pieces: Text {
+                        text: piece.text;
+                        color: root.code-colour(piece.kind);
+                        font-size: 13px;
+                        font-family: Theme.mono;
+                    }
+                }
+            }
+            input := TextInput {
+                width: scroller.content-width;
+                height: scroller.content-height;
+                text <=> root.text;
+                single-line: false;
+                wrap: no-wrap;
+                color: transparent;
+                selection-background-color: Theme.selected;
+                selection-foreground-color: Theme.foreground;
+                font-size: 13px;
+                font-family: Theme.mono;
+                edited => { root.edited(); }
+                cursor-position-changed(point) => {
+                    root.caret-x = point.x;
+                    root.caret-y = point.y;
+                    if point.x + scroller.content-x > scroller.width - 24px {
+                        scroller.content-x = scroller.width - 24px - point.x;
+                    } else if point.x + scroller.content-x < 0 {
+                        scroller.content-x = min(0, 24px - point.x);
+                    }
+                }
+            }
+            // The field's own caret takes the colour of its text, which is transparent here.
+            if input.has-focus && root.caret-on: Rectangle {
+                x: root.caret-x;
+                y: root.caret-y;
+                width: 1px;
+                height: root.line-height;
+                background: Theme.foreground;
+            }
+        }
+        Timer {
+            interval: 530ms;
+            running: input.has-focus;
+            triggered => { root.caret-on = !root.caret-on; }
+        }
+    }
+}
+
+export component Field {
+    in property <string> label;
+    in-out property <string> text;
+    in property <bool> secret;
+    in property <int> lines;
+    in property <string> hint;
+    in property <bool> mono;
+    in property <bool> autofocus;
+    in property <[CodeLine]> code;
+    callback edited();
+    callback accepted();
+    VerticalLayout {
+        spacing: 4px;
+        if root.label != "": Small { text: root.label; }
+        if root.lines <= 1 && root.code.length == 0: Rectangle {
+            height: 34px;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: input.has-focus ? Theme.accent : Theme.border;
+            input := TextInput {
+                x: 10px;
+                width: parent.width - 20px;
+                height: 100%;
+                text <=> root.text;
+                color: Theme.foreground;
+                selection-background-color: Theme.selected;
+                // The toolkit's mask is a fixed black circle as wide as a capital, so only its size can change.
+                font-size: root.secret && root.text != "" ? 9px : 14px;
+                letter-spacing: root.secret ? 1px : 0;
+                font-family: root.mono ? Theme.mono : "";
+                vertical-alignment: center;
+                input-type: root.secret ? InputType.password : InputType.text;
+                edited => { root.edited(); }
+                accepted => { root.accepted(); }
+                init => {
+                    if root.autofocus {
+                        self.focus();
+                    }
+                }
+            }
+            if input.text == "" && root.hint != "": Text {
+                x: 10px;
+                text: root.hint;
+                color: Theme.faint;
+                font-size: 14px;
+                vertical-alignment: center;
+            }
+        }
+        if root.code.length > 0: CodeArea {
+            text <=> root.text;
+            code: root.code;
+            lines: root.lines;
+            edited => { root.edited(); }
+        }
+        // It grows with what is written, and the page scrolls.
+        if root.lines > 1 && root.code.length == 0: Rectangle {
+            height: max(root.lines * 20px, area.preferred-height) + 18px;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: area.has-focus ? Theme.accent : Theme.border;
+            area := TextInput {
+                x: 10px;
+                y: 9px;
+                width: parent.width - 20px;
+                height: parent.height - 18px;
+                text <=> root.text;
+                single-line: false;
+                wrap: word-wrap;
+                color: Theme.foreground;
+                selection-background-color: Theme.selected;
+                font-size: root.mono ? 13px : 14px;
+                font-family: root.mono ? Theme.mono : "";
+                edited => { root.edited(); }
+            }
+        }
+    }
+}
+
+// What a key looks like on the keyboard help.
+component Key {
+    in property <string> text;
+    min-width: 24px;
+    height: 22px;
+    Rectangle {
+        border-radius: 6px;
+        border-width: 1px;
+        border-color: Theme.border;
+    }
+    HorizontalLayout {
+        padding-left: 6px;
+        padding-right: 6px;
+        Text {
+            text: root.text;
+            color: Theme.foreground;
+            font-size: 12px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component RowView {
+    in-out property <SettingsRow> line;
+    callback event(int, int);
+    callback edited();
+    private property <[color]> swatch-colors: [#3470b8, #4b5563, #2f7d5b, #7a4fa3, #a8703a, #000000];
+    VerticalLayout {
+        // An entry: what it is, and what can be done with it.
+        if root.line.kind == 0: HorizontalLayout {
+            padding-top: root.line.ruled ? 8px : 6px;
+            padding-bottom: root.line.ruled ? 8px : 6px;
+            spacing: 12px;
+            VerticalLayout {
+                horizontal-stretch: 1;
+                alignment: center;
+                spacing: 1px;
+                if root.line.title != "": Text {
+                    text: root.line.title;
+                    color: root.line.bad ? Theme.danger : Theme.foreground;
+                    font-size: 14px;
+                    overflow: elide;
+                }
+                if root.line.detail != "": Secret {
+                    height: 18px;
+                    text: root.line.detail;
+                    hidden: root.line.hidden-detail;
+                    mono: root.line.mono;
+                    size: root.line.mono ? 12px : 13px;
+                }
+            }
+            if root.line.value != "": Secret {
+                y: (parent.height - self.height) / 2;
+                height: 20px;
+                min-width: 40px;
+                horizontal-stretch: 0;
+                preferred-width: value-width.preferred-width;
+                text: root.line.value;
+                hidden: root.line.hidden;
+                align: right;
+            }
+            if root.line.tag != "": Tag {
+                y: (parent.height - self.height) / 2;
+                text: root.line.tag;
+                bad: root.line.tag-bad;
+                good: root.line.tag-good;
+            }
+            if root.line.button != "": SmallButton {
+                y: (parent.height - self.height) / 2;
+                text: root.line.button;
+                clicked => { root.event(0, 0); }
+            }
+            if root.line.second != "": SmallButton {
+                y: (parent.height - self.height) / 2;
+                text: root.line.second;
+                clicked => { root.event(1, 0); }
+            }
+        }
+        if root.line.kind == 1: HorizontalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            spacing: 16px;
+            VerticalLayout {
+                horizontal-stretch: 1;
+                alignment: center;
+                Text {
+                    text: root.line.title;
+                    color: Theme.foreground;
+                    font-size: 14px;
+                    wrap: word-wrap;
+                    // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+                    height: self.preferred-height;
+                }
+                if root.line.detail != "": Small { text: root.line.detail; }
+            }
+            Switch {
+                y: (parent.height - self.height) / 2;
+                on: root.line.on;
+                opacity: root.line.enabled ? 1 : 0.45;
+            }
+        }
+        if root.line.kind == 2: HorizontalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            spacing: 16px;
+            Caption {
+                horizontal-stretch: 1;
+                text: root.line.title;
+                wrap: word-wrap;
+                // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+                height: self.preferred-height;
+            }
+            Segmented {
+                options: root.line.options;
+                selected: root.line.selected;
+                chosen(index) => { root.event(0, index); }
+            }
+        }
+        // The palettes, each on a button of its own colour.
+        if root.line.kind == 3: HorizontalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            spacing: 8px;
+            Caption {
+                horizontal-stretch: 1;
+                text: root.line.title;
+            }
+            for option[index] in root.line.options: Rectangle {
+                height: 28px;
+                border-radius: 14px;
+                border-width: 1px;
+                border-color: index == root.line.selected ? Theme.accent : Theme.border;
+                HorizontalLayout {
+                    padding-left: 6px;
+                    padding-right: 10px;
+                    spacing: 6px;
+                    Rectangle {
+                        y: (parent.height - self.height) / 2;
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 8px;
+                        background: root.swatch-colors[index];
+                    }
+                    Text {
+                        text: option;
+                        color: Theme.foreground;
+                        font-size: 13px;
+                        font-weight: index == root.line.selected ? 600 : 400;
+                        vertical-alignment: center;
+                    }
+                }
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.event(0, index); }
+                }
+            }
+        }
+        if root.line.kind == 4: Small {
+            text: root.line.detail;
+        }
+        if root.line.kind == 5: Text {
+            text: root.line.detail;
+            color: Theme.muted;
+            opacity: 0.6;
+            font-size: 12px;
+            wrap: word-wrap;
+            // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+            height: self.preferred-height;
+        }
+        if root.line.kind == 6: VerticalLayout {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            Field {
+                label: root.line.title;
+                text <=> root.line.text;
+                secret: root.line.secret;
+                lines: root.line.lines;
+                hint: root.line.detail;
+                mono: root.line.mono;
+                code: root.line.code;
+                autofocus: root.line.on;
+                edited => { root.edited(); }
+            }
+        }
+        // A code of six digits, in the same cells as at sign-in.
+        if root.line.kind == 17: VerticalLayout {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            spacing: 4px;
+            if root.line.title != "": Small { text: root.line.title; }
+            HorizontalLayout {
+                alignment: start;
+                CodeField {
+                    width: 300px;
+                    code <=> root.line.text;
+                    cells: root.line.options;
+                    autofocus: root.line.on;
+                    edited => { root.edited(); }
+                }
+            }
+        }
+        if root.line.kind == 7: HorizontalLayout {
+            padding-top: 8px;
+            padding-bottom: 4px;
+            spacing: 8px;
+            alignment: start;
+            SmallButton {
+                text: root.line.button;
+                ghost: root.line.ghost;
+                enabled: root.line.enabled;
+                clicked => { root.event(0, 0); }
+            }
+            if root.line.second != "": SmallButton {
+                text: root.line.second;
+                clicked => { root.event(1, 0); }
+            }
+        }
+        if root.line.kind == 8: VerticalLayout {
+            padding-top: 6px;
+            padding-bottom: 8px;
+            spacing: 6px;
+            Rectangle {
+                height: 6px;
+                border-radius: 3px;
+                background: Theme.border;
+                clip: true;
+                Rectangle {
+                    x: 0;
+                    width: parent.width * root.line.share;
+                    background: Theme.accent;
+                    animate width { duration: 300ms; }
+                }
+            }
+            Small { text: root.line.value; }
+        }
+        // A choice from a list, which the system's own menu shows.
+        if root.line.kind == 9: HorizontalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            spacing: 16px;
+            Caption {
+                horizontal-stretch: 1;
+                text: root.line.title;
+            }
+            Rectangle {
+                height: 34px;
+                max-width: 320px;
+                border-radius: 17px;
+                border-width: 1px;
+                border-color: Theme.border;
+                background: choosing.has-hover ? Theme.hover : transparent;
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 10px;
+                    spacing: 8px;
+                    Text {
+                        text: root.line.value;
+                        color: Theme.foreground;
+                        font-size: 13px;
+                        overflow: elide;
+                        vertical-alignment: center;
+                    }
+                    Icon {
+                        y: (parent.height - self.height) / 2;
+                        width: 14px;
+                        height: 14px;
+                        source: @image-url("icons/chevrons-up-down.svg");
+                        tint: Theme.muted;
+                    }
+                }
+                choosing := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.event(0, 0); }
+                }
+            }
+        }
+        if root.line.kind == 10: Text {
+            text: root.line.detail;
+            color: Theme.danger;
+            font-size: 13px;
+            wrap: word-wrap;
+            // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+            height: self.preferred-height;
+        }
+        if root.line.kind == 11: HorizontalLayout {
+            padding-top: 3px;
+            padding-bottom: 3px;
+            spacing: 4px;
+            Caption {
+                horizontal-stretch: 1;
+                text: root.line.title;
+            }
+            for key in root.line.options: Key { text: key; }
+        }
+        // A record of the journal.
+        if root.line.kind == 12: HorizontalLayout {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            spacing: 10px;
+            // To the millisecond, and room for a twelve-hour clock's AM.
+            Text {
+                width: 190px;
+                text: root.line.value;
+                color: Theme.muted;
+                font-size: 12px;
+                font-family: Theme.mono;
+            }
+            Text {
+                width: 110px;
+                text: root.line.tag;
+                color: Theme.muted;
+                font-size: 12px;
+                font-family: Theme.mono;
+                overflow: elide;
+            }
+            Text {
+                horizontal-stretch: 1;
+                text: root.line.title;
+                color: root.line.selected == 2 ? Theme.danger : root.line.selected == 1 ? Theme.accent : Theme.foreground;
+                font-size: 12px;
+                font-family: Theme.mono;
+                // By letters, not words: a record can hold an address of 60 letters with no space, which ran past
+                // the column's edge.
+                wrap: char-wrap;
+                // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+                height: self.preferred-height;
+            }
+        }
+        if root.line.kind == 13: Text {
+            text: root.line.title;
+            color: Theme.foreground;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        if root.line.kind == 14: HorizontalLayout {
+            padding-bottom: 6px;
+            spacing: 6px;
+            alignment: start;
+            for label[index] in root.line.options: Tag {
+                text: label;
+                bad: mod(floor(root.line.selected / pow(2, index)), 2) == 1;
+                good: !self.bad;
+            }
+        }
+        // A node of a Tor circuit, on a rail from the person down to Proton. `selected` holds 1 for the first,
+        // 2 for the last, 4 when the way down is hidden and 8 when the way up is, each drawn as a broken line.
+        if root.line.kind == 18: HorizontalLayout {
+            spacing: 14px;
+            Rectangle {
+                width: 14px;
+                Rectangle {
+                    x: (parent.width - self.width) / 2;
+                    y: 0;
+                    width: 2px;
+                    height: parent.height / 2;
+                    background: Theme.border;
+                    visible: mod(root.line.selected, 2) == 0 && mod(floor(root.line.selected / 8), 2) == 0;
+                }
+                for dash in 8: Rectangle {
+                    x: (parent.width - self.width) / 2;
+                    y: parent.height / 2 - 12px - dash * 7px;
+                    width: 2px;
+                    height: 4px;
+                    background: Theme.muted;
+                    visible: mod(floor(root.line.selected / 8), 2) == 1 && self.y >= 0;
+                }
+                Rectangle {
+                    x: (parent.width - self.width) / 2;
+                    y: parent.height / 2;
+                    width: 2px;
+                    height: parent.height / 2;
+                    background: Theme.border;
+                    visible: mod(floor(root.line.selected / 2), 2) == 0 && mod(floor(root.line.selected / 4), 2) == 0;
+                }
+                for dash in 8: Rectangle {
+                    x: (parent.width - self.width) / 2;
+                    y: parent.height / 2 + 8px + dash * 7px;
+                    width: 2px;
+                    height: 4px;
+                    background: Theme.muted;
+                    visible: mod(floor(root.line.selected / 4), 2) == 1 && self.y + self.height <= parent.height;
+                }
+                Rectangle {
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 6px;
+                    border-width: 2px;
+                    border-color: root.line.on ? Theme.accent : Theme.muted;
+                    background: root.line.on ? Theme.accent : Theme.window;
+                }
+            }
+            VerticalLayout {
+                horizontal-stretch: 1;
+                alignment: center;
+                padding-top: 9px;
+                padding-bottom: 9px;
+                spacing: 2px;
+                Text {
+                    text: root.line.title;
+                    color: Theme.foreground;
+                    font-size: 14px;
+                }
+                if root.line.detail != "": Text {
+                    text: root.line.detail;
+                    color: Theme.muted;
+                    font-size: 12px;
+                    wrap: word-wrap;
+                    // Slint measures a scroller by single lines: a wrapped text says its real height itself.
+                    height: self.preferred-height;
+                }
+                if root.line.text != "": Text {
+                    text: root.line.text;
+                    color: Theme.muted;
+                    font-size: 12px;
+                    font-family: Theme.mono;
+                    overflow: elide;
+                }
+            }
+            if root.line.value != "": Text {
+                text: root.line.value;
+                color: Theme.foreground;
+                font-size: 12px;
+                font-family: Theme.mono;
+                vertical-alignment: center;
+                horizontal-alignment: right;
+            }
+        }
+        if root.line.kind == 16: HorizontalLayout {
+            padding-top: 6px;
+            padding-bottom: 6px;
+            alignment: start;
+            Image {
+                width: 200px;
+                height: 200px;
+                source: root.line.picture;
+                image-rendering: pixelated;
+            }
+        }
+        if root.line.kind == 15: HorizontalLayout {
+            padding-top: 4px;
+            padding-bottom: 4px;
+            spacing: 8px;
+            Caption {
+                horizontal-stretch: 1;
+                text: root.line.title;
+                overflow: elide;
+            }
+            Switch {
+                y: (parent.height - self.height) / 2;
+                on: root.line.on;
+                toggled => { root.event(2, root.line.on ? 0 : 1); }
+            }
+            IconButton {
+                icon: @image-url("icons/pencil.svg");
+                clicked => { root.event(0, 0); }
+            }
+            IconButton {
+                icon: @image-url("icons/trash.svg");
+                clicked => { root.event(1, 0); }
+            }
+        }
+    }
+    if root.line.ruled: Rectangle {
+        x: 0;
+        y: 0;
+        height: 1px;
+        background: Theme.border;
+    }
+    // A switch answers anywhere on its row, the way a label does.
+    if root.line.kind == 1: TouchArea {
+        enabled: root.line.enabled;
+        mouse-cursor: root.line.enabled ? pointer : default;
+        clicked => { root.event(0, root.line.on ? 0 : 1); }
+    }
+    value-width := Text {
+        visible: false;
+        text: root.line.value;
+        font-size: 13px;
+    }
+}
+
+component SectionView {
+    in-out property <SettingsSection> section;
+    in property <bool> first;
+    if root.section.card: Rectangle {
+        y: 10px;
+        height: parent.height - 10px;
+        border-radius: 10px;
+        border-width: 1px;
+        border-color: Theme.border;
+    }
+    VerticalLayout {
+        alignment: start;
+        padding-top: 24px;
+        padding-bottom: root.section.card ? 14px : 20px;
+        padding-left: root.section.card ? 14px : 0;
+        padding-right: root.section.card ? 14px : 0;
+        spacing: 4px;
+        if root.section.title != "" || root.section.action != "": HorizontalLayout {
+            padding-bottom: 8px;
+            spacing: 16px;
+            Text {
+                horizontal-stretch: 1;
+                text: root.section.title;
+                color: Theme.foreground;
+                font-size: 16px;
+                font-weight: 700;
+                vertical-alignment: center;
+            }
+            if root.section.action != "": SmallButton {
+                text: root.section.action;
+                clicked => { Settings.event(root.section.id, 0, 0); }
+            }
+        }
+        for row in root.section.rows: RowView {
+            line <=> row;
+            event(part, value) => { Settings.event(row.id, part, value); }
+            edited => { Settings.edited(row.id); }
+        }
+    }
+    if !root.first && !root.section.card: Rectangle {
+        x: 0;
+        y: 0;
+        height: 2px;
+        background: Theme.border;
+    }
+}
+
+component TabItem {
+    in property <TabRow> tab;
+    in property <bool> active;
+    pure function picture(name: string) -> image {
+        if name == "house" { return @image-url("icons/house.svg"); }
+        if name == "credit-card" { return @image-url("icons/credit-card.svg"); }
+        if name == "key-round" { return @image-url("icons/key-round.svg"); }
+        if name == "user-round" { return @image-url("icons/user-round.svg"); }
+        if name == "languages" { return @image-url("icons/languages.svg"); }
+        if name == "palette" { return @image-url("icons/palette.svg"); }
+        if name == "shield" { return @image-url("icons/shield.svg"); }
+        if name == "gift" { return @image-url("icons/gift.svg"); }
+        if name == "file-input" { return @image-url("icons/file-input.svg"); }
+        if name == "download" { return @image-url("icons/download.svg"); }
+        if name == "mail" { return @image-url("icons/mail.svg"); }
+        if name == "shield-check" { return @image-url("icons/shield-check.svg"); }
+        if name == "id-card" { return @image-url("icons/id-card.svg"); }
+        if name == "folder" { return @image-url("icons/folder.svg"); }
+        if name == "funnel" { return @image-url("icons/funnel.svg"); }
+        if name == "forward" { return @image-url("icons/forward.svg"); }
+        if name == "globe" { return @image-url("icons/globe.svg"); }
+        if name == "lock-keyhole" { return @image-url("icons/lock-keyhole.svg"); }
+        if name == "server" { return @image-url("icons/server.svg"); }
+        if name == "hard-drive-download" { return @image-url("icons/hard-drive-download.svg"); }
+        if name == "users" { return @image-url("icons/users.svg"); }
+        if name == "monitor" { return @image-url("icons/monitor.svg"); }
+        if name == "activity" { return @image-url("icons/activity.svg"); }
+        if name == "circuit" { return @image-url("icons/circuit.svg"); }
+        if name == "scroll-text" { return @image-url("icons/scroll-text.svg"); }
+        if name == "qr-code" { return @image-url("icons/qr-code.svg"); }
+        if name == "keyboard" { return @image-url("icons/keyboard.svg"); }
+        return @image-url("icons/info.svg");
+    }
+    VerticalLayout {
+        if root.tab.heading != "": Text {
+            height: 30px;
+            text: root.tab.heading;
+            color: Theme.faint;
+            font-size: 12px;
+            vertical-alignment: bottom;
+        }
+        Rectangle {
+            height: 34px;
+            border-radius: 8px;
+            background: root.active ? Theme.selected : touch.has-hover ? Theme.hover : transparent;
+            HorizontalLayout {
+                padding-left: 10px;
+                padding-right: 10px;
+                spacing: 10px;
+                Icon {
+                    y: (parent.height - self.height) / 2;
+                    source: root.picture(root.tab.icon);
+                    tint: root.active ? Theme.foreground : Theme.muted;
+                }
+                Text {
+                    text: root.tab.title;
+                    color: Theme.foreground;
+                    font-size: 14px;
+                    font-weight: root.active ? 600 : 400;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+            }
+            touch := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { Settings.go(root.tab.id); }
+            }
+        }
+    }
+}
+
+export component SettingsMode {
+    in property <length> top-inset;
+    init => { scope.focus(); }
+    scope := FocusScope {
+        width: 0;
+        height: 0;
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                Settings.back();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    TouchArea { }
+    Rectangle { background: Theme.panel; }
+    HorizontalLayout {
+        Rectangle {
+            width: 272px;
+            background: Theme.window;
+            VerticalLayout {
+                padding-top: root.top-inset;
+                padding-left: 12px;
+                padding-right: 12px;
+                padding-bottom: 12px;
+                spacing: 10px;
+                HorizontalLayout {
+                    alignment: start;
+                    SmallButton {
+                        large: true;
+                        text: Say.text("tabs.backToMail");
+                        has-icon: true;
+                        icon: @image-url("icons/arrow-left.svg");
+                        clicked => { Settings.back(); }
+                    }
+                }
+                Rectangle {
+                    height: 34px;
+                    border-radius: 9px;
+                    background: Theme.field;
+                    Icon {
+                        x: 10px;
+                        width: 15px;
+                        height: 15px;
+                        source: @image-url("icons/search.svg");
+                        tint: Theme.muted;
+                    }
+                    find := TextInput {
+                        x: 32px;
+                        width: parent.width - 42px;
+                        height: 100%;
+                        text <=> Settings.query;
+                        color: Theme.foreground;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                        edited => { Settings.search(self.text); }
+                    }
+                    if find.text == "": Text {
+                        x: 32px;
+                        text: Say.text("tabs.search");
+                        color: Theme.muted;
+                        font-size: 13px;
+                        vertical-alignment: center;
+                    }
+                }
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        spacing: 2px;
+                        for tab in Settings.tabs: TabItem {
+                            tab: tab;
+                            active: tab.id == Settings.tab;
+                        }
+                        if Settings.tabs.length == 0: Text {
+                            text: Say.text("tabs.nothingFound");
+                            color: Theme.muted;
+                            font-size: 13px;
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle { width: 1px; background: Theme.border; }
+        view := ScrollView {
+            property <int> page: Settings.page;
+            changed page => { self.content-y = 0; }
+            horizontal-stretch: 1;
+            HorizontalLayout {
+                alignment: center;
+                VerticalLayout {
+                    width: min(760px, view.visible-width);
+                    alignment: start;
+                    padding-left: 32px;
+                    padding-right: 32px;
+                    padding-top: 40px;
+                    padding-bottom: 64px;
+                    Text {
+                        text: Settings.title;
+                        color: Theme.foreground;
+                        font-size: 26px;
+                        font-weight: 800;
+                    }
+                    if Settings.loading: VerticalLayout {
+                        padding-top: 24px;
+                        spacing: 12px;
+                        for index in 5: Rectangle {
+                            height: 18px;
+                            border-radius: 6px;
+                            background: Theme.skeleton;
+                        }
+                    }
+                    for section[index] in Settings.sections: SectionView {
+                        section <=> section;
+                        first: index == 0;
+                    }
+                }
+            }
+        }
+    }
+    if Settings.notice != "": Rectangle {
+        x: (parent.width - self.width) / 2;
+        y: parent.height - 56px;
+        width: min(notice-text.preferred-width + 32px, parent.width - 48px);
+        height: 36px;
+        border-radius: 18px;
+        background: Theme.strong;
+        notice-text := Text {
+            x: 16px;
+            width: parent.width - 32px;
+            text: Settings.notice;
+            color: Theme.on-strong;
+            font-size: 13px;
+            overflow: elide;
+            vertical-alignment: center;
+        }
+    }
+    Timer {
+        interval: 4s;
+        running: Settings.notice != "";
+        triggered => { Settings.notice = ""; }
+    }
+}

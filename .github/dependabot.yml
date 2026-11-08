@@ -1,0 +1,44 @@
+# Updates for the Rust dependencies and the actions, weekly, grouped so that one pull request carries a week's
+# minor updates. Each one still has to pass scripts/check.sh, and `scripts/components.py` has to be run on its
+# branch: app/tests/components.rs fails until the list of components matches Cargo.lock.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # A release a week old: a hijacked one is usually found and pulled within days.
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Patched in vendor/ and kept in step with it by hand (vendor/*/PATCHED.md).
+      - dependency-name: softbuffer
+      - dependency-name: i-slint-backend-winit
+      # Pinned to what wry and webview2-com use: one moves with the other.
+      - dependency-name: webkit2gtk
+      - dependency-name: webview2-com
+      - dependency-name: windows-core
+      # One muda in the program: tray-icon moves with the one Slint links (docs/DEVELOPMENT.md, "One muda in the program").
+      - dependency-name: tray-icon
+      - dependency-name: muda
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # A release a week old: a hijacked one is usually found and pulled within days.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci

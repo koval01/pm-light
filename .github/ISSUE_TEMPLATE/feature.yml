@@ -1,0 +1,28 @@
+name: Feature request
+description: Something the client should do, or do differently.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        `docs/PARITY.md` lists what Proton's own web client has that this one lacks, and ideas beyond it: please look
+        there first.
+  - type: textarea
+    id: need
+    attributes:
+      label: What you need
+      description: The problem, in your own words, before any solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How it could work
+  - type: dropdown
+    id: proton
+    attributes:
+      label: Does Proton's own client have it?
+      options:
+        - "Yes"
+        - "No"
+        - Not sure

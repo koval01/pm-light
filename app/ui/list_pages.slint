@@ -1,0 +1,205 @@
+// A folder a page at a time, as Proton's own client shows it, or one list that grows as it is scrolled. The pager sits
+// beside the folder's name; the choice between the two is asked once, at the first start, and kept in the settings.
+
+import { Theme, IconButton } from "base.slint";
+
+// "‹ 3/8 ›" beside the folder's name: the arrows step a page, the numbers open the list of pages.
+export component Pager {
+    // From 0.
+    in property <int> page;
+    in property <int> pages;
+    callback go(int);
+    callback choose();
+    HorizontalLayout {
+        spacing: 2px;
+        alignment: end;
+        IconButton {
+            icon: @image-url("icons/chevron-left.svg");
+            enabled: root.page > 0;
+            hint: @tr("Newer mail");
+            clicked => { root.go(root.page - 1); }
+        }
+        Rectangle {
+            min-width: numbers.preferred-width + 16px;
+            height: 32px;
+            border-radius: 8px;
+            background: pick.has-hover ? Theme.hover : transparent;
+            numbers := Text {
+                text: (root.page + 1) + "/" + root.pages;
+                color: Theme.foreground;
+                font-size: 12px;
+                font-weight: 500;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            pick := TouchArea {
+                mouse-cursor: pointer;
+                enabled: root.pages > 1;
+                clicked => { root.choose(); }
+            }
+        }
+        IconButton {
+            icon: @image-url("icons/chevron-right.svg");
+            enabled: root.page < root.pages - 1;
+            hint: @tr("Older mail");
+            clicked => { root.go(root.page + 1); }
+        }
+    }
+}
+
+// A small drawing of a list: rows, and below them either a pager or a list that runs on and fades.
+component Sketch {
+    in property <bool> paged;
+    in property <bool> on;
+    Rectangle {
+        border-radius: 8px;
+        background: Theme.window;
+        clip: true;
+        VerticalLayout {
+            padding: 10px;
+            spacing: 7px;
+            for row in 5: HorizontalLayout {
+                spacing: 6px;
+                opacity: root.paged ? 1 : 1 - row * 0.18;
+                Rectangle { width: 12px; height: 12px; border-radius: 6px; background: Theme.accent; opacity: 0.55; }
+                VerticalLayout {
+                    spacing: 3px;
+                    alignment: center;
+                    Rectangle { height: 4px; border-radius: 2px; background: Theme.muted; opacity: 0.6; }
+                    Rectangle { height: 4px; width: 60%; border-radius: 2px; background: Theme.faint; opacity: 0.6; }
+                }
+            }
+            if root.paged: HorizontalLayout {
+                alignment: center;
+                spacing: 6px;
+                Text { text: "‹"; color: Theme.faint; font-size: 12px; }
+                Text { text: "1/8"; color: Theme.foreground; font-size: 11px; font-weight: 600; }
+                Text { text: "›"; color: Theme.muted; font-size: 12px; }
+            }
+            if !root.paged: Rectangle { height: 4px; }
+        }
+    }
+}
+
+component Option {
+    in property <bool> paged;
+    in property <string> title;
+    in property <string> text;
+    in property <bool> recommended;
+    callback chosen();
+    min-height: column.preferred-height;
+    Rectangle {
+        border-radius: 12px;
+        border-width: touch.has-hover ? 2px : 1px;
+        border-color: touch.has-hover ? Theme.accent : Theme.border;
+        background: Theme.panel;
+    }
+    column := VerticalLayout {
+        padding: 14px;
+        spacing: 8px;
+        alignment: start;
+        Sketch { paged: root.paged; height: 118px; }
+        HorizontalLayout {
+            spacing: 6px;
+            Text {
+                text: root.title;
+                color: Theme.foreground;
+                font-size: 14px;
+                font-weight: 600;
+                vertical-alignment: center;
+            }
+            if root.recommended: Rectangle {
+                width: badge.preferred-width + 12px;
+                height: 18px;
+                border-radius: 9px;
+                background: Theme.hover;
+                badge := Text {
+                    text: @tr("Like Proton's own client");
+                    color: Theme.muted;
+                    font-size: 10px;
+                    font-weight: 500;
+                }
+            }
+            Rectangle { horizontal-stretch: 1; }
+        }
+        Text {
+            text: root.text;
+            color: Theme.muted;
+            font-size: 12px;
+            wrap: word-wrap;
+            height: self.preferred-height;
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.chosen(); }
+    }
+}
+
+// Asked once, at the first start. Escape keeps pages, the usual way, and does not ask again.
+export component ListChoice {
+    callback chosen(bool);
+    private property <length> card-width: min(560px, root.width - 32px);
+    Rectangle { background: #000000a6; }
+    TouchArea { }
+    FocusScope {
+        width: 0px;
+        height: 0px;
+        init => { self.focus(); }
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.chosen(true);
+                return accept;
+            }
+            return reject;
+        }
+    }
+    card := Rectangle {
+        x: (root.width - root.card-width) / 2;
+        y: max(8px, (root.height - self.height) / 2);
+        width: root.card-width;
+        height: column.preferred-height;
+        border-radius: 14px;
+        border-width: 1px;
+        border-color: Theme.border;
+        background: Theme.panel;
+        column := VerticalLayout {
+            padding: 20px;
+            spacing: 12px;
+            Text {
+                text: @tr("How should a folder be shown?");
+                color: Theme.foreground;
+                font-size: 18px;
+                font-weight: 700;
+                wrap: word-wrap;
+                height: self.preferred-height;
+            }
+            HorizontalLayout {
+                spacing: 12px;
+                // Side by side and alike: neither looks like the lesser one.
+                Option {
+                    width: (root.card-width - 40px - 12px) / 2;
+                    paged: true;
+                    recommended: true;
+                    title: @tr("Pages");
+                    text: @tr("A page of mail at a time. The arrows beside the folder's name turn the pages, and the number between them opens a list of them.");
+                    chosen => { root.chosen(true); }
+                }
+                Option {
+                    width: (root.card-width - 40px - 12px) / 2;
+                    paged: false;
+                    title: @tr("One long list");
+                    text: @tr("Older mail comes as you scroll down, with no pages to turn.");
+                    chosen => { root.chosen(false); }
+                }
+            }
+            Text {
+                text: @tr("You can change this at any time in Settings, under Appearance.");
+                color: Theme.faint;
+                font-size: 12px;
+                wrap: word-wrap;
+                height: self.preferred-height;
+            }
+        }
+    }
+}

@@ -1,0 +1,9 @@
+# Every text file keeps LF on every system. Git on Windows would otherwise check files out with CRLF, and the build
+# reads some of them line by line (app/components/, the translations, test fixtures).
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.icns binary
+*.ttf binary
+*.asc text eol=lf

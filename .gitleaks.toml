@@ -1,0 +1,7 @@
+# gitleaks' own rules, with the test fixtures that look like secrets and are not.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "A locked test key, user 'not_for_email_use@domain.tld', made for tests and published as one"
+paths = ['''^core/src/crypto/test_key\.asc$''']

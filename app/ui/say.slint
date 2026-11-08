@@ -1,0 +1,648 @@
+// Rust asks here for text by a key. A new key goes here and into both files in `app/lang`.
+
+export global Say {
+    public pure function text(key: string) -> string {
+        if key == "account.ends" { return @tr("active until {{date}}"); }
+        if key == "account.plan" { return @tr("Plan"); }
+        if key == "account.planFree" { return @tr("Free"); }
+        if key == "account.planPaid" { return @tr("Paid"); }
+        if key == "account.renews" { return @tr("renews {{date}}"); }
+        if key == "app.offline" { return @tr("No connection to Proton. New mail will appear once it is back."); }
+        if key == "app.unavailable" { return @tr("Proton is having trouble. You are still signed in, and new mail will appear once it passes."); }
+        if key == "app.untrusted" { return @tr("This connection failed its security check, so nothing was sent. Someone on the network may be interfering, your computer's clock may be wrong, or the app needs an update."); }
+        if key == "apps.android" { return @tr("Proton Mail for Android"); }
+        if key == "apps.bridge" { return @tr("Proton Mail Bridge"); }
+        if key == "apps.bridgeAbout" { return @tr("Lets Outlook, Thunderbird and Apple Mail use your account."); }
+        if key == "apps.computer" { return @tr("On a computer"); }
+        if key == "apps.desktop" { return @tr("Proton Mail for desktop"); }
+        if key == "apps.ios" { return @tr("Proton Mail for iPhone and iPad"); }
+        if key == "apps.mobile" { return @tr("On your phone"); }
+        if key == "apps.open" { return @tr("Open"); }
+        if key == "backup.about" { return @tr("Proton's Export Tool saves all your mail to this computer. It is a separate app for macOS, Windows and Linux, because the mail has to be decrypted on your side."); }
+        if key == "backup.get" { return @tr("Get the Export Tool"); }
+        if key == "billing.credit" { return @tr("Credit"); }
+        if key == "billing.creditAvailable" { return @tr("Available credit"); }
+        if key == "billing.default" { return @tr("Default"); }
+        if key == "billing.ends" { return @tr("Ends on"); }
+        if key == "billing.invoiceDetails" { return @tr("Details on invoices"); }
+        if key == "billing.invoiceSaved" { return @tr("Invoice details saved"); }
+        if key == "billing.invoices" { return @tr("Invoices"); }
+        if key == "billing.manageHint" { return @tr("Changing the plan, payment methods and downloading invoices happen on Proton's website."); }
+        if key == "billing.methods" { return @tr("Payment methods"); }
+        if key == "billing.months" { return @tr("{{count}} months"); }
+        if key == "billing.otherState" { return @tr("Closed"); }
+        if key == "billing.paid" { return @tr("billing.paid" => "Paid"); }
+        if key == "billing.price" { return @tr("Paid for this period"); }
+        if key == "billing.renews" { return @tr("Renews on"); }
+        if key == "billing.unpaid" { return @tr("Unpaid"); }
+        if key == "cache.about" { return @tr("Mail is encrypted and opens at once, even after a restart. The key stays with the session, so with an app password mail cannot be read without it. Signing out or turning this off erases everything."); }
+        if key == "cache.keep" { return @tr("Keep read mail on this computer"); }
+        if key == "cache.title" { return @tr("Mail storage"); }
+        if key == "common.cancel" { return @tr("Cancel"); }
+        if key == "common.create" { return @tr("Create"); }
+        if key == "common.loading" { return @tr("Loading…"); }
+        if key == "common.save" { return @tr("Save"); }
+        if key == "compose.expires" { return @tr("Delete the message after"); }
+        if key == "compose.expiresDay" { return @tr("1 day"); }
+        if key == "compose.expiresFourWeeks" { return @tr("4 weeks"); }
+        if key == "compose.expiresHour" { return @tr("1 hour"); }
+        if key == "compose.expiresNever" { return @tr("Never"); }
+        if key == "compose.expiresWeek" { return @tr("1 week"); }
+        if key == "compose.password" { return @tr("Password for recipients outside Proton"); }
+        if key == "compose.passwordHelp" { return @tr("Share it with the recipient some other way."); }
+        if key == "compose.passwordHint" { return @tr("Password hint"); }
+        if key == "compose.pickTime" { return @tr("Pick a time"); }
+        if key == "compose.protonFooter" { return @tr("Sent with {{link}} secure email."); }
+        if key == "compose.readReceipt" { return @tr("Request a read receipt"); }
+        if key == "compose.schedule" { return @tr("Schedule"); }
+        if key == "compose.scheduled" { return @tr("Message scheduled"); }
+        if key == "compose.scheduledFor" { return @tr("Sending: {{when}}"); }
+        if key == "compose.sent" { return @tr("Message sent"); }
+        if key == "compose.subject" { return @tr("Subject"); }
+        if key == "compose.tomorrowMorning" { return @tr("Tomorrow morning"); }
+        if key == "compose.undo" { return @tr("Undo"); }
+        if key == "connection.about" { return @tr("How long the servers take to answer. Measured on this computer, only when you open this tab or press the button."); }
+        if key == "connection.measure" { return @tr("Measure again"); }
+        if key == "connection.torTitle" { return @tr("Tor"); }
+        if key == "connection.torAbout" { return @tr("Tor sends the app's connections through three relays run by volunteers, so that Proton and your network cannot see your address."); }
+        if key == "connection.tor" { return @tr("Use Tor"); }
+        if key == "connection.torHint" { return @tr("The app starts again to change this."); }
+        if key == "connection.torRoute" { return @tr("Route"); }
+        if key == "connection.torOnion" { return @tr("Proton's onion site"); }
+        if key == "connection.torExit" { return @tr("Through an exit relay"); }
+        if key == "connection.torState" { return @tr("State"); }
+        if key == "connection.torNew" { return @tr("New circuits"); }
+        if key == "connection.torNewDone" { return @tr("New circuits are used from now on."); }
+        if key == "privacy.gravatar" { return @tr("Pictures from Gravatar"); }
+        if key == "privacy.gravatarHint" { return @tr("For senders with no logo. Gravatar learns, in coded form, who writes to you."); }
+        if key == "privacy.gravatarTitle" { return @tr("Ask Gravatar for pictures?"); }
+        if key == "privacy.gravatarText" { return @tr("For each sender without a logo, the app asks Gravatar, a service of Automattic, for a picture. The request goes through Proton, so Gravatar does not see your address, but it gets each sender's address in coded form, which is enough to tell who you write with. Proton sees the requests too."); }
+        if key == "privacy.gravatarYes" { return @tr("Ask Gravatar"); }
+        if key == "settings.notificationsRefused" { return @tr("The system does not allow this app notifications, so neither they nor the count on its icon are shown. Only you can allow them, in the system's settings."); }
+        if key == "settings.notificationsOpen" { return @tr("Open the system's notification settings"); }
+        if key == "look.menuBarIcon" { return @tr("Icon in the menu bar"); }
+        if key == "look.menuBarIconHint" { return @tr("Shows the mail not yet read, and opens the app. The Dock does both too."); }
+        if key == "privacy.screenTitle" { return @tr("Privacy on screen"); }
+        if key == "privacy.hide" { return @tr("Cover private details"); }
+        if key == "privacy.hideHint" { return @tr("Addresses, IP addresses and the like stay covered until you point at them, for a screen others can see."); }
+        if key == "tour.title" { return @tr("Tour"); }
+        if key == "tour.about" { return @tr("A short look at where things are in the window."); }
+        if key == "tour.again" { return @tr("Take the tour"); }
+        if key == "about.licenseTitle" { return @tr("License"); }
+        if key == "about.license" { return @tr("Free software under the GNU Affero General Public License, version 3, with additional terms: every copy and every changed version keeps the author's name and the link to this repository, and a changed version says that it is changed. It comes with no warranty."); }
+        if key == "about.readLicense" { return @tr("Read the license"); }
+        if key == "about.componentsTitle" { return @tr("Components"); }
+        if key == "about.components" { return @tr("Built from {{count}} open-source components. Their licenses allow this use, and their texts come with the program."); }
+        if key == "about.search" { return @tr("Search by name or license"); }
+        if key == "about.readNotices" { return @tr("Read the licenses of the components"); }
+        if key == "about.more" { return @tr("{{count}} more: search to find them."); }
+        if key == "about.nothing" { return @tr("Nothing found."); }
+        if key == "tabs.tor" { return @tr("Tor"); }
+        if key == "tor.off" { return @tr("Tor is off"); }
+        if key == "connection.toTor" { return @tr("Tor settings and the circuit"); }
+        if key == "tor.toConnection" { return @tr("Connection and response times"); }
+        if key == "connection.torYou" { return @tr("You"); }
+        if key == "connection.torYouDetail" { return @tr("This computer. Only the entry relay sees its address, and the app does not ask anyone for it."); }
+        if key == "connection.torEntry" { return @tr("Entry relay"); }
+        if key == "connection.torEntryDetail" { return @tr("Sees your address, not where you go."); }
+        if key == "connection.torMiddle" { return @tr("Middle relay"); }
+        if key == "connection.torMiddleDetail" { return @tr("Sees neither you nor Proton."); }
+        if key == "connection.torMeeting" { return @tr("Meeting point"); }
+        if key == "connection.torMeetingDetail" { return @tr("Your circuit meets Proton's here. It sees neither side."); }
+        if key == "connection.torExitRelay" { return @tr("Exit relay"); }
+        if key == "connection.torExitDetail" { return @tr("Sees that Proton is reached, not by whom. What is sent stays encrypted."); }
+        if key == "connection.torProtonRelays" { return @tr("Proton's relays"); }
+        if key == "connection.torProtonRelaysDetail" { return @tr("Hidden: an onion site does not show its circuit, nor where its server is."); }
+        if key == "connection.torProtonExit" { return @tr("Reached by name: the exit relay looks the address up itself and does not pass it back."); }
+        if key == "connection.torProton" { return @tr("Proton's server"); }
+        if key == "connection.restartTitle" { return @tr("Start the app again?"); }
+        if key == "connection.restartText" { return @tr("How the app connects changes only at a start, so that nothing of the old way is still under way."); }
+        if key == "connection.restart" { return @tr("Start again"); }
+        if key == "tor.starting" { return @tr("Tor · connecting {{percent}}%"); }
+        if key == "tor.ready" { return @tr("Tor · {{path}}"); }
+        if key == "tor.readyAlone" { return @tr("Tor · connected"); }
+        if key == "tor.failed" { return @tr("Tor could not connect. Nothing goes out until it does."); }
+        if key == "links.outsideTorTitle" { return @tr("Open outside Tor?"); }
+        if key == "links.outsideTorText" { return @tr("The link opens in your browser, which does not go through Tor. The site will see your address."); }
+        if key == "links.open" { return @tr("Open"); }
+        if key == "connection.measuring" { return @tr("Measuring…"); }
+        if key == "connection.milliseconds" { return @tr("{{value}} ms"); }
+        if key == "connection.noAnswer" { return @tr("No answer"); }
+        if key == "connection.online" { return @tr("Connected"); }
+        if key == "connection.proton" { return @tr("Proton server"); }
+        if key == "connection.quad9" { return @tr("Quad9 (DNS)"); }
+        if key == "connection.state" { return @tr("State"); }
+        if key == "connection.updated" { return @tr("Mail updated"); }
+        if key == "date.choose" { return @tr("Choose"); }
+        if key == "date.months" { return @tr("January,February,March,April,May,June,July,August,September,October,November,December"); }
+        if key == "date.today" { return @tr("Today"); }
+        if key == "date.weekdays" { return @tr("Mo,Tu,We,Th,Fr,Sa,Su"); }
+        if key == "details.cc" { return @tr("Cc"); }
+        if key == "details.date" { return @tr("Date"); }
+        if key == "details.from" { return @tr("From"); }
+        if key == "details.to" { return @tr("To"); }
+        if key == "domains.checkNow" { return @tr("Check now"); }
+        if key == "domains.checking" { return @tr("Checking…"); }
+        if key == "domains.correct" { return @tr("Correct"); }
+        if key == "domains.dkim" { return @tr("DKIM"); }
+        if key == "domains.dmarc" { return @tr("DMARC"); }
+        if key == "domains.empty" { return @tr("This account has no domains of its own."); }
+        if key == "domains.manageHint" { return @tr("Adding a domain and changing its records happen on Proton's website."); }
+        if key == "domains.mx" { return @tr("MX"); }
+        if key == "domains.nothing" { return @tr("Nothing found"); }
+        if key == "domains.spf" { return @tr("SPF"); }
+        if key == "domains.verified" { return @tr("Verified"); }
+        if key == "domains.wrong" { return @tr("Needs fixing"); }
+        if key == "error.badAddress" { return @tr("Invalid address: {{address}}"); }
+        if key == "error.badTime" { return @tr("That send time is not valid"); }
+        if key == "error.cannotMove" { return @tr("This message cannot be moved there"); }
+        if key == "error.pastTime" { return @tr("The send time must be in the future"); }
+        if key == "errors.internal" { return @tr("Something failed inside the app. The details are in the journal."); }
+        if key == "forwarding.active" { return @tr("Active"); }
+        if key == "forwarding.addHint" { return @tr("Adding a forwarding creates keys for it, which happens on Proton's website."); }
+        if key == "forwarding.delete" { return @tr("Remove forwarding"); }
+        if key == "forwarding.deleteText" { return @tr("Forwarding with {{address}} will stop."); }
+        if key == "forwarding.empty" { return @tr("No forwarding is set up."); }
+        if key == "forwarding.encrypted" { return @tr("Encrypted"); }
+        if key == "forwarding.incoming" { return @tr("Forwards to you"); }
+        if key == "forwarding.outdated" { return @tr("Needs renewal"); }
+        if key == "forwarding.outgoing" { return @tr("Forwards to this address"); }
+        if key == "forwarding.pause" { return @tr("Pause"); }
+        if key == "forwarding.paused" { return @tr("Paused"); }
+        if key == "forwarding.pending" { return @tr("Waiting"); }
+        if key == "forwarding.rejected" { return @tr("Rejected"); }
+        if key == "forwarding.resume" { return @tr("Resume"); }
+        if key == "forwarding.title" { return @tr("Forwarding"); }
+        if key == "guard.code" { return @tr("Code from your authenticator app"); }
+        if key == "guard.confirm" { return @tr("Confirm"); }
+        if key == "guard.done" { return @tr("Done"); }
+        if key == "guard.email" { return @tr("The recovery email becomes {{value}}."); }
+        if key == "guard.emailRemove" { return @tr("The recovery email will be removed."); }
+        if key == "guard.emailResetOff" { return @tr("Your password can no longer be reset by email."); }
+        if key == "guard.emailResetOn" { return @tr("Your password can then be reset by email."); }
+        if key == "guard.logMode" { return @tr("Changing the sign-in log needs your password."); }
+        if key == "guard.password" { return @tr("Account password"); }
+        if key == "guard.phone" { return @tr("The recovery phone becomes {{value}}."); }
+        if key == "guard.phoneRemove" { return @tr("The recovery phone will be removed."); }
+        if key == "guard.phoneResetOff" { return @tr("Your password can no longer be reset by phone."); }
+        if key == "guard.phoneResetOn" { return @tr("Your password can then be reset by phone."); }
+        if key == "guard.sentinelOff" { return @tr("Proton Sentinel will be turned off."); }
+        if key == "guard.sentinelOn" { return @tr("Proton Sentinel will be turned on."); }
+        if key == "guard.title" { return @tr("Confirm with your password"); }
+        if key == "guard.totpOff" { return @tr("The authenticator app stops protecting this account."); }
+        if key == "guard.totpOn" { return @tr("You will set up an authenticator app next."); }
+        if key == "journal.about" { return @tr("A detailed record of what the app does, for finding out what went wrong. It holds no passwords, addresses or mail. It is encrypted and only this app can read it, and it is erased when you quit the app and after 24 hours at most."); }
+        if key == "journal.all" { return @tr("All"); }
+        if key == "journal.clear" { return @tr("Clear the journal"); }
+        if key == "journal.clearText" { return @tr("All records will be erased."); }
+        if key == "journal.empty" { return @tr("Nothing here yet."); }
+        if key == "journal.errors" { return @tr("Errors"); }
+        if key == "journal.refresh" { return @tr("Refresh"); }
+        if key == "journal.search" { return @tr("Search the journal"); }
+        if key == "journal.urgent" { return @tr("Warnings"); }
+        if key == "keys.about" { return @tr("The keys this app has open. Compare a fingerprint to be sure a key is yours."); }
+        if key == "keys.account" { return @tr("Account key"); }
+        if key == "keys.manageHint" { return @tr("Creating, importing and exporting keys happen on Proton's website."); }
+        if key == "keys.primary" { return @tr("Primary"); }
+        if key == "language.de" { return @tr("German"); }
+        if key == "language.en" { return @tr("English"); }
+        if key == "language.ru" { return @tr("Russian"); }
+        if key == "lock.about" { return @tr("Encrypts the saved session. Once locked, the app holds neither keys nor mail in memory."); }
+        if key == "lock.auto" { return @tr("Lock when the window is inactive"); }
+        if key == "lock.current" { return @tr("Current password"); }
+        if key == "lock.minutes" { return @tr("{{count}} min"); }
+        if key == "lock.new" { return @tr("New password"); }
+        if key == "lock.remove" { return @tr("Remove password"); }
+        if key == "lock.removed" { return @tr("App password removed"); }
+        if key == "lock.repeat" { return @tr("Repeat the password"); }
+        if key == "lock.saved" { return @tr("App password set"); }
+        if key == "lock.section" { return @tr("App password"); }
+        if key == "lock.set" { return @tr("Set password"); }
+        if key == "lock.touchIdHint" { return @tr("The system checks your fingerprint. The app never sees it."); }
+        if key == "lock.touchIdOption" { return @tr("Unlock with Touch ID"); }
+        if key == "lock.touchIdReason" { return @tr("unlock your mail"); }
+        if key == "lock.warning" { return @tr("It cannot be recovered. If you lose it, you will need to sign in to Proton again."); }
+        if key == "lock.wrong" { return @tr("Wrong password"); }
+        if key == "log.awaiting2fa" { return @tr("Password accepted, awaiting second factor"); }
+        if key == "log.blocked" { return @tr("Sign-in blocked"); }
+        if key == "log.failed2fa" { return @tr("Sign-in failed: wrong code"); }
+        if key == "log.failedPassword" { return @tr("Sign-in failed: wrong password"); }
+        if key == "log.revokedAll" { return @tr("All sessions ended"); }
+        if key == "log.revokedOne" { return @tr("Session ended"); }
+        if key == "log.signedIn" { return @tr("Signed in"); }
+        if key == "log.signedOut" { return @tr("Signed out"); }
+        if key == "login.unofficial" { return @tr("Unofficial client. Not affiliated with Proton AG."); }
+        if key == "look.blue" { return @tr("Blue"); }
+        if key == "look.closeToTray" { return @tr("Stay in the tray when the window closes"); }
+        if key == "look.colors" { return @tr("Colours"); }
+        if key == "look.columns" { return @tr("Beside the list"); }
+        if key == "look.comfortable" { return @tr("Comfortable"); }
+        if key == "look.compact" { return @tr("Compact"); }
+        if key == "look.contrast" { return @tr("Contrast"); }
+        if key == "look.density" { return @tr("List density"); }
+        if key == "look.forest" { return @tr("Forest"); }
+        if key == "look.graphite" { return @tr("Graphite"); }
+        if key == "look.large" { return @tr("Large"); }
+        if key == "look.layout" { return @tr("Messages open"); }
+        if key == "look.listStyle" { return @tr("Mail in a folder"); }
+        if key == "look.mailText" { return @tr("Mail text"); }
+        if key == "look.normal" { return @tr("Normal"); }
+        if key == "look.oneList" { return @tr("One long list"); }
+        if key == "look.pages" { return @tr("Pages"); }
+        if key == "look.palette" { return @tr("Style"); }
+        if key == "look.plum" { return @tr("Plum"); }
+        if key == "look.rows" { return @tr("Below the list"); }
+        if key == "look.sand" { return @tr("Sand"); }
+        if key == "look.sizes" { return @tr("Sizes"); }
+        if key == "look.small" { return @tr("Small"); }
+        if key == "look.window" { return @tr("Window"); }
+        if key == "look.zoom" { return @tr("Interface scale"); }
+        if key == "mail.almostAllMail" { return @tr("Leave spam and trash out of All mail"); }
+        if key == "mail.almostAllMailHint" { return @tr("Searches in All mail skip them too."); }
+        if key == "mail.asDefault" { return @tr("mail.asDefault" => "Default"); }
+        if key == "mail.attachPublicKey" { return @tr("Attach your public key"); }
+        if key == "mail.attachPublicKeyHint" { return @tr("Lets recipients with PGP write back encrypted."); }
+        if key == "mail.blockQuietly" { return @tr("Block senders without asking"); }
+        if key == "mail.blockQuietlyHint" { return @tr("Marking a message as spam no longer asks about its sender."); }
+        if key == "mail.composerMaximized" { return @tr("Maximized"); }
+        if key == "mail.composerMode" { return @tr("Writing window"); }
+        if key == "mail.composerPopup" { return @tr("mail.composerPopup" => "Normal"); }
+        if key == "mail.conversations" { return @tr("Conversations"); }
+        if key == "mail.direction" { return @tr("Text direction"); }
+        if key == "mail.draftPlain" { return @tr("Plain text"); }
+        if key == "mail.draftRich" { return @tr("Formatted"); }
+        if key == "mail.draftType" { return @tr("New messages are"); }
+        if key == "mail.folderColor" { return @tr("Colour folders"); }
+        if key == "mail.fontFace" { return @tr("Default font"); }
+        if key == "mail.fontSize" { return @tr("Default font size"); }
+        if key == "mail.hideEmbedded" { return @tr("Hide embedded images"); }
+        if key == "mail.hideEmbeddedHint" { return @tr("Pictures carried inside a message wait until you ask for them."); }
+        if key == "mail.hideSenderImages" { return @tr("Hide sender images"); }
+        if key == "mail.hideSenderImagesHint" { return @tr("Lists show initials instead of logos."); }
+        if key == "mail.images" { return @tr("Images"); }
+        if key == "mail.inheritFolderColor" { return @tr("Folders take the colour of their parent"); }
+        if key == "mail.layout" { return @tr("Layout and lists"); }
+        if key == "mail.leftToRight" { return @tr("Left to right"); }
+        if key == "mail.movedBoth" { return @tr("Both"); }
+        if key == "mail.movedDrafts" { return @tr("Drafts"); }
+        if key == "mail.movedNone" { return @tr("Neither"); }
+        if key == "mail.movedSent" { return @tr("Sent"); }
+        if key == "mail.page100" { return @tr("100"); }
+        if key == "mail.page200" { return @tr("200"); }
+        if key == "mail.page50" { return @tr("50"); }
+        if key == "mail.pageSize" { return @tr("Messages per page"); }
+        if key == "mail.pgp" { return @tr("External PGP"); }
+        if key == "mail.pgpInline" { return @tr("Inline"); }
+        if key == "mail.pgpMime" { return @tr("PGP/MIME"); }
+        if key == "mail.pgpScheme" { return @tr("PGP format"); }
+        if key == "mail.promptPin" { return @tr("Offer to trust new keys"); }
+        if key == "mail.promptPinHint" { return @tr("Asks when a signed message arrives with a key you have not trusted yet."); }
+        if key == "mail.protonFooter" { return @tr("Proton footer in new messages"); }
+        if key == "mail.protonFooterHint" { return @tr("Free plans cannot turn it off."); }
+        if key == "mail.removeMetadata" { return @tr("Remove image metadata"); }
+        if key == "mail.removeMetadataHint" { return @tr("Location and camera details leave pictures you attach."); }
+        if key == "mail.rightToLeft" { return @tr("Right to left"); }
+        if key == "mail.safety" { return @tr("Safety"); }
+        if key == "mail.savedOnlyKeys" { return @tr("Kept in your account for Proton's own apps. This client does not follow these yet."); }
+        if key == "mail.showMoved" { return @tr("Keep messages in Sent and Drafts when moved"); }
+        if key == "mail.sign" { return @tr("Sign external messages"); }
+        if key == "mail.signHint" { return @tr("Recipients can see the message really came from you."); }
+        if key == "mail.singleMessages" { return @tr("Single messages"); }
+        if key == "mail.spamAction" { return @tr("After marking as spam"); }
+        if key == "mail.spamAsk" { return @tr("Ask"); }
+        if key == "mail.spamOnly" { return @tr("Only spam"); }
+        if key == "mail.spamUnsubscribe" { return @tr("Also unsubscribe"); }
+        if key == "mail.stickyLabels" { return @tr("Sticky labels"); }
+        if key == "mail.stickyLabelsHint" { return @tr("A label stays on the whole conversation, new messages included."); }
+        if key == "mail.viewMode" { return @tr("Group messages"); }
+        if key == "nav.addFolder" { return @tr("New folder"); }
+        if key == "nav.addLabel" { return @tr("New label"); }
+        if key == "nav.delete" { return @tr("Delete"); }
+        if key == "nav.deleteText" { return @tr("Your messages stay where they are."); }
+        if key == "nav.deleteTitle" { return @tr("Delete “{{name}}”?"); }
+        if key == "nav.folders" { return @tr("Folders"); }
+        if key == "nav.labels" { return @tr("Labels"); }
+        if key == "nav.name" { return @tr("Name"); }
+        if key == "nav.rename" { return @tr("Rename"); }
+        if key == "nav.settings" { return @tr("Settings"); }
+        if key == "news.announcements" { return @tr("Important announcements"); }
+        if key == "news.beta" { return @tr("Beta programme"); }
+        if key == "news.business" { return @tr("Business news"); }
+        if key == "news.drive" { return @tr("Drive news"); }
+        if key == "news.inbox" { return @tr("Mail and Calendar news"); }
+        if key == "news.newMail" { return @tr("Daily new mail reminders"); }
+        if key == "news.newsletter" { return @tr("Newsletter"); }
+        if key == "news.offers" { return @tr("Offers"); }
+        if key == "news.onboarding" { return @tr("Getting started tips"); }
+        if key == "news.pass" { return @tr("Pass news"); }
+        if key == "news.recovery" { return @tr("Account recovery notices"); }
+        if key == "news.surveys" { return @tr("Surveys"); }
+        if key == "news.title" { return @tr("Emails from Proton"); }
+        if key == "news.vpn" { return @tr("VPN news"); }
+        if key == "org.addresses" { return @tr("Addresses"); }
+        if key == "org.admin" { return @tr("Admin"); }
+        if key == "org.disabled" { return @tr("Disabled"); }
+        if key == "org.domains" { return @tr("Domains"); }
+        if key == "org.invited" { return @tr("Invited"); }
+        if key == "org.manageHint" { return @tr("Adding users depends on your plan and is done on Proton's site."); }
+        if key == "org.member" { return @tr("Member"); }
+        if key == "org.none" { return @tr("This account has no other users."); }
+        if key == "org.of" { return @tr("{{used}} of {{max}}"); }
+        if key == "org.seats" { return @tr("Seats"); }
+        if key == "org.users" { return @tr("Users"); }
+        if key == "org.you" { return @tr("You"); }
+        if key == "palette.language" { return @tr("Language: {{name}}"); }
+        if key == "palette.themeDark" { return @tr("Dark theme"); }
+        if key == "palette.themeLight" { return @tr("Light theme"); }
+        if key == "palette.themeSystem" { return @tr("System theme"); }
+        if key == "preview.cannotShow" { return @tr("This type of file cannot be shown here. You can save it."); }
+        if key == "preview.macros" { return @tr("{{name}} can hold macros, which run on your computer once allowed. Save it only if you trust the sender, and do not enable macros in it."); }
+        if key == "preview.notWhatItClaims" { return @tr("This file is not what its name says. Be careful with it."); }
+        if key == "preview.program" { return @tr("This is a program, not a document, so it is not opened here. Save it only if you trust the sender."); }
+        if key == "picture.continue" { return @tr("Make the picture"); }
+        if key == "picture.warnText" { return @tr("A picture of a mail is no longer encrypted. Whoever gets it, and the app it goes through, can read it. This is said only once."); }
+        if key == "picture.warnTitle" { return @tr("The picture leaves Proton's encryption"); }
+        if key == "print.attachments" { return @tr("Attachments"); }
+        if key == "print.checkCode" { return @tr("Check code (QR)"); }
+        if key == "print.checkCodeHint" { return @tr("Later, this app can bring up the original message for comparing with the sheet."); }
+        if key == "print.dateFormat" { return @tr("%Y-%m-%d %H:%M"); }
+        if key == "print.earlierMail" { return @tr("Earlier messages from this address: {{count}}"); }
+        if key == "print.encryption" { return @tr("Encryption"); }
+        if key == "print.firstMail" { return @tr("First message from this address"); }
+        if key == "print.foldA" { return @tr("DIN form A"); }
+        if key == "print.foldB" { return @tr("DIN form B"); }
+        if key == "print.foldMarks" { return @tr("Fold marks (A4)"); }
+        if key == "print.foldNone" { return @tr("None"); }
+        if key == "print.grayscale" { return @tr("Black and white"); }
+        if key == "print.headers" { return @tr("Sender, recipients and date"); }
+        if key == "print.history" { return @tr("Earlier mail from this sender"); }
+        if key == "print.historyHint" { return @tr("Says how many messages came from this address before."); }
+        if key == "print.holeMark" { return @tr("Punch mark at the middle"); }
+        if key == "print.images" { return @tr("Remote images"); }
+        if key == "print.messageId" { return @tr("Message ID"); }
+        if key == "print.newSheet" { return @tr("Start each message on a new sheet"); }
+        if key == "print.saveInk" { return @tr("Save ink"); }
+        if key == "print.saveInkHint" { return @tr("Drops backgrounds and turns all text black."); }
+        if key == "print.scopeMessage" { return @tr("This message"); }
+        if key == "print.scopeSelected" { return @tr("Selected ({{count}})"); }
+        if key == "print.scopeSelectedThreads" { return @tr("Their threads"); }
+        if key == "print.scopeThread" { return @tr("Whole thread"); }
+        if key == "print.seal" { return @tr("Digital seal (OpenPGP)"); }
+        if key == "print.sealFingerprint" { return @tr("Key fingerprint"); }
+        if key == "print.sealHint" { return @tr("Adds a sheet with a code signed by your address's key. Any OpenPGP app can check it."); }
+        if key == "print.sealKey" { return @tr("Public key"); }
+        if key == "print.sealMore" { return @tr("The message is longer than one code. The rest of its text is in these codes, which Proton Mail Light reads."); }
+        if key == "print.sealText" { return @tr("The first code holds this message with an OpenPGP signature. Scan it, check it in any OpenPGP app with the public key below, then compare its text with the letter on paper."); }
+        if key == "print.sealTitle" { return @tr("Digital seal"); }
+        if key == "print.shift" { return @tr("Move marks down, mm"); }
+        if key == "print.size" { return @tr("Size"); }
+        if key == "print.systemHint" { return @tr("Paper size, orientation and scale are set in the system's print dialog. To place marks exactly, print a test sheet and compare it with a ruler."); }
+        if key == "print.technical" { return @tr("Technical details"); }
+        if key == "print.technicalHint" { return @tr("Encryption, size, message ID and sender checks."); }
+        if key == "print.testSheet" { return @tr("Test sheet"); }
+        if key == "print.testText" { return @tr("Lay a ruler against the numbers on the left. If they are off, enter the difference in the shift field."); }
+        if key == "print.testTitle" { return @tr("Test sheet"); }
+        if key == "print.title" { return @tr("Print"); }
+        if key == "print.tooLongToSeal" { return @tr("This message is too long for a digital seal."); }
+        if key == "print.tooMany" { return @tr("Too many messages at once. Print at most {{limit}}."); }
+        if key == "print.what" { return @tr("What to print"); }
+        if key == "printCheck.about" { return @tr("Load a scan or a photo of the sheets. The app reads their codes, checks the signature, and shows the sealed text beside the paper."); }
+        if key == "printCheck.check" { return @tr("Check"); }
+        if key == "printCheck.compare" { return @tr("A signature cannot see the paper. Compare the sheet with the sealed text: any difference means the paper was changed."); }
+        if key == "printCheck.damaged" { return @tr("The codes do not fit together: they are damaged, or from different seals."); }
+        if key == "printCheck.differs" { return @tr("The code does not match: the message changed after printing, or the code is false"); }
+        if key == "printCheck.forged" { return @tr("The signature is not from {{signer}}. Do not trust this sheet."); }
+        if key == "printCheck.genuine" { return @tr("Genuine signature by {{signer}}"); }
+        if key == "printCheck.incomplete" { return @tr("Part of the text could not be read: {{have}} of {{need}} codes. Load another scan, or paste what a phone read from the codes."); }
+        if key == "printCheck.matches" { return @tr("The code is genuine, and the message is unchanged"); }
+        if key == "printCheck.noKey" { return @tr("Proton has no public key for {{signer}}, so the signature cannot be checked."); }
+        if key == "printCheck.noSignature" { return @tr("The code with the signature could not be read, so nothing can be confirmed. Load a better scan, or paste what a phone read from it."); }
+        if key == "printCheck.nothing" { return @tr("No check codes were found."); }
+        if key == "printCheck.paste" { return @tr("Or paste what a phone read from the codes"); }
+        if key == "printCheck.phone" { return @tr("On a phone: scan the first code, then check the text in any OpenPGP app, with the public key printed on the sheet."); }
+        if key == "printCheck.reading" { return @tr("Reading…"); }
+        if key == "printCheck.scan" { return @tr("Load scans"); }
+        if key == "printCheck.unknown" { return @tr("This account holds no such message."); }
+        if key == "printCheck.unreadableScan" { return @tr("This file could not be read. PNG, JPEG and PDF scans work."); }
+        if key == "privacy.breachAlerts" { return @tr("Dark web monitoring"); }
+        if key == "privacy.breachAlertsHint" { return @tr("Proton tells you when your address appears in a leak."); }
+        if key == "privacy.crashReports" { return @tr("Send crash reports"); }
+        if key == "privacy.crashReportsHint" { return @tr("Applies to Proton's own apps. This client sends none."); }
+        if key == "privacy.hoverContacts" { return @tr("Point at the email or phone number to see it."); }
+        if key == "privacy.hoverPayment" { return @tr("Point at the payment details to see them."); }
+        if key == "privacy.telemetry" { return @tr("Share usage statistics"); }
+        if key == "privacy.telemetryHint" { return @tr("Applies to Proton's own apps. This client sends none."); }
+        if key == "privacy.title" { return @tr("Data shared with Proton"); }
+        if key == "reader.download" { return @tr("Download"); }
+        if key == "reader.previewFailed" { return @tr("Could not open this file"); }
+        if key == "reader.print" { return @tr("reader.print" => "Print"); }
+        if key == "recovery.allowEmail" { return @tr("Reset the password by email"); }
+        if key == "recovery.allowPhone" { return @tr("Reset the password by phone"); }
+        if key == "recovery.change" { return @tr("Change"); }
+        if key == "recovery.device" { return @tr("Device backup"); }
+        if key == "recovery.email" { return @tr("Recovery email"); }
+        if key == "recovery.manageHint" { return @tr("Recovery is changed on Proton's website, where it asks for your password."); }
+        if key == "recovery.off" { return @tr("Off"); }
+        if key == "recovery.on" { return @tr("On"); }
+        if key == "recovery.phone" { return @tr("Recovery phone"); }
+        if key == "recovery.phrase" { return @tr("Recovery phrase"); }
+        if key == "recovery.phraseMissing" { return @tr("Not set"); }
+        if key == "recovery.phraseOff" { return @tr("recovery.phraseOff" => "Off"); }
+        if key == "recovery.phraseOutdated" { return @tr("Outdated, set a new one"); }
+        if key == "recovery.phraseSet" { return @tr("Set"); }
+        if key == "referral.about" { return @tr("Invite friends to Proton. When they subscribe, you both get credit."); }
+        if key == "referral.copied" { return @tr("Copied"); }
+        if key == "referral.copy" { return @tr("Copy"); }
+        if key == "referral.earned" { return @tr("Free months earned"); }
+        if key == "referral.earnedValue" { return @tr("{{months}} of {{limit}}"); }
+        if key == "referral.left" { return @tr("Invitations by mail left"); }
+        if key == "referral.link" { return @tr("Your invitation link"); }
+        if key == "referral.none" { return @tr("Nobody has joined through your link yet."); }
+        if key == "referral.people" { return @tr("Invited people"); }
+        if key == "referral.reward" { return @tr("You get {{you}} for each friend, up to {{most}}. They get {{friend}}."); }
+        if key == "referral.someone" { return @tr("Joined by link"); }
+        if key == "referral.stateCompleted" { return @tr("Subscribed"); }
+        if key == "referral.stateInvited" { return @tr("Invited"); }
+        if key == "referral.stateRewarded" { return @tr("Rewarded"); }
+        if key == "referral.stateSignedUp" { return @tr("Signed up"); }
+        if key == "referral.stateTrial" { return @tr("On trial"); }
+        if key == "referral.unavailable" { return @tr("Invitations are not available for this account."); }
+        if key == "security.2fa" { return @tr("Two-factor authentication"); }
+        if key == "security.2faBoth" { return @tr("App and security key"); }
+        if key == "security.2faKey" { return @tr("Security key"); }
+        if key == "security.2faOff" { return @tr("security.2faOff" => "Off"); }
+        if key == "security.2faTotp" { return @tr("Authenticator app"); }
+        if key == "security.log" { return @tr("Sign-in log"); }
+        if key == "security.logAdvanced" { return @tr("Advanced"); }
+        if key == "security.logBasic" { return @tr("Basic"); }
+        if key == "security.logClear" { return @tr("Clear the log"); }
+        if key == "security.logClearText" { return @tr("The entries are gone for good."); }
+        if key == "security.logEntries" { return @tr("Entries: {{count}}"); }
+        if key == "security.logOff" { return @tr("security.logOff" => "Off"); }
+        if key == "security.manage" { return @tr("Change your password, two-factor and recovery at"); }
+        if key == "security.recovery" { return @tr("Recovery email"); }
+        if key == "security.recoveryNone" { return @tr("Not set"); }
+        if key == "senders.about" { return @tr("Mail from these addresses and domains goes where you say, whatever the filters decide."); }
+        if key == "senders.add" { return @tr("Add"); }
+        if key == "senders.allowed" { return @tr("Allowed"); }
+        if key == "senders.blocked" { return @tr("Blocked"); }
+        if key == "senders.empty" { return @tr("Nothing here."); }
+        if key == "senders.list" { return @tr("List"); }
+        if key == "senders.more" { return @tr("And {{count}} more. Search to narrow them down."); }
+        if key == "senders.placeholder" { return @tr("Address or domain"); }
+        if key == "senders.remove" { return @tr("Remove"); }
+        if key == "senders.search" { return @tr("Search the lists"); }
+        if key == "senders.show" { return @tr("Show"); }
+        if key == "senders.spam" { return @tr("Spam"); }
+        if key == "senders.title" { return @tr("Blocked and allowed senders"); }
+        if key == "sentinel.hint" { return @tr("Stronger protection against account takeover, reviewed by Proton's security team."); }
+        if key == "sentinel.title" { return @tr("Proton Sentinel"); }
+        if key == "sessions.current" { return @tr("This session"); }
+        if key == "sessions.revoke" { return @tr("End"); }
+        if key == "sessions.revokeOthers" { return @tr("End all other sessions"); }
+        if key == "sessions.revokeOthersText" { return @tr("Every device but this one will be signed out."); }
+        if key == "sessions.title" { return @tr("Active sessions"); }
+        if key == "settings.addressSaved" { return @tr("Address saved"); }
+        if key == "settings.addresses" { return @tr("Addresses"); }
+        if key == "settings.addressesHint" { return @tr("The default address is used for new messages. You can change it in each message."); }
+        if key == "settings.autoDelete" { return @tr("Auto-delete from Spam and Trash"); }
+        if key == "settings.autoDeleteHint" { return @tr("Mail is deleted after 30 days. Available on paid plans."); }
+        if key == "settings.autoReply" { return @tr("Auto-reply"); }
+        if key == "settings.autoReplyDates" { return @tr("Between dates"); }
+        if key == "settings.autoReplyFrom" { return @tr("settings.autoReplyFrom" => "From"); }
+        if key == "settings.autoReplyMessage" { return @tr("Reply text"); }
+        if key == "settings.autoReplyOn" { return @tr("Reply automatically"); }
+        if key == "settings.autoReplyPermanent" { return @tr("Until turned off"); }
+        if key == "settings.autoReplySaved" { return @tr("Auto-reply saved"); }
+        if key == "settings.autoReplyTo" { return @tr("Until"); }
+        if key == "settings.autoSaveContacts" { return @tr("Save new recipients to contacts"); }
+        if key == "settings.autostart" { return @tr("Start when you sign in to your computer"); }
+        if key == "settings.autostartHint" { return @tr("The app starts in the tray, so that notifications arrive right away."); }
+        if key == "settings.confirmLinks" { return @tr("Ask before opening links"); }
+        if key == "settings.confirmLinksHint" { return @tr("Shows the full address, which makes phishing easier to spot."); }
+        if key == "settings.default" { return @tr("Default"); }
+        if key == "settings.displayName" { return @tr("Display name"); }
+        if key == "settings.filterAdd" { return @tr("Add filter"); }
+        if key == "settings.filterContains" { return @tr("contains"); }
+        if key == "settings.filterFrom" { return @tr("Sender"); }
+        if key == "settings.filterIf" { return @tr("If"); }
+        if key == "settings.filterKeep" { return @tr("Don't move"); }
+        if key == "settings.filterMarkRead" { return @tr("Mark as read"); }
+        if key == "settings.filterModeSimple" { return @tr("Simple"); }
+        if key == "settings.filterName" { return @tr("Name"); }
+        if key == "settings.filterNone" { return @tr("No filters yet"); }
+        if key == "settings.filterSaved" { return @tr("Filter added"); }
+        if key == "settings.filterStar" { return @tr("Star"); }
+        if key == "settings.filterSubject" { return @tr("Subject"); }
+        if key == "settings.filterThen" { return @tr("Move to"); }
+        if key == "settings.filterTo" { return @tr("Recipient"); }
+        if key == "settings.filters" { return @tr("Filters"); }
+        if key == "settings.hideRemote" { return @tr("Hide remote images"); }
+        if key == "settings.hideRemoteHint" { return @tr("Images always go through Proton's proxy, so senders never see your address."); }
+        if key == "settings.keyboard" { return @tr("Keyboard"); }
+        if key == "settings.language" { return @tr("Language"); }
+        if key == "settings.makeDefault" { return @tr("Make default"); }
+        if key == "settings.navigation" { return @tr("Going to folders"); }
+        if key == "settings.nextOnMove" { return @tr("Open the next message after moving one"); }
+        if key == "settings.notifications" { return @tr("New mail notifications"); }
+        if key == "settings.notificationsHint" { return @tr("When the window is in the background. Message text never appears in them."); }
+        if key == "settings.reading" { return @tr("Reading"); }
+        if key == "settings.shortcuts" { return @tr("Keyboard shortcuts"); }
+        if key == "settings.signOut" { return @tr("Sign out"); }
+        if key == "settings.signature" { return @tr("Signature"); }
+        if key == "settings.storage" { return @tr("{{used}} of {{max}}"); }
+        if key == "settings.theme" { return @tr("Theme"); }
+        if key == "settings.themeDark" { return @tr("Dark"); }
+        if key == "settings.themeLight" { return @tr("Light"); }
+        if key == "settings.themeSystem" { return @tr("System"); }
+        if key == "settings.undoOff" { return @tr("settings.undoOff" => "Off"); }
+        if key == "settings.undoSeconds" { return @tr("{{count}} s"); }
+        if key == "settings.undoSend" { return @tr("Time to undo sending"); }
+        if key == "settings.writing" { return @tr("Writing"); }
+        if key == "shortcut.saveDraft" { return @tr("Save draft (in the composer)"); }
+        if key == "shortcut.sendMail" { return @tr("Send (in the composer)"); }
+        if key == "smtp.about" { return @tr("Lets other services and devices send mail from your custom domain through Proton."); }
+        if key == "smtp.address" { return @tr("Email address"); }
+        if key == "smtp.bridgeAbout" { return @tr("Your mail is encrypted, so other apps reach it through Proton Mail Bridge, which runs on your computer."); }
+        if key == "smtp.bridgeTitle" { return @tr("IMAP and SMTP in other mail apps"); }
+        if key == "smtp.create" { return @tr("Generate token"); }
+        if key == "smtp.delete" { return @tr("Delete"); }
+        if key == "smtp.deleteText" { return @tr("Whatever uses it will stop sending."); }
+        if key == "smtp.deleteTitle" { return @tr("Delete token “{{name}}”?"); }
+        if key == "smtp.done" { return @tr("smtp.done" => "Done"); }
+        if key == "smtp.name" { return @tr("Token name"); }
+        if key == "smtp.neverUsed" { return @tr("Never used"); }
+        if key == "smtp.noDomain" { return @tr("A token needs an active address on a custom domain."); }
+        if key == "smtp.none" { return @tr("No tokens yet."); }
+        if key == "smtp.once" { return @tr("Copy the token now. It will not be shown again."); }
+        if key == "smtp.port" { return @tr("SMTP port"); }
+        if key == "smtp.server" { return @tr("SMTP server"); }
+        if key == "smtp.title" { return @tr("SMTP submission"); }
+        if key == "smtp.token" { return @tr("SMTP token"); }
+        if key == "smtp.used" { return @tr("Last used {{when}}"); }
+        if key == "smtp.user" { return @tr("SMTP username"); }
+        if key == "tabs.about" { return @tr("About"); }
+        if key == "tabs.account" { return @tr("Account and password"); }
+        if key == "tabs.appearance" { return @tr("Appearance"); }
+        if key == "tabs.application" { return @tr("Application"); }
+        if key == "tabs.apps" { return @tr("Get the apps"); }
+        if key == "tabs.backToMail" { return @tr("Back to mail"); }
+        if key == "tabs.backup" { return @tr("Backup and export"); }
+        if key == "tabs.connection" { return @tr("Connection"); }
+        if key == "tabs.domains" { return @tr("Domain names"); }
+        if key == "tabs.encryption" { return @tr("Encryption and keys"); }
+        if key == "tabs.filters" { return @tr("Filters"); }
+        if key == "tabs.folders" { return @tr("Folders and labels"); }
+        if key == "tabs.forwarding" { return @tr("Forwarding and auto-reply"); }
+        if key == "tabs.groupAccount" { return @tr("Account"); }
+        if key == "tabs.groupApp" { return @tr("This app"); }
+        if key == "tabs.groupMail" { return @tr("Proton Mail"); }
+        if key == "tabs.groupOrganization" { return @tr("Organization"); }
+        if key == "tabs.identity" { return @tr("Identity and addresses"); }
+        if key == "tabs.imap" { return @tr("IMAP/SMTP"); }
+        if key == "tabs.import" { return @tr("Import with Easy Switch"); }
+        if key == "tabs.journal" { return @tr("Journal"); }
+        if key == "tabs.keyboard" { return @tr("Keyboard shortcuts"); }
+        if key == "tabs.language" { return @tr("Language and time"); }
+        if key == "tabs.messages" { return @tr("Messages and composing"); }
+        if key == "tabs.multiUser" { return @tr("Multi-user support"); }
+        if key == "tabs.nothingFound" { return @tr("Nothing found"); }
+        if key == "tabs.openInProton" { return @tr("Open on Proton's website"); }
+        if key == "tabs.overview" { return @tr("Overview"); }
+        if key == "tabs.printCheck" { return @tr("Check a printout"); }
+        if key == "tabs.privacy" { return @tr("Email privacy"); }
+        if key == "tabs.recovery" { return @tr("Recovery"); }
+        if key == "tabs.referral" { return @tr("Refer a friend"); }
+        if key == "tabs.search" { return @tr("Search settings"); }
+        if key == "tabs.security" { return @tr("Security and privacy"); }
+        if key == "tabs.subscription" { return @tr("Subscription"); }
+        if key == "tabs.webOnly" { return @tr("This part lives on Proton's website. It opens in your browser, where you sign in to Proton."); }
+        if key == "time.asLanguage" { return @tr("As in the language"); }
+        if key == "time.clock" { return @tr("Time format"); }
+        if key == "time.date" { return @tr("Date format"); }
+        if key == "time.day1" { return @tr("Monday"); }
+        if key == "time.day2" { return @tr("Tuesday"); }
+        if key == "time.day3" { return @tr("Wednesday"); }
+        if key == "time.day4" { return @tr("Thursday"); }
+        if key == "time.day5" { return @tr("Friday"); }
+        if key == "time.day6" { return @tr("Saturday"); }
+        if key == "time.day7" { return @tr("Sunday"); }
+        if key == "time.h12" { return @tr("12 hours"); }
+        if key == "time.h24" { return @tr("24 hours"); }
+        if key == "time.now" { return @tr("Now: {{time}}"); }
+        if key == "time.title" { return @tr("Date and time"); }
+        if key == "time.weekDefault" { return @tr("As in the language"); }
+        if key == "time.weekStart" { return @tr("First day of the week"); }
+        if key == "time.where" { return @tr("Formats and the first day of the week are kept in your Proton account, the time zone is chosen for this computer. The first day of the week sets when “next week” begins for snoozed mail."); }
+        if key == "time.zone" { return @tr("Time zone"); }
+        if key == "time.zoneSystem" { return @tr("As in the system ({{zone}})"); }
+        if key == "totp.codes" { return @tr("Save these recovery codes now. Each works once, and they will not be shown again."); }
+        if key == "totp.disable" { return @tr("Turn off"); }
+        if key == "totp.done" { return @tr("I saved them"); }
+        if key == "totp.enable" { return @tr("Turn on"); }
+        if key == "totp.key" { return @tr("Key"); }
+        if key == "totp.scan" { return @tr("Scan this with an authenticator app, or enter the key by hand. Then type the code it shows."); }
+        if key == "units.size" { return @tr("B,KB,MB,GB,TB"); }
+        return key;
+    }
+}

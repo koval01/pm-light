@@ -1,0 +1,534 @@
+// Getting into the account: every screen before the mailbox, over the whole window. A saved session
+// never shows these. The words a server answers with come from Rust as they are.
+
+import { Theme, Logo } from "base.slint";
+
+export global Auth {
+    // 0 nothing, 1 credentials, 2 code, 3 mailbox password, 4 locked, 5 waiting, 6 verification.
+    in-out property <int> step;
+    in-out property <string> username;
+    in-out property <string> password;
+    in-out property <string> code;
+    in property <[string]> code-cells;
+    in-out property <string> recovery;
+    in-out property <string> mailbox;
+    in-out property <string> lock-password;
+    in-out property <bool> using-recovery;
+    in property <bool> busy;
+    in property <int> error;
+    in property <string> error-text;
+    in property <bool> session-ended;
+    in property <int> waiting-for;
+    // This start goes through Tor: a person waiting long enough may leave it, after a warning.
+    in property <bool> through-tor;
+    in-out property <int> frozen;
+    in property <bool> touch-id;
+    in property <string> verify-address;
+    in property <bool> verify-in-browser;
+    in property <bool> verify-failed;
+    in-out property <length> verify-x;
+    in-out property <length> verify-y;
+    in-out property <length> verify-width;
+    in-out property <length> verify-height;
+    out property <bool> dark: Theme.dark;
+    out property <string> touch-reason: @tr("unlock your mail");
+    out property <string> word-forgot-title: @tr("Sign out on this device?");
+    out property <string> word-forgot-text: @tr("The app password cannot be recovered. You will need to sign in to Proton again.");
+    out property <string> word-sign-out: @tr("Sign out");
+    out property <string> word-sign-out-title: @tr("Sign out of this account?");
+    out property <string> word-sign-out-text: @tr("The session ends, and mail saved on this computer is erased.");
+    out property <string> word-leave-tor-title: @tr("Connect without Tor?");
+    out property <string> word-leave-tor-text: @tr("Proton and your network will then see your computer's address, and your network will see that you use Proton. The app starts again without Tor, and you can turn it back on in Settings.");
+    out property <string> word-leave-tor: @tr("Connect without Tor");
+    callback sign-in();
+    callback code-edited();
+    callback recovery-sent(string);
+    callback mailbox-sent();
+    callback unlock();
+    callback touch-unlock();
+    callback forgot();
+    callback leave-tor();
+    callback verify-back();
+    callback verify-in-browser-requested();
+    callback verify-done();
+    callback verify-moved();
+    callback repository-requested();
+}
+
+component LoginField {
+    in property <string> label;
+    in property <bool> secret;
+    in property <bool> enabled: true;
+    in-out property <string> text;
+    callback accepted();
+    public function take-focus() { input.focus(); }
+    forward-focus: input;
+    height: 42px;
+    opacity: root.enabled ? 1 : 0.55;
+    Rectangle {
+        border-radius: 10px;
+        // The active field stands out from the others at a glance.
+        background: input.has-focus ? Theme.panel : Theme.field;
+        border-width: input.has-focus && root.enabled ? 2px : 1px;
+        border-color: input.has-focus && root.enabled ? Theme.accent : Theme.border;
+        animate background, border-color { duration: 120ms; }
+        input := TextInput {
+            x: 14px;
+            width: parent.width - 28px;
+            height: 100%;
+            text <=> root.text;
+            enabled: root.enabled;
+            input-type: root.secret ? InputType.password : InputType.text;
+            vertical-alignment: center;
+            color: Theme.foreground;
+            // The toolkit's mask is a fixed black circle as wide as a capital, so only its size can change.
+            font-size: root.secret && root.text != "" ? 9px : 14px;
+            letter-spacing: root.secret ? 1px : 0;
+            single-line: true;
+            accepted => { root.accepted(); }
+        }
+        if root.text == "": Text {
+            x: 14px;
+            text: root.label;
+            color: Theme.muted;
+            font-size: 14px;
+            height: 100%;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// One digit of a code. The block around it draws the edge, so a cell has only a line to its right,
+// and the frame of the active one lies over that line and takes the block's corners.
+component CodeCell {
+    in property <string> digit;
+    in property <bool> active;
+    in property <bool> caret;
+    in property <bool> first;
+    in property <bool> last;
+    height: 52px;
+    if !root.last: Rectangle {
+        x: parent.width - 1px;
+        width: 1px;
+        background: Theme.border;
+    }
+    Text { text: root.digit; color: Theme.foreground; font-size: 20px; font-weight: 600; }
+    if root.caret: Rectangle { width: 1.5px; height: 22px; background: Theme.accent; }
+    if root.active: Rectangle {
+        border-width: 2px;
+        border-color: Theme.accent;
+        border-top-left-radius: root.first ? 10px : 0;
+        border-bottom-left-radius: root.first ? 10px : 0;
+        border-top-right-radius: root.last ? 10px : 0;
+        border-bottom-right-radius: root.last ? 10px : 0;
+    }
+}
+
+// One real field under the cells, so that typing and pasting just work.
+export component CodeField {
+    in-out property <string> code;
+    // The digits one by one, since a string cannot be cut here.
+    in property <[string]> cells;
+    in property <bool> locked;
+    in property <bool> autofocus: true;
+    callback edited();
+    private property <int> filled: root.code.character-count;
+    private property <bool> blink: true;
+    public function take-focus() { input.focus(); }
+    pure function active(cell: int) -> bool {
+        return input.has-focus && cell == min(root.filled, 5);
+    }
+    height: 52px;
+    HorizontalLayout {
+        spacing: 10px;
+        Rectangle {
+            horizontal-stretch: 1;
+            border-radius: 10px;
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.border;
+            HorizontalLayout {
+                for cell in [0, 1, 2]: CodeCell {
+                    digit: root.cells[cell];
+                    active: root.active(cell);
+                    caret: input.has-focus && root.blink && cell == root.filled;
+                    first: cell == 0;
+                    last: cell == 2;
+                }
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            Rectangle { width: 8px; height: 2px; border-radius: 1px; background: Theme.muted; }
+        }
+        Rectangle {
+            horizontal-stretch: 1;
+            border-radius: 10px;
+            background: Theme.panel;
+            border-width: 1px;
+            border-color: Theme.border;
+            HorizontalLayout {
+                for cell in [3, 4, 5]: CodeCell {
+                    digit: root.cells[cell];
+                    active: root.active(cell);
+                    caret: input.has-focus && root.blink && cell == root.filled;
+                    first: cell == 3;
+                    last: cell == 5;
+                }
+            }
+        }
+    }
+    Timer {
+        interval: 550ms;
+        running: input.has-focus;
+        triggered => { root.blink = !root.blink; }
+    }
+    input := TextInput {
+        width: 100%;
+        height: 100%;
+        text <=> root.code;
+        read-only: root.locked;
+        color: transparent;
+        selection-background-color: transparent;
+        selection-foreground-color: transparent;
+        single-line: true;
+        edited => { root.edited(); }
+        init => {
+            if root.autofocus {
+                self.focus();
+            }
+        }
+    }
+}
+
+component MainButton {
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <bool> ghost;
+    callback clicked();
+    height: 42px;
+    Rectangle {
+        border-radius: 10px;
+        background: root.ghost ? (touch.has-hover ? Theme.hover : transparent) : root.enabled ? Theme.strong : Theme.field;
+        Text {
+            text: root.label;
+            color: root.ghost ? Theme.foreground : root.enabled ? Theme.on-strong : Theme.muted;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        touch := TouchArea {
+            enabled: root.enabled;
+            mouse-cursor: pointer;
+            clicked => { root.clicked(); }
+        }
+    }
+}
+
+export component AuthScreen {
+    pure function error-text() -> string {
+        if Auth.error == 1 { return @tr("Something failed inside the app. The details are in the journal."); }
+        if Auth.error == 2 { return @tr("This connection failed its security check, so nothing was sent. Someone on the network may be interfering, your computer's clock may be wrong, or the app needs an update."); }
+        if Auth.error == 3 { return @tr("Cannot reach Proton. If this client is open on a public domain, Proton refuses direct requests from it."); }
+        if Auth.error == 4 { return @tr("Wrong password"); }
+        if Auth.error == 5 { return @tr("Proton is not available right now. Try again in a minute."); }
+        return Auth.error-text;
+    }
+
+    pure function clock(seconds: int) -> string {
+        return floor(seconds / 60) + ":" + (mod(seconds, 60) < 10 ? "0" : "") + mod(seconds, 60);
+    }
+
+    pure function waiting-text() -> string {
+        if Auth.waiting-for == 1 { return @tr("Proton is not available right now. You are still signed in, and the app will carry on by itself."); }
+        if Auth.waiting-for == 2 { return @tr("This connection failed its security check, so nothing was sent. Someone on the network may be interfering, your computer's clock may be wrong, or the app needs an update."); }
+        return @tr("No connection to Proton yet. You are still signed in.");
+    }
+
+    // How long the waiting screen has been up, for offering a way out of Tor only after a while.
+    property <int> waited;
+    property <int> shown-step: Auth.step;
+    changed shown-step => { root.waited = 0; }
+    Timer {
+        interval: 1s;
+        running: Auth.step == 5;
+        triggered => { root.waited += 1; }
+    }
+
+    Rectangle { background: Theme.window; }
+    TouchArea { }
+
+    Timer {
+        interval: 1s;
+        running: Auth.frozen > 0;
+        triggered => { Auth.frozen -= 1; }
+    }
+
+    if Auth.step > 0 && Auth.step < 6: VerticalLayout {
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+            VerticalLayout {
+                width: 340px;
+                spacing: 12px;
+                HorizontalLayout {
+                    alignment: center;
+                    padding-bottom: 8px;
+                    Logo { size: 56px; still: true; }
+                }
+                if Auth.step == 1: VerticalLayout {
+                    spacing: 12px;
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 5px;
+                        Text { text: "Proton Mail"; color: Theme.foreground; font-size: 22px; font-weight: 700; }
+                        Text { text: "Light"; color: Theme.accent; font-size: 22px; font-weight: 300; }
+                    }
+                    Text {
+                        text: @tr("A lightweight client for Proton Mail");
+                        color: Theme.muted;
+                        font-size: 13px;
+                        horizontal-alignment: center;
+                    }
+                    if Auth.session-ended: Rectangle {
+                        border-radius: 10px;
+                        background: Theme.field;
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 3px;
+                            Text { text: @tr("This session is no longer valid"); color: Theme.foreground; font-size: 13px; font-weight: 600; wrap: word-wrap; }
+                            Text {
+                                text: @tr("Proton no longer accepts it. This happens after signing out on another device, changing the password or revoking the session in Proton's settings. The session and keys were removed from this device, so please sign in again.");
+                                color: Theme.muted;
+                                font-size: 12px;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+                    first-field := LoginField {
+                        label: @tr("Username or email");
+                        enabled: !Auth.busy;
+                        text <=> Auth.username;
+                        init => { self.take-focus(); }
+                        accepted => { second-field.take-focus(); }
+                    }
+                    second-field := LoginField {
+                        label: @tr("Password");
+                        secret: true;
+                        enabled: !Auth.busy;
+                        text <=> Auth.password;
+                        accepted => {
+                            if !Auth.busy && Auth.username != "" && Auth.password != "" { Auth.sign-in(); }
+                        }
+                    }
+                    MainButton {
+                        label: Auth.busy ? @tr("Signing in…") : @tr("Sign in");
+                        enabled: !Auth.busy && Auth.username != "" && Auth.password != "";
+                        clicked => { Auth.sign-in(); }
+                    }
+                }
+                if Auth.step == 2: VerticalLayout {
+                    spacing: 12px;
+                    Text { text: @tr("Two-factor code"); color: Theme.foreground; font-size: 20px; font-weight: 700; horizontal-alignment: center; }
+                    Text {
+                        text: Auth.using-recovery ? @tr("Enter one of the recovery codes you saved when you set up two-factor authentication.") : @tr("Enter the six digits from your authenticator app.");
+                        color: Theme.muted;
+                        font-size: 13px;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                    if !Auth.using-recovery: CodeField {
+                        code <=> Auth.code;
+                        cells: Auth.code-cells;
+                        locked: Auth.busy;
+                        edited => { Auth.code-edited(); }
+                    }
+                    if Auth.using-recovery: LoginField {
+                        label: @tr("Recovery code");
+                        enabled: !Auth.busy;
+                        text <=> Auth.recovery;
+                        accepted => { Auth.recovery-sent(Auth.recovery); }
+                    }
+                    if Auth.using-recovery: MainButton {
+                        label: @tr("Confirm");
+                        enabled: !Auth.busy && Auth.recovery != "";
+                        clicked => { Auth.recovery-sent(Auth.recovery); }
+                    }
+                    MainButton {
+                        ghost: true;
+                        label: Auth.using-recovery ? @tr("Use the authenticator app") : @tr("Use a recovery code");
+                        clicked => { Auth.using-recovery = !Auth.using-recovery; }
+                    }
+                }
+                if Auth.step == 3: VerticalLayout {
+                    spacing: 12px;
+                    Text { text: @tr("Mailbox password"); color: Theme.foreground; font-size: 20px; font-weight: 700; horizontal-alignment: center; }
+                    LoginField {
+                        label: @tr("Mailbox password");
+                        secret: true;
+                        enabled: !Auth.busy;
+                        text <=> Auth.mailbox;
+                        accepted => {
+                            if !Auth.busy && Auth.mailbox != "" { Auth.mailbox-sent(); }
+                        }
+                    }
+                    MainButton {
+                        label: @tr("Unlock");
+                        enabled: !Auth.busy && Auth.mailbox != "";
+                        clicked => { Auth.mailbox-sent(); }
+                    }
+                }
+                if Auth.step == 4: VerticalLayout {
+                    spacing: 12px;
+                    Text { text: @tr("The app is locked"); color: Theme.foreground; font-size: 20px; font-weight: 700; horizontal-alignment: center; }
+                    LoginField {
+                        label: @tr("App password");
+                        secret: true;
+                        enabled: Auth.frozen == 0 && !Auth.busy;
+                        text <=> Auth.lock-password;
+                        accepted => {
+                            if !Auth.busy && Auth.frozen == 0 && Auth.lock-password != "" { Auth.unlock(); }
+                        }
+                    }
+                    MainButton {
+                        label: @tr("Unlock");
+                        enabled: !Auth.busy && Auth.frozen == 0 && Auth.lock-password != "";
+                        clicked => { Auth.unlock(); }
+                    }
+                    if Auth.frozen > 0: Text {
+                        text: @tr("Too many attempts. Try again in {}", root.clock(Auth.frozen));
+                        color: Theme.muted;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                    }
+                    if Auth.touch-id: MainButton {
+                        ghost: true;
+                        label: @tr("Use Touch ID");
+                        enabled: !Auth.busy;
+                        clicked => { Auth.touch-unlock(); }
+                    }
+                    MainButton {
+                        ghost: true;
+                        label: @tr("Forgot the password");
+                        clicked => { Auth.forgot(); }
+                    }
+                }
+                if Auth.step == 5: VerticalLayout {
+                    spacing: 12px;
+                    // Three dots that brighten in turn: the app is at work, and nothing needs pressing.
+                    HorizontalLayout {
+                        alignment: center;
+                        spacing: 8px;
+                        for dot in 3: Rectangle {
+                            width: 8px;
+                            height: 8px;
+                            border-radius: 4px;
+                            background: Theme.accent;
+                            opacity: 0.25 + 0.75 * abs(sin(animation-tick() / 1200ms * 180deg - dot * 50deg));
+                        }
+                    }
+                    Text {
+                        text: @tr("Trying to reconnect…");
+                        color: Theme.foreground;
+                        font-size: 15px;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: root.waiting-text();
+                        color: Theme.muted;
+                        font-size: 13px;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                    if Auth.through-tor && root.waited >= 20: MainButton {
+                        ghost: true;
+                        label: Auth.word-leave-tor;
+                        clicked => { Auth.leave-tor(); }
+                    }
+                }
+                if root.error-text() != "": Text {
+                    text: root.error-text();
+                    color: #e0545e;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+
+    if Auth.step != 6: Text {
+        y: parent.height - 34px;
+        width: parent.width;
+        text: @tr("Unofficial client. Not affiliated with Proton AG.") + " Yaroslav Koval";
+        color: repository-touch.has-hover ? Theme.accent : Theme.faint;
+        font-size: 12px;
+        horizontal-alignment: center;
+        repository-touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { Auth.repository-requested(); }
+        }
+    }
+
+    // Proton's page lies over `slot` in a webview of its own. This bar says what it is and offers the way out.
+    if Auth.step == 6: VerticalLayout {
+        padding: 12px;
+        padding-top: 40px;
+        spacing: 12px;
+        HorizontalLayout {
+            spacing: 10px;
+            vertical-stretch: 0;
+            height: 36px;
+            MainButton { width: 170px; height: 36px; ghost: true; label: @tr("Back to sign-in"); clicked => { Auth.verify-back(); } }
+            Text {
+                text: @tr("Proton verification");
+                color: Theme.foreground;
+                font-size: 13px;
+                font-weight: 600;
+                vertical-alignment: center;
+                horizontal-alignment: center;
+                horizontal-stretch: 1;
+            }
+            if !Auth.verify-in-browser: MainButton {
+                width: 240px;
+                height: 36px;
+                ghost: true;
+                label: @tr("Open the verification page");
+                clicked => { Auth.verify-in-browser-requested(); }
+            }
+            if Auth.verify-in-browser: MainButton {
+                width: 170px;
+                height: 36px;
+                label: @tr("Check again");
+                clicked => { Auth.verify-done(); }
+            }
+        }
+        slot := Rectangle {
+            vertical-stretch: 1;
+            border-radius: 10px;
+            background: Theme.panel;
+            changed absolute-position => {
+                Auth.verify-x = self.absolute-position.x;
+                Auth.verify-y = self.absolute-position.y;
+                Auth.verify-moved();
+            }
+            changed width => { Auth.verify-width = self.width; Auth.verify-moved(); }
+            changed height => { Auth.verify-height = self.height; Auth.verify-moved(); }
+            init => {
+                Auth.verify-x = self.absolute-position.x;
+                Auth.verify-y = self.absolute-position.y;
+                Auth.verify-width = self.width;
+                Auth.verify-height = self.height;
+                Auth.verify-moved();
+            }
+            if Auth.busy: Text { text: @tr("No connection to Proton. Connecting…"); color: Theme.muted; font-size: 13px; }
+            if Auth.verify-failed: Text {
+                width: parent.width - 48px;
+                text: @tr("Proton wants to confirm you are human. Complete the check on the page that opens and come back: the sign-in continues by itself.");
+                color: Theme.muted;
+                font-size: 13px;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+        }
+    }
+}

@@ -1,0 +1,37 @@
+Proton Mail Light
+Copyright (C) 2026 Yaroslav Koval
+https://github.com/koval01/pm-light
+
+An unofficial client. It is not affiliated with, endorsed by or connected to Proton AG. "Proton" and "Proton Mail"
+are trademarks of Proton AG.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General
+Public License as published by the Free Software Foundation, version 3 of the License, with the additional terms
+below.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+details. Its full text is in the file LICENSE, and at <https://www.gnu.org/licenses/agpl-3.0.html>.
+
+
+Additional terms, under section 7 of the GNU Affero General Public License
+
+These terms are added under section 7, paragraphs (b) and (c), and apply to this program and to every work based
+on it.
+
+1. Attribution (section 7(b)). Every copy and every modified version must keep, unchanged and readable:
+   a. the author's name, "Yaroslav Koval", and the copyright notice above, in the source and in this file;
+   b. the link to the original repository, https://github.com/koval01/pm-light, in the source and in this file;
+   c. the program's Appropriate Legal Notices, as its About page shows them: the author's name, the link to the
+      original repository, and a statement that the program is under this license with these terms.
+   A modified version that has its own interactive user interface must show these notices in a place a user can
+   reach as easily as the About page of the original.
+
+2. Marking of modified versions (section 7(c)). A modified version must not be presented as the original, and must
+   state in its Appropriate Legal Notices and in its source that it was changed, by whom, and where its own source
+   is published.
+
+3. Names (section 7(e)). These terms grant no right to use the name "Proton Mail Light", the author's name or
+   Proton AG's trademarks to promote a modified version, beyond the notices required above.
+
+Under section 7, a recipient may not remove these terms from a copy of the program or of a work based on it.

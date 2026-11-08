@@ -1,0 +1,397 @@
+// Panels laid over the main window. Each is a system sheet: nothing the toolkit draws in the main
+// window can cover the mail's webview.
+
+import { ListView } from "std-widgets.slint";
+import { Theme, Icon, IconButton } from "base.slint";
+
+export struct ContactRow {
+    id: string,
+    name: string,
+    email: string,
+    initials: string,
+    tint: color,
+}
+
+export struct CommandRow {
+    label: string,
+    hint: string,
+}
+
+// What the command palette and the keyboard help say. The commands themselves are built in Rust.
+export global Words {
+    out property <string> compose: @tr("New message");
+    out property <string> reply: @tr("Reply");
+    out property <string> reply-all: @tr("Reply all");
+    out property <string> forward: @tr("Forward");
+    out property <string> images: @tr("Show remote images");
+    out property <string> details: @tr("Message details");
+    out property <string> source: @tr("Message source");
+    out property <string> print: @tr("Print…");
+    out property <string> headers: @tr("Message headers");
+    out property <string> filter-unread: @tr("Filter: unread");
+    out property <string> filter-files: @tr("Filter: with attachments");
+    out property <string> contacts: @tr("Contacts");
+    out property <string> shortcuts: @tr("Keyboard shortcuts");
+    out property <string> navigation: @tr("Navigation");
+    out property <string> sign-out: @tr("Sign out");
+    out property <string> next: @tr("Next message");
+    out property <string> previous: @tr("Previous message");
+    out property <string> open: @tr("Edit draft");
+    out property <string> close: @tr("Close message");
+    out property <string> scroll-down: @tr("Scroll the message down");
+    out property <string> scroll-up: @tr("Scroll the message up");
+    out property <string> search: @tr("Search");
+    out property <string> archive: @tr("Archive");
+    out property <string> trash: @tr("Move to trash");
+    out property <string> spam: @tr("Move to spam");
+    out property <string> star: @tr("Star");
+    out property <string> unread: @tr("Mark as unread");
+    out property <string> move-to: @tr("Move to a folder");
+    out property <string> label: @tr("Apply a label");
+    out property <string> show-images: @tr("Show images");
+    out property <string> toggle-check: @tr("Select message");
+    out property <string> check-all: @tr("Select all");
+    out property <string> undo: @tr("Undo send");
+    out property <string> help: @tr("This help");
+    out property <string> palette: @tr("All commands");
+    out property <string> notify-title: @tr("New mail");
+    public pure function notify-body(count: string) -> string { return @tr("New messages: {}", count); }
+    public pure function go-to(name: string) -> string { return @tr("Go to: {}", name); }
+    public pure function move-to-folder(name: string) -> string { return @tr("Move to: {}", name); }
+    public pure function label-on(name: string) -> string { return @tr("Label: {}", name); }
+    public pure function download(name: string) -> string { return @tr("Download: {}", name); }
+    public pure function open-mail(name: string) -> string { return @tr("Open: {}", name); }
+}
+
+component PanelField {
+    in property <string> label;
+    in-out property <string> text;
+    callback edited();
+    callback accepted();
+    public function take-focus() { input.focus(); }
+    forward-focus: input;
+    height: 36px;
+    Rectangle {
+        border-radius: 9px;
+        background: Theme.field;
+        input := TextInput {
+            x: 12px;
+            width: parent.width - 24px;
+            height: 100%;
+            text <=> root.text;
+            vertical-alignment: center;
+            color: Theme.foreground;
+            font-size: 13px;
+            single-line: true;
+            edited => { root.edited(); }
+            accepted => { root.accepted(); }
+        }
+        if root.text == "": Text {
+            x: 12px;
+            height: 100%;
+            text: root.label;
+            color: Theme.muted;
+            font-size: 13px;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component ContactsWindow inherits Window {
+    in property <[ContactRow]> rows;
+    in property <bool> loading: true;
+    in property <bool> own-close;
+    in property <string> problem;
+    in-out property <string> query;
+    in-out property <string> new-name;
+    in-out property <string> new-email;
+    in-out property <string> confirming;
+    out property <string> word-bad-address: @tr("Not a valid address");
+    callback dismissed();
+    callback searched();
+    callback add();
+    callback write(string);
+    callback remove(string, string);
+    callback removal-confirmed();
+    public function begin() { search-field.take-focus(); }
+
+    title: @tr("Contacts");
+    preferred-width: 520px;
+    preferred-height: 620px;
+    min-width: 400px;
+    min-height: 400px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    forward-focus: scope;
+    scope := FocusScope {
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+        VerticalLayout {
+            padding-top: 14px;
+            padding-bottom: 12px;
+            spacing: 10px;
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 12px;
+                vertical-stretch: 0;
+                Text { text: root.title; color: Theme.foreground; font-size: 18px; font-weight: 700; vertical-alignment: center; horizontal-stretch: 1; }
+                if root.own-close: IconButton {
+                    icon: @image-url("icons/x.svg");
+                    clicked => { root.dismissed(); }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 20px;
+                vertical-stretch: 0;
+                search-field := PanelField {
+                    label: @tr("Search");
+                    text <=> root.query;
+                    edited => { root.searched(); }
+                }
+            }
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 20px;
+                spacing: 8px;
+                vertical-stretch: 0;
+                PanelField { label: @tr("Name"); text <=> root.new-name; accepted => { root.add(); } }
+                PanelField { label: @tr("Email"); text <=> root.new-email; accepted => { root.add(); } }
+                Rectangle {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 9px;
+                    background: root.new-email != "" ? Theme.strong : Theme.field;
+                    Text {
+                        text: "+";
+                        color: root.new-email != "" ? Theme.on-strong : Theme.muted;
+                        font-size: 18px;
+                        font-weight: 600;
+                    }
+                    TouchArea { enabled: root.new-email != ""; mouse-cursor: pointer; clicked => { root.add(); } }
+                }
+            }
+            if root.problem != "": HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 20px;
+                vertical-stretch: 0;
+                Text { text: root.problem; color: #e0545e; font-size: 12px; wrap: word-wrap; }
+            }
+            if root.loading: Text {
+                text: @tr("Loading…");
+                color: Theme.muted;
+                font-size: 13px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                vertical-stretch: 1;
+            }
+            if !root.loading && root.rows.length == 0: Text {
+                text: @tr("Nothing found");
+                color: Theme.muted;
+                font-size: 13px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                vertical-stretch: 1;
+            }
+            if !root.loading && root.rows.length > 0: ListView {
+                vertical-stretch: 1;
+                for contact in root.rows: Rectangle {
+                    height: 54px;
+                    Rectangle {
+                        x: 10px;
+                        y: 2px;
+                        width: parent.width - 20px;
+                        height: 50px;
+                        border-radius: 10px;
+                        background: row-touch.has-hover ? Theme.hover : transparent;
+                        Rectangle {
+                            x: 10px;
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 16px;
+                            background: contact.tint;
+                            Text { text: contact.initials; color: #ffffff; font-size: 12px; font-weight: 600; }
+                        }
+                        Text {
+                            x: 54px;
+                            y: 8px;
+                            width: parent.width - 100px;
+                            text: contact.name;
+                            color: Theme.foreground;
+                            font-size: 13px;
+                            font-weight: 500;
+                            overflow: elide;
+                        }
+                        Text {
+                            x: 54px;
+                            y: 27px;
+                            width: parent.width - 100px;
+                            text: contact.email;
+                            color: Theme.muted;
+                            font-size: 12px;
+                            overflow: elide;
+                        }
+                        row-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.write(contact.email); }
+                        }
+                        IconButton {
+                            x: parent.width - 40px;
+                            y: 9px;
+                            icon: @image-url("icons/trash.svg");
+                            clicked => { root.remove(contact.id, contact.name); }
+                        }
+                    }
+                }
+            }
+            // A second press, inside this window: a system alert would stop the whole program.
+            if root.confirming != "": HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 20px;
+                spacing: 6px;
+                height: 36px;
+                vertical-stretch: 0;
+                Text {
+                    text: @tr("Delete “{}”?", root.confirming);
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    font-weight: 500;
+                    vertical-alignment: center;
+                    overflow: elide;
+                    horizontal-stretch: 1;
+                }
+                Rectangle {
+                    width: keep-label.preferred-width + 24px;
+                    border-radius: 10px;
+                    background: keep-touch.has-hover ? Theme.hover : transparent;
+                    keep-label := Text { text: @tr("Cancel"); color: Theme.foreground; font-size: 13px; font-weight: 500; }
+                    keep-touch := TouchArea { mouse-cursor: pointer; clicked => { root.confirming = ""; } }
+                }
+                Rectangle {
+                    width: delete-label.preferred-width + 28px;
+                    border-radius: 10px;
+                    background: #d8434e;
+                    delete-label := Text { text: @tr("Delete"); color: #ffffff; font-size: 13px; font-weight: 600; }
+                    TouchArea { mouse-cursor: pointer; clicked => { root.removal-confirmed(); } }
+                }
+            }
+        }
+    }
+}
+
+export component PaletteWindow inherits Window {
+    in property <[CommandRow]> commands;
+    in-out property <int> chosen;
+    in property <string> hint;
+    in-out property <string> query;
+    callback edited();
+    callback run(int);
+    callback dismissed();
+    public function begin() { field.focus(); }
+
+    function step(delta: int) {
+        if root.commands.length == 0 {
+            return;
+        }
+        root.chosen = mod(root.chosen + delta + root.commands.length, root.commands.length);
+        // In steps of a row: keeps the chosen one in sight without a jump.
+        if results.content-y + root.chosen * 36px < 0 {
+            results.content-y = -root.chosen * 36px;
+        }
+        if results.content-y + (root.chosen + 1) * 36px > results.height {
+            results.content-y = results.height - (root.chosen + 1) * 36px;
+        }
+    }
+
+    preferred-width: 560px;
+    preferred-height: 420px;
+    min-width: 400px;
+    min-height: 300px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    VerticalLayout {
+        padding: 10px;
+        spacing: 8px;
+        Rectangle {
+            height: 42px;
+            vertical-stretch: 0;
+            border-radius: 10px;
+            background: Theme.field;
+            field := TextInput {
+                x: 14px;
+                width: parent.width - 28px;
+                height: 100%;
+                text <=> root.query;
+                vertical-alignment: center;
+                color: Theme.foreground;
+                font-size: 15px;
+                single-line: true;
+                edited => { root.edited(); }
+                key-pressed(event) => {
+                    if event.text == Key.Escape { root.dismissed(); return accept; }
+                    if event.text == Key.DownArrow { root.step(1); return accept; }
+                    if event.text == Key.UpArrow { root.step(-1); return accept; }
+                    if event.text == Key.Return { root.run(root.chosen); return accept; }
+                    return reject;
+                }
+            }
+            if root.query == "": Text {
+                x: 14px;
+                height: 100%;
+                text: root.hint;
+                color: Theme.muted;
+                font-size: 15px;
+                vertical-alignment: center;
+            }
+        }
+        if root.commands.length == 0: Text {
+            text: @tr("Nothing found");
+            color: Theme.muted;
+            font-size: 13px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            vertical-stretch: 1;
+        }
+        results := ListView {
+            vertical-stretch: 1;
+            for command[index] in root.commands: Rectangle {
+                height: 36px;
+                border-radius: 8px;
+                background: index == root.chosen ? Theme.selected : transparent;
+                Text {
+                    x: 12px;
+                    width: parent.width - 90px;
+                    height: 100%;
+                    text: command.label;
+                    color: Theme.foreground;
+                    font-size: 13px;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+                if command.hint != "": Text {
+                    x: parent.width - self.preferred-width - 12px;
+                    height: 100%;
+                    text: command.hint;
+                    color: Theme.muted;
+                    font-family: Theme.mono;
+                    font-size: 12px;
+                    vertical-alignment: center;
+                }
+                touch := TouchArea {
+                    mouse-cursor: pointer;
+                    changed has-hover => {
+                        if self.has-hover { root.chosen = index; }
+                    }
+                    clicked => { root.run(index); }
+                }
+            }
+        }
+    }
+}

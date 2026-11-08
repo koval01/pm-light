@@ -1,0 +1,167 @@
+# Builds and checks the app on the systems it is made for, then starts it once on each, keeps a picture of its
+# window, and draws a made-up mail as a picture through the system's web engine (`--check-picture`). The pictures are
+# the only look at Windows and Linux most changes get.
+#
+# Minutes are counted on a private repository, macOS's at ten times the rate. macOS is checked on this computer before
+# every change, so here it runs only when asked for and for a release; Windows and Linux run on every push to main and
+# on every pull request. A newer run of the same branch stops the older one.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/dependabot.yml"
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
+    inputs:
+      macos:
+        description: Also build and start on macOS
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      macos:
+        description: Also build and start on macOS
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-24.04]
+        # `inputs` is empty on a push or a pull request, and set when the run was asked for or called by a release.
+        asked:
+          - ${{ inputs.macos == true }}
+        exclude:
+          - os: macos-latest
+            asked: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Linux libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            libxdo-dev libxkbcommon-dev libxkbcommon-x11-0 libfontconfig1-dev libdbus-1-dev xvfb imagemagick
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        with:
+          tool: cargo-deny
+
+      - name: Checks
+        shell: bash
+        run: scripts/check.sh
+
+      - name: Build
+        run: cargo build --profile native --locked -p proton-mail-light
+
+      - name: Bundle for macOS
+        if: runner.os == 'macOS'
+        run: |
+          scripts/bundle-macos.sh
+          ditto -c -k --keepParent "target/native/Proton Mail Light.app" "target/native/Proton-Mail-Light-macos.zip"
+
+      # The journal goes to the terminal too (PML_JOURNAL_ECHO), and is kept: it holds nothing of a person.
+      - name: Start on macOS
+        if: runner.os == 'macOS'
+        env:
+          PML_JOURNAL_ECHO: "1"
+          RUST_BACKTRACE: "1"
+        run: |
+          "target/native/Proton Mail Light.app/Contents/MacOS/proton-mail-light" \
+            "--check-picture=$PWD/target/native/picture.png" > target/native/started.log 2>&1 & app=$!
+          sleep 25
+          kill -0 $app || { cat target/native/started.log; echo "The app quit by itself"; exit 1; }
+          screencapture -x target/native/started.png
+          kill $app
+
+      - name: Start on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PML_JOURNAL_ECHO: "1"
+          RUST_BACKTRACE: "1"
+        run: |
+          $picture = Join-Path $PWD "target\native\picture.png"
+          $app = Start-Process -FilePath target\native\proton-mail-light.exe -ArgumentList "--check-picture=$picture" `
+            -RedirectStandardOutput target\native\started.log -RedirectStandardError target\native\started.err.log -PassThru
+          Start-Sleep -Seconds 25
+          if ($app.HasExited) {
+            Get-Content target\native\started.log, target\native\started.err.log -ErrorAction SilentlyContinue
+            throw "The app quit by itself with code $($app.ExitCode)"
+          }
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $shot = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+          [System.Drawing.Graphics]::FromImage($shot).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+          $shot.Save("target\native\started.png")
+          Stop-Process -Id $app.Id
+
+      - name: Start on Linux
+        if: runner.os == 'Linux'
+        env:
+          PML_JOURNAL_ECHO: "1"
+          RUST_BACKTRACE: "1"
+        run: |
+          # shellcheck disable=SC2016 # expanded by the inner shell, under the virtual screen
+          xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" bash -c '
+            target/native/proton-mail-light "--check-picture=$PWD/target/native/picture.png" \
+              > target/native/started.log 2>&1 & app=$!
+            sleep 25
+            kill -0 $app || { cat target/native/started.log; echo "The app quit by itself"; exit 1; }
+            import -window root target/native/started.png
+            kill $app'
+
+      - name: The mail picture was drawn
+        shell: bash
+        run: |
+          note=target/native/picture.png.txt
+          test -f "$note" || { echo "No report of the picture check"; exit 1; }
+          cat "$note"
+          grep -qx "failed" "$note" && { echo "The picture check failed"; exit 1; }
+          width=$(sed -n 's/^width=//p' "$note")
+          test "${width:-0}" -gt 0 || { echo "The picture is empty"; exit 1; }
+          grep -qx "copied=true" "$note" || echo "::warning::The picture did not reach the clipboard"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: proton-mail-light-${{ runner.os }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            target/native/proton-mail-light
+            target/native/proton-mail-light.exe
+            target/native/Proton-Mail-Light-macos.zip
+            target/native/started.png
+            target/native/started*.log
+            target/native/picture.png
+            target/native/picture.png.txt

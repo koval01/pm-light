@@ -1,0 +1,87 @@
+# A release from a tag `v<version>` that matches the app's version: the same build and checks as every push, on all
+# three systems, then the programs, their SHA-256 sums and the notes. Versions below 1.0 are marked pre-releases.
+# Builds are not signed by Apple or Microsoft and macOS's is not notarized: the notes say so.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: The tag is the version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The tag names the app's version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' app/Cargo.toml | head -n 1)
+          test "v$version" = "$TAG" || { echo "The tag $TAG is not the app's version $version"; exit 1; }
+
+  build:
+    needs: version
+    # The same build as every push. `./` is the form actionlint and GitHub's documentation give for a workflow of the
+    # same repository and commit.
+    uses: ./.github/workflows/build.yml # zizmor: ignore[self-repository]
+    with:
+      macos: true
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write # to create the release
+      id-token: write # to sign the provenance
+      attestations: write # to store the provenance
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: built
+
+      - name: Pack
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir release
+          cp "built/proton-mail-light-macOS/Proton-Mail-Light-macos.zip" "release/proton-mail-light-$TAG-macos.zip"
+          (cd built/proton-mail-light-Windows && zip -9 "../../release/proton-mail-light-$TAG-windows-x64.zip" proton-mail-light.exe)
+          chmod +x built/proton-mail-light-Linux/proton-mail-light
+          tar -C built/proton-mail-light-Linux -czf "release/proton-mail-light-$TAG-linux-x64.tar.gz" proton-mail-light
+          (cd release && sha256sum -- * > SHA256SUMS)
+          cat release/SHA256SUMS
+
+      - name: Provenance
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/proton-mail-light-*
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ startsWith(github.ref_name, 'v0.') || contains(github.ref_name, '-') }}
+        run: |
+          cat > notes.md <<'NOTES'
+          An unofficial Proton Mail desktop client, written in Rust. It is not affiliated with Proton AG.
+
+          The programs are not signed by Apple or Microsoft, and the macOS one is not notarized: the system warns
+          before the first start. Compare a download with `SHA256SUMS` before running it.
+          NOTES
+          flags=(--repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md --generate-notes --verify-tag)
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "$TAG" release/* "${flags[@]}"

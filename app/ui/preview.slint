@@ -1,0 +1,100 @@
+// A look at an attachment, in a sheet over the main window. A webview fills everything below the
+// heading, down to the sheet's edge.
+
+import { Theme, IconButton } from "base.slint";
+import { Say } from "say.slint";
+import { SmallButton } from "settings.slint";
+
+export component PreviewWindow inherits Window {
+    in property <string> name;
+    in property <bool> own-close;
+    // 0 on its way, 1 drawn by the webview, 2 not shown.
+    in property <int> state;
+    // A file that is not shown can still be saved.
+    in property <bool> arrived;
+    // What was found out about the file, shown whether it is drawn or not.
+    in property <string> problem;
+    out property <length> page-x: page.absolute-position.x;
+    out property <length> page-y: page.absolute-position.y;
+    out property <length> page-width: page.width;
+    out property <length> page-height: page.height;
+    callback dismissed();
+    callback save();
+    callback moved();
+    public function begin() { keys.focus(); }
+
+    changed page-width => { root.moved(); }
+    changed page-height => { root.moved(); }
+
+    title: root.name;
+    preferred-width: 860px;
+    preferred-height: 640px;
+    min-width: 420px;
+    min-height: 320px;
+    background: Theme.panel;
+    default-font-family: "Inter Variable";
+
+    keys := FocusScope {
+        width: 0;
+        height: 0;
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    VerticalLayout {
+        HorizontalLayout {
+            height: 60px;
+            vertical-stretch: 0;
+            padding-left: 16px;
+            padding-right: 12px;
+            padding-top: 14px;
+            padding-bottom: 14px;
+            spacing: 10px;
+            Text {
+                horizontal-stretch: 1;
+                text: root.name;
+                color: Theme.foreground;
+                font-size: 15px;
+                font-weight: 600;
+                overflow: elide;
+                vertical-alignment: center;
+            }
+            SmallButton {
+                text: Say.text("reader.download");
+                icon: @image-url("icons/download.svg");
+                has-icon: true;
+                enabled: root.arrived;
+                clicked => { root.save(); }
+            }
+            if root.own-close: IconButton {
+                icon: @image-url("icons/x.svg");
+                clicked => { root.dismissed(); }
+            }
+        }
+        if root.problem != "": Rectangle {
+            height: warning.preferred-height + 16px;
+            vertical-stretch: 0;
+            background: Theme.field;
+            warning := Text {
+                x: 16px;
+                width: parent.width - 32px;
+                text: root.problem;
+                color: Theme.danger;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+        }
+        page := Rectangle {
+            vertical-stretch: 1;
+            if root.state == 0: Text {
+                text: Say.text("common.loading");
+                color: Theme.muted;
+                font-size: 13px;
+            }
+        }
+    }
+}
