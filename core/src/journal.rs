@@ -162,8 +162,7 @@ impl Log for Logger {
 }
 
 fn seal(cipher: &XChaCha20Poly1305, record: &Record) -> Option<Vec<u8>> {
-    let mut nonce = [0; NONCE_BYTES];
-    rand::thread_rng().fill_bytes(&mut nonce);
+    let nonce: [u8; NONCE_BYTES] = rand::random();
     let plain = Zeroizing::new(serde_json::to_vec(record).ok()?);
     let sealed =
         cipher.encrypt(XNonce::from_slice(&nonce), Payload { msg: &plain, aad: CONTEXT }).ok()?;

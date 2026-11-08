@@ -221,3 +221,12 @@ fn tors_life_is_kept_without_its_noise() {
     assert_eq!(area_of("tor_dirmgr::bootstrap"), "tor_dirmgr");
     assert_eq!(area_of("arti_client::status"), "arti_client");
 }
+
+#[test]
+fn the_same_record_never_seals_the_same_way() {
+    let cipher = cipher();
+    let first = seal(&cipher, &record("the same")).unwrap_or_default();
+    let second = seal(&cipher, &record("the same")).unwrap_or_default();
+    assert!(!first.is_empty());
+    assert_ne!(first, second, "each record has a nonce of its own");
+}

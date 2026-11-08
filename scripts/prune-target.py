@@ -16,7 +16,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = ROOT / "target"
+# What check.sh builds of a crate: clippy's check of the program and of its tests, the tests, the program.
 KEPT = 4
+# Incremental state only makes the next build of a configuration faster, at a gigabyte and more each for the app:
+# the two newest are kept.
+KEPT_INCREMENTAL = 2
 HASHED = re.compile(r"^(?P<name>[a-z0-9_]+)-(?P<hash>[0-9a-z]{13,16})(?:[.-]|$)")
 
 
@@ -75,7 +79,7 @@ def remove(path: Path) -> int:
     return freed
 
 
-def prune(folder: Path, names: set[str]) -> int:
+def prune(folder: Path, names: set[str], kept: int = KEPT) -> int:
     """In `deps` or `incremental`: groups entries by crate and build, and removes all but the newest builds."""
     if not folder.is_dir():
         return 0
@@ -87,7 +91,7 @@ def prune(folder: Path, names: set[str]) -> int:
     freed = 0
     for by_hash in builds.values():
         ordered = sorted(by_hash.values(), key=newest, reverse=True)
-        for old in ordered[KEPT:]:
+        for old in ordered[kept:]:
             freed += sum(remove(entry) for entry in old)
     return freed
 
@@ -99,11 +103,11 @@ def main() -> int:
     freed = 0
     for profile in TARGET.iterdir():
         if profile.is_dir():
-            freed += prune(profile / "deps", names) + prune(profile / "incremental", names)
+            freed += prune(profile / "deps", names) + prune(profile / "incremental", names, KEPT_INCREMENTAL)
             for triple in profile.iterdir():
                 # Builds for another system keep their own profiles one level down.
                 if triple.is_dir() and (triple / "deps").is_dir() and triple.name not in ("deps", "incremental"):
-                    freed += prune(triple / "deps", names) + prune(triple / "incremental", names)
+                    freed += prune(triple / "deps", names) + prune(triple / "incremental", names, KEPT_INCREMENTAL)
     print(f"== old builds let go: {freed / 1024**3:.1f} GB")
     return 0
 

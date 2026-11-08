@@ -8,6 +8,8 @@
 #   tests         every test, including the dictionaries and the English-only check
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# Old builds go however this ends: a failed check builds as much as a passing one.
+trap 'python3 -I scripts/prune-target.py' EXIT
 
 echo "== dependencies"
 cargo deny check
@@ -18,5 +20,4 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 echo "== tests"
 cargo test --workspace --locked
 
-python3 -I "$(dirname "$0")/prune-target.py"
 echo "== all checks passed"

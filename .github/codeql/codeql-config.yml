@@ -1,0 +1,12 @@
+# What CodeQL reads. Tests are left out: their keys, passwords and nonces are fixed on purpose, to be compared with.
+# vendor/ is Slint's and softbuffer's code with the few patches its PATCHED.md files list, not this project's.
+name: Proton Mail Light
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths-ignore:
+  - vendor
+  - "**/tests.rs"
+  - "**/tests/**"
