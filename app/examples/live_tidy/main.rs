@@ -4,8 +4,11 @@
 //!
 //! Only for that account. It sends nothing and never refreshes the tokens. Run it with
 //! `cargo run -p proton-mail-light --example live_tidy`, which only counts and sets the filter; `-- --delete` also
-//! deletes, and `-- --sample-draft` saves a draft with no recipient for the checks to draw when the account holds no
-//! other mail. macOS asks before it lets the session out of the keychain.
+//! deletes, `-- --sample-draft` saves a draft with no recipient for the checks to draw, and `-- --import` puts the
+//! set of `corpus.rs` into the inbox through Proton's import, unless it is there already: mail that arrived from no one,
+//! and went to no one. macOS asks before it lets the session out of the keychain.
+
+mod corpus;
 
 use keyring::Entry;
 use proton_core::{
@@ -93,6 +96,17 @@ async fn run() -> Result<(), String> {
             };
             service.save_draft(&draft).await.map_err(|e| e.to_string())?;
             println!("a sample draft saved, with no recipient");
+        }
+    }
+
+    if std::env::args().any(|argument| argument == "--import") {
+        let inbox = service.list("inbox", &ListOptions { limit: Some(150), ..Default::default() }).await.map_err(|e| e.to_string())?;
+        if inbox.iter().any(|row| row.subject == "Autumn sale: up to 40% off") {
+            println!("the set of test mail is in the inbox already");
+        } else {
+            let mails: Vec<(String, bool)> = corpus::all().into_iter().map(|mail| (mail.literal, mail.unread)).collect();
+            let ids = service.import_mail(&mails).await.map_err(|e| e.to_string())?;
+            println!("imported {} test mails into the inbox", ids.len());
         }
     }
 

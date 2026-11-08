@@ -103,6 +103,9 @@ extra traffic.
 | `Total` of a list reply: the folder with its filters, for the number of pages (`elementQuery.ts`)          | Web        | matches                                           |
 | Inline images by `content-id`                                                                              | Web        | matches                                           |
 | HTML cleaning                                                                                              | Web        | same approach as DOMPurify, our own rules in Rust |
+| `POST /mail/v4/messages/import`: parts `0`..`9`, `message/rfc822`, and `Metadata` keyed by the same names  | Go         | matches `ImportMessages`, at most 10 at once      |
+| Each imported message: PGP/MIME, encrypted to and signed by the address key, list headers kept outside     | Go         | matches `encryptFull`                             |
+| `Metadata`: `AddressID`, `LabelIDs`, `Unread`, `Flags` 1 (received); reply: code 1001, `Responses`         | Go         | matches; used by `live_tidy` only                 |
 
 ## Sending
 

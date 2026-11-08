@@ -85,10 +85,15 @@ pub fn mailbox_opened(service: &Arc<Service>, app: &Weak<App>, folders: usize) {
         let rows = service.list("inbox", &options).await.unwrap_or_default();
         // An empty inbox still leaves a mail to draw when the account holds one anywhere: the newest of all mail, or a
         // draft, which the test account keeps for this.
+        // A row is the open folder's: in conversations its id is a conversation's, which only that folder turns into
+        // a message's. So a mail found in another folder is opened there.
         let mut first = rows.first().map(|row| row.id.clone());
         for folder in ["all", "drafts"] {
             if first.is_none() {
                 first = service.list(folder, &options).await.unwrap_or_default().first().map(|row| row.id.clone());
+                if first.is_some() {
+                    service.view_open(folder).await;
+                }
             }
         }
         let count = rows.len();

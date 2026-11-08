@@ -4,6 +4,7 @@ mod account;
 mod changes;
 mod contacts;
 mod images;
+mod import;
 mod lock;
 mod mailbox;
 mod print;

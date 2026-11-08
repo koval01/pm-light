@@ -13,6 +13,7 @@ pub mod error;
 pub mod file_kind;
 pub mod html;
 pub mod image_metadata;
+pub mod import;
 pub mod journal;
 pub mod keymap;
 pub mod mailto;

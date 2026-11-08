@@ -618,6 +618,17 @@ impl Client {
         Self::parse(self.finish(response, false).await?)
     }
 
+    /// An upload to a batch endpoint, which answers Code 1001 with a result for each item.
+    pub async fn upload_batch<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        form: &(dyn Fn() -> Form + Send + Sync),
+    ) -> Result<T> {
+        let attach = |request: reqwest::RequestBuilder| request.multipart(form());
+        let response = self.send_with(Method::POST, path, API_ACCEPT, false, &attach).await?;
+        Self::parse(self.finish(response, true).await?)
+    }
+
     /// Concurrent 401s share one round trip: whoever waited finds the token already new.
     async fn refresh(&self, used_token: Option<&str>) -> Result<()> {
         let _guard = self.refreshing.lock().await;

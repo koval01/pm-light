@@ -3,22 +3,22 @@
 # maintainer on their own Mac; macOS asks before it lets the session out of the keychain. The session goes straight
 # from the keychain into GitHub's secret store and is never shown or written anywhere.
 #
-# The first run also makes the environment `live-account`, whose secret only a run the maintainer approved can read,
-# and only from main. Run it again whenever the check says the session needs to be handed over anew.
+# The first run also makes the environment `live-account`, whose secret only a run from main can read. It asks for no
+# approval: only the maintainer can start the check, and main takes nothing but reviewed pull requests. Run it again
+# whenever the check says the session needs to be handed over anew.
 set -euo pipefail
 
 repo=koval01/pm-light
 service=org.koval-dev.proton-mail-light
 
-me=$(gh api user -q .id)
 gh api -X PUT "repos/$repo/environments/live-account" --input - >/dev/null <<JSON
 {
   "wait_timer": 0,
-  "reviewers": [{ "type": "User", "id": $me }],
+  "reviewers": [],
   "deployment_branch_policy": { "protected_branches": true, "custom_branch_policies": false }
 }
 JSON
-echo "the environment live-account waits for your approval on every run"
+echo "the environment live-account takes runs from main only"
 
 session=$(security find-generic-password -s "$service" -a session -w)
 if printf '%s' "$session" | grep -q '"sealed"'; then

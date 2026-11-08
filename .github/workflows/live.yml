@@ -2,10 +2,10 @@
 # (scripts/live-session.sh), reads it, and draws its first mail through the system's web engine. It never refreshes
 # the tokens, sends nothing, and changes nothing but the read mark of that one mail.
 #
-# Started by hand only, and every run waits for the owner's approval in the environment `live-account`, the only
-# place the session is. The log carries numbers and fixed words only. The artifacts show the test account's first
-# mail, open in the window and as the web engine drew it: the account holds nothing of worth, and its owner wants
-# them seen. Nothing of the session is in either.
+# Started by hand only, and only from main: the environment `live-account`, the only place the session is, takes no
+# other branch. The three systems run at once, so an approval, if the environment asks for one, is given once for
+# all. The log carries numbers and fixed words only. The artifacts show the test account's first mail, open in the
+# window and as the web engine drew it: the account holds nothing of worth, and its owner wants them seen. Nothing of the session is in either.
 name: Live account
 
 on:
@@ -27,7 +27,6 @@ jobs:
     environment: live-account
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
         os: [windows-latest, ubuntu-24.04, macos-latest]
     runs-on: ${{ matrix.os }}

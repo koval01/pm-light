@@ -132,8 +132,13 @@ Threats, findings and known limits are in `docs/SECURITY.md`: update it with eve
 `.github/workflows/live.yml` opens the test account on macOS, Windows and Linux: `live_check` reads it, and the app,
 started with `--check-account=<file>`, opens its inbox and draws its first mail through the system's web engine. It
 borrows the session the maintainer's Mac saved, handed over with `scripts/live-session.sh`, never refreshes the tokens,
-and sends nothing. It runs by hand only, and each run waits for the maintainer's approval in the environment
-`live-account`, which holds the session. Its log is public: only numbers and fixed words, and no artifacts.
+and sends nothing. It runs by hand only, and only from main: the environment `live-account`, which holds the session,
+takes no other branch. Its log is public, with only numbers and fixed words. Its artifacts show the test account's
+first mail, which holds nothing of worth.
+
+`live_tidy` keeps that account fit for the check: a Sieve filter sends to spam all mail not from Proton, and
+`--import` fills the inbox with made-up letters through Proton's import call (`core/src/import.rs`), so the check
+always has mail to open: a thread, a reply, a long letter, attachments, an inline picture, Cyrillic, remote images.
 
 ## Test builds
 
