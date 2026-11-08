@@ -2,36 +2,17 @@
 # window, and draws a made-up mail as a picture through the system's web engine (`--check-picture`). The pictures are
 # the only look at Windows and Linux most changes get.
 #
-# Minutes are counted on a private repository, macOS's at ten times the rate. macOS is checked on this computer before
-# every change, so here it runs only when asked for and for a release; Windows and Linux run on every push to main and
-# on every pull request. A newer run of the same branch stops the older one.
+# It runs on all three systems for every push to main and every pull request, with nothing left out by path: its checks
+# are required to merge, and a check that never runs would hold a pull request forever. A newer run of the same branch
+# stops the older one.
 name: Build
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
-      - ".github/dependabot.yml"
   pull_request:
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - ".github/ISSUE_TEMPLATE/**"
   workflow_dispatch:
-    inputs:
-      macos:
-        description: Also build and start on macOS
-        type: boolean
-        default: true
   workflow_call:
-    inputs:
-      macos:
-        description: Also build and start on macOS
-        type: boolean
-        default: true
 
 permissions:
   contents: read
@@ -50,12 +31,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-24.04]
-        # `inputs` is empty on a push or a pull request, and set when the run was asked for or called by a release.
-        asked:
-          - ${{ inputs.macos == true }}
-        exclude:
-          - os: macos-latest
-            asked: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:

@@ -2,6 +2,8 @@
 
 [![Build](https://github.com/koval01/pm-light/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/koval01/pm-light/actions/workflows/build.yml)
 [![Security](https://github.com/koval01/pm-light/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/koval01/pm-light/actions/workflows/security.yml)
+[![CodeQL](https://github.com/koval01/pm-light/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/koval01/pm-light/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/koval01/pm-light/badge)](https://scorecard.dev/viewer/?uri=github.com/koval01/pm-light)
 [![Release](https://img.shields.io/github/v/release/koval01/pm-light?include_prereleases&sort=semver)](https://github.com/koval01/pm-light/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 [![Rust 1.99](https://img.shields.io/badge/rust-1.99-orange?logo=rust)](rust-toolchain.toml)

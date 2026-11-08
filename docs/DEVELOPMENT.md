@@ -85,14 +85,13 @@ exception carries `#[expect(..., reason = "...")]` at the one place it is needed
 fenced off whole. Before a change is pushed: `scripts/check.sh`, `scripts/platforms.sh`, and for anything in the
 window, a look at the bundle running.
 
-`.github/workflows/build.yml` does the same on Windows and Linux on every push to main and every pull request, and on
-macOS when started by hand or for a release. It starts the app on each with `--check-picture`, which draws a made-up
-mail through the system's web engine: read `started.png` and `picture.png` after a change that touches them. Minutes
-on the private repository are few, macOS's count ten times: push seldom, several changes at once.
-`security.yml` runs cargo-deny, gitleaks and zizmor; `codeql.yml`, `scorecard.yml` and dependency review wait for
-the repository to be public. A release is a tag `v<version>` (`release.yml`). The protection of `main` is
-`.github/rulesets/main.json`, which GitHub takes only from a public repository (or GitHub Pro): once public, apply it
-with `gh api -X POST repos/koval01/pm-light/rulesets --input .github/rulesets/main.json`. Admins may bypass it.
+`.github/workflows/build.yml` does the same on macOS, Windows and Linux on every push to main and every pull request.
+It starts the app on each with `--check-picture`, which draws a made-up mail through the system's web engine: read
+`started.png` and `picture.png` after a change that touches them. `security.yml` runs cargo-deny, gitleaks and zizmor,
+`codeql.yml` GitHub's code scanning, `scorecard.yml` the OpenSSF Scorecard, and pull requests get a dependency review.
+A release is a tag `v<version>` (`release.yml`). `main` is protected by `.github/rulesets/main.json`, applied with
+`gh api -X POST repos/koval01/pm-light/rulesets --input .github/rulesets/main.json`: changes come through pull
+requests that pass these checks, and only an admin may bypass it.
 
 ## Checking
 

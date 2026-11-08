@@ -1,6 +1,6 @@
 # OpenSSF Scorecard: how the repository itself is kept (pinned actions, reviews, branch protection, dangerous
-# workflows, and more), weekly and on every push to main. Its results are published for the badge, which needs a
-# public repository: until then the job does not run.
+# workflows, and more), weekly and on every push to main. Its results are published for the badge, which a private
+# copy cannot do: there the job does not run.
 name: Scorecard
 
 on:

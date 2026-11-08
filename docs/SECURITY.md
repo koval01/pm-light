@@ -124,7 +124,9 @@ What this client defends against, how, and what it does not. It records the find
 - **The repository.** Actions are pinned to commits, checkouts keep no credentials, and every workflow starts with
   read-only permissions. gitleaks reads every commit for secrets (one published test key is allowed by path, in
   `.gitleaks.toml`), zizmor reads the workflows, cargo-deny the dependencies, daily. Dependabot proposes updates
-  weekly. Code scanning, the OpenSSF Scorecard, dependency review and branch protection need a public repository.
+  weekly, each a week after its release. CodeQL reads the Rust and the workflows with both of its extended suites,
+  the OpenSSF Scorecard rates how the repository is kept, pull requests get a dependency review, and secret scanning
+  refuses a push that carries a secret. `main` takes changes only through pull requests that pass these checks.
 - **The process.** Core dumps are off. On Windows a crash report leaves the heap out, and libraries are not loaded
   from a network share or a low-integrity folder, with the system's own preferred. On macOS a release build refuses debuggers (`PT_DENY_ATTACH`), and on Linux the
   process is not dumpable. A second start hands its link to the first copy over a local socket and quits: a message

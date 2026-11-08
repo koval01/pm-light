@@ -2,6 +2,6 @@
 [extend]
 useDefault = true
 
-[[allowlists]]
+[allowlist]
 description = "A locked test key, user 'not_for_email_use@domain.tld', made for tests and published as one"
 paths = ['''^core/src/crypto/test_key\.asc$''']

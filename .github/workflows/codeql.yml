@@ -2,8 +2,7 @@
 # at code that has not changed. Rust is read from the source; the workflows themselves are checked too, since a
 # careless workflow is a way into the repository. Both query suites run: security-extended and security-and-quality.
 #
-# A private repository cannot take the results without GitHub Advanced Security, so the job waits for the
-# repository to be public, rather than spend minutes on an upload that is refused.
+# A private copy cannot take the results without GitHub Advanced Security: there the job does not run.
 name: CodeQL
 
 on:
