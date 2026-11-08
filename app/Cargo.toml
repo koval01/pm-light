@@ -38,7 +38,7 @@ log = "0.4"
 notify-rust = "4"
 url = "2"
 zeroize = "1"
-rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
+rfd = { version = "0.16", default-features = false, features = ["xdg-portal", "tokio"] }
 serde_json = "1"
 i-slint-backend-winit = { version = "=1.18.1", default-features = false }
 slint = { version = "~1.18", default-features = false, features = ["std", "compat-1-2", "backend-winit", "renderer-software", "raw-window-handle-06", "unstable-winit-030"] }
