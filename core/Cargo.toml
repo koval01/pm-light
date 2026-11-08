@@ -39,7 +39,7 @@ futures = { version = "0.3", default-features = false, features = ["std"] }
 image = { version = "0.25", default-features = false, features = ["bmp", "gif", "jpeg", "png", "webp"] }
 imagesize = "0.15.0"
 infer = "0.22.0"
-lol_html = "2"
+lol_html = "3"
 parking_lot = "0.12"
 proton-crypto-account = { git = "https://github.com/ProtonMail/proton-crypto-rs", rev = "c468e282625206eda9b48d539949e6183b1da32a", default-features = false, features = ["rustpgp"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
