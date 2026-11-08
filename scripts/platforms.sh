@@ -33,7 +33,15 @@ docker run --rm \
             libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev libxdo-dev libxkbcommon-dev libxkbcommon-x11-0 \
             libfontconfig1-dev libdbus-1-dev libssl-dev gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
             xvfb xauth lld >/dev/null
-        curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none >/dev/null 2>&1
+        # rustup-init of a fixed version, run only if its SHA-256 is the one written here.
+        case "$(uname -m)" in
+            aarch64) triple=aarch64-unknown-linux-gnu; sum=9f608c142e0e38a78957d0661ba1dfaf0b6fb37184cfaa4b9a0aa57af6184282 ;;
+            *) triple=x86_64-unknown-linux-gnu; sum=b1c8cb14e30889e7e2999e6b69e62d9e9b9ffc0f4df8180564d306d9680e6c55 ;;
+        esac
+        curl -sSf -o /tmp/rustup-init "https://static.rust-lang.org/rustup/archive/1.29.3/$triple/rustup-init"
+        echo "$sum  /tmp/rustup-init" | sha256sum -c --quiet || { echo "rustup-init is not the one expected"; exit 1; }
+        chmod +x /tmp/rustup-init
+        /tmp/rustup-init -y --profile minimal --default-toolchain none >/dev/null 2>&1
         export PATH=/root/.cargo/bin:$PATH
         step() {
             echo "== $1"; shift

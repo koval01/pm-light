@@ -1,0 +1,89 @@
+# Advisories that reach this project only through its dependencies, with no fix it can take, each with the reason it
+# does not harm the app. Read by osv-scanner and the OpenSSF Scorecard; cargo-deny keeps its own list in deny.toml, and
+# docs/SECURITY.md explains each. An entry goes once a fixed version can be taken: `ignoreUntil` makes it be looked at
+# again.
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2023-0071"
+ignoreUntil = 2027-05-01
+reason = "rsa, inside Proton's pgp crates: the Marvin timing attack needs many measured decryptions; the app decrypts locally and shows no timing to anyone"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0387"
+ignoreUntil = 2027-05-01
+reason = "crypto-bigint through cx448 in Proton's crates: timing that an attacker would have to measure on this computer"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2025-0144"
+ignoreUntil = 2027-05-01
+reason = "ml-dsa 0.0.4 in Proton's pgp: timing in post-quantum signing, measurable only locally; fixed when Proton moves pgp"
+
+[[IgnoredVulns]]
+id = "GHSA-5x2r-hc65-25f9"
+ignoreUntil = 2027-05-01
+reason = "ml-dsa 0.0.4 in Proton's pgp: repeated hint indices accepted in post-quantum signatures; fixed when Proton moves pgp"
+
+[[IgnoredVulns]]
+id = "GHSA-h37v-hp6w-2pp8"
+ignoreUntil = 2027-05-01
+reason = "ml-dsa 0.0.4 in Proton's pgp: off-by-two in UseHint; fixed when Proton moves pgp"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0429"
+ignoreUntil = 2027-05-01
+reason = "glib 0.18 on Linux, through the gtk 0.18 wry is pinned to: the unsound VariantStrIter is never used"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0253"
+ignoreUntil = 2027-05-01
+reason = "lru 0.7 inside reed-solomon-erasure: the use-after-free needs a key or value whose Hash or Drop panics; its keys are Vec<usize> and its values Arc<Matrix>"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2025-0141"
+ignoreUntil = 2027-05-01
+reason = "bincode is unmaintained, an informational notice; it has no known vulnerability, and comes through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2025-0057"
+ignoreUntil = 2027-05-01
+reason = "fxhash is unmaintained, an informational notice; no known vulnerability, through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0384"
+ignoreUntil = 2027-05-01
+reason = "instant is unmaintained, an informational notice; no known vulnerability, through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0436"
+ignoreUntil = 2027-05-01
+reason = "paste is unmaintained, an informational notice; a build-time macro with no known vulnerability"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0441"
+ignoreUntil = 2027-05-01
+reason = "pin-utils is unmaintained, an informational notice; no known vulnerability, through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2024-0370"
+ignoreUntil = 2027-05-01
+reason = "proc-macro-error is unmaintained, an informational notice; a build-time macro with no known vulnerability"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0192"
+ignoreUntil = 2027-05-01
+reason = "ttf-parser is unmaintained, an informational notice; it reads only the fonts built into the app"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0371"
+ignoreUntil = 2027-05-01
+reason = "zbus_names is unmaintained, an informational notice; Linux's D-Bus, through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0370"
+ignoreUntil = 2027-05-01
+reason = "zvariant is unmaintained, an informational notice; Linux's D-Bus, through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0372"
+ignoreUntil = 2027-05-01
+reason = "zvariant_derive is unmaintained, an informational notice; Linux's D-Bus, through a dependency"

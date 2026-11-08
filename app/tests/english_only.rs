@@ -7,8 +7,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-const ROOTS: [&str; 12] = [
+const ROOTS: [&str; 15] = [
+    "fuzz/fuzz_targets",
+    "fuzz/Cargo.toml",
     "README.md",
+    "CHANGELOG.md",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "SUPPORT.md",

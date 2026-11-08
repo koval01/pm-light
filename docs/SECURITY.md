@@ -261,7 +261,9 @@ GitHub's Dependabot reports more, from GitHub's own advisory database:
 | `ml-dsa` 0.0.4 | GHSA-5x2r-hc65-25f9 | A post-quantum signature with repeated hint indices is accepted. Reached through Proton's `pgp`; fixed only when Proton moves it.   |
 | `ml-dsa` 0.0.4 | GHSA-h37v-hp6w-2pp8 | An off-by-two in `UseHint` when `r0` is zero. Same path, same wait.                                                                 |
 | `glib` 0.18.5  | GHSA-wrw7-89jp-8q8g | Unsound `VariantStrIter`, Linux only, through the `gtk` 0.18 wry is pinned to. The app never iterates a `Variant`'s strings.         |
+| `lru` 0.7.8    | RUSTSEC-2026-0253   | A use-after-free when a key's or value's `Hash` or `Drop` panics, inside `reed-solomon-erasure`. Its keys are `Vec<usize>`, its values `Arc<Matrix>`: neither panics. |
 
-The rest are `unmaintained` notices for Linux-only and build-time crates. `cargo deny` also found two
+`osv-scanner.toml` lists each of these with its reason, for osv-scanner and the OpenSSF Scorecard, and asks for each
+to be looked at again by a date. The rest are `unmaintained` notices for Linux-only and build-time crates. `cargo deny` also found two
 advisories in `hickory-proto` 0.25 (RUSTSEC-2026-0118 and 0119): the first needs DNSSEC validation, which is not
 built in, and the second only slows the encoding of the app's own queries. It was moved to 0.26.3 regardless.

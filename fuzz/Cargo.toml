@@ -1,0 +1,64 @@
+# Fuzzing the code that reads what strangers send: mail, its HTML and CSS, links, attachments, pictures, pasted codes.
+# A workspace of its own, built only by cargo-fuzz on a nightly compiler: `cargo +nightly fuzz run <target>` from the
+# repository's root. CI runs every target on every push and longer once a day (.github/workflows/fuzz.yml).
+[package]
+name = "proton-mail-light-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+license = "AGPL-3.0-only"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+proton-core = { path = "../core" }
+
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "mime"
+path = "fuzz_targets/mime.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "html"
+path = "fuzz_targets/html.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "search"
+path = "fuzz_targets/search.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "links"
+path = "fuzz_targets/links.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "attachment"
+path = "fuzz_targets/attachment.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "seal_codes"
+path = "fuzz_targets/seal_codes.rs"
+test = false
+doc = false
+bench = false

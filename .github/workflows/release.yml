@@ -62,11 +62,21 @@ jobs:
           (cd release && sha256sum -- * > SHA256SUMS)
           cat release/SHA256SUMS
 
+      # SLSA provenance of every program, signed through Sigstore with this workflow's identity. GitHub keeps it for
+      # `gh attestation verify <file> --repo koval01/pm-light`, and the release carries the signed bundle as well.
       - name: Provenance
+        id: provenance
         if: ${{ !github.event.repository.private }}
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: release/proton-mail-light-*
+
+      - name: Provenance beside the programs
+        if: ${{ steps.provenance.outputs.bundle-path != '' }}
+        env:
+          BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+          TAG: ${{ github.ref_name }}
+        run: cp "$BUNDLE" "release/proton-mail-light-$TAG.intoto.jsonl"
 
       - name: Release
         env:
@@ -75,10 +85,12 @@ jobs:
           PRERELEASE: ${{ startsWith(github.ref_name, 'v0.') || contains(github.ref_name, '-') }}
         run: |
           cat > notes.md <<'NOTES'
-          An unofficial Proton Mail desktop client, written in Rust. It is not affiliated with Proton AG.
+          An unofficial Proton Mail desktop client, written in Rust. It is not affiliated with Proton AG. What changed is in
+          [CHANGELOG.md](https://github.com/koval01/pm-light/blob/main/CHANGELOG.md).
 
           The programs are not signed by Apple or Microsoft, and the macOS one is not notarized: the system warns
-          before the first start. Compare a download with `SHA256SUMS` before running it.
+          before the first start. Compare a download with `SHA256SUMS`, or check where it was built with
+          `gh attestation verify <file> --repo koval01/pm-light`, before running it.
           NOTES
           flags=(--repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md --generate-notes --verify-tag)
           if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi

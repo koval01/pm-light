@@ -1,6 +1,6 @@
 [workspace]
 members = ["core", "app"]
-exclude = ["vendor"]
+exclude = ["vendor", "fuzz"]
 resolver = "3"
 
 # Mail is hostile input, and a panic on it is a crash anyone can send. Tests may unwrap.

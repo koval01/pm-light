@@ -116,6 +116,11 @@ limits. `html/parsed_tests.rs` parses the cleaned mail with html5ever, twice, an
 Docker must be running. Only crafted input is used, never real malware. Tests named `live_` reach Proton and are
 skipped there.
 
+`fuzz/` fuzzes the code that reads what strangers send: MIME, HTML and CSS, links, attachments, pictures and pasted
+codes. It is a workspace of its own and needs a nightly compiler: `cargo +nightly fuzz run <target>`. CI runs every
+target for a minute on each push and for ten once a day (`.github/workflows/fuzz.yml`). A new parser of outside input
+gets a target there.
+
 Threats, findings and known limits are in `docs/SECURITY.md`: update it with every security change.
 
 ## Test builds
