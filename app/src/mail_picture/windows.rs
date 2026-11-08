@@ -18,8 +18,8 @@ use windows_sys::Win32::{
 use wry::{WebView, WebViewExtWindows};
 
 pub const CAN_SHARE: bool = false;
-/// `DevTools` draws a page that is not shown.
-pub const DRAWS_HIDDEN: bool = true;
+/// Hidden, its `DevTools` capture never answered on CI: the page is shown past the window's edge instead.
+pub const DRAWS_HIDDEN: bool = false;
 
 /// What `DevTools` is asked: the page beyond what a view shows, twice as fine, as PNG.
 fn asked(width: f64, height: f64) -> String {

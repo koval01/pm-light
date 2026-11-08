@@ -126,7 +126,9 @@ What this client defends against, how, and what it does not. It records the find
   `.gitleaks.toml`), zizmor reads the workflows, cargo-deny the dependencies, daily. Dependabot proposes updates
   weekly, each a week after its release. CodeQL reads the Rust and the workflows with both of its extended suites,
   the OpenSSF Scorecard rates how the repository is kept, pull requests get a dependency review, and secret scanning
-  refuses a push that carries a secret. `main` takes changes only through pull requests that pass these checks.
+  refuses a push that carries a secret. `main` takes changes only through pull requests that pass these checks, and
+  cannot be deleted or force-pushed. With one maintainer no pull request can be approved by someone else, so approvals
+  are not required and the maintainer may bypass the rules; both change once there is a second reviewer.
 - **The process.** Core dumps are off. On Windows a crash report leaves the heap out, and libraries are not loaded
   from a network share or a low-integrity folder, with the system's own preferred. On macOS a release build refuses debuggers (`PT_DENY_ATTACH`), and on Linux the
   process is not dumpable. A second start hands its link to the first copy over a local socket and quits: a message
