@@ -3,7 +3,9 @@
 //! account's session, by hand and after the owner approves each run.
 //!
 //! It never refreshes the tokens, so the session it borrows stays the owner's; it never asks about Tor, and goes
-//! straight to Proton; and `<file>` gets numbers and fixed words only: no picture, no subject, no address, no text.
+//! straight to Proton. The first mail opens in the window, as a click would open it, for CI to photograph, and its
+//! drawing is kept as `<file>.png`: the test account holds nothing of worth, and its owner wants them seen. The
+//! journal and `<file>.txt` still carry numbers and fixed words only.
 
 use crate::{App, mail_picture, print_dialog};
 use proton_core::{PrintScope, Service, model::ListOptions};
@@ -79,8 +81,17 @@ pub fn mailbox_opened(service: &Arc<Service>, app: &Weak<App>, folders: usize) {
     let _ = app.upgrade_in_event_loop(|_| reached("reading the inbox"));
     let (service, app) = (service.clone(), app.clone());
     tokio::spawn(async move {
-        let rows = service.list("inbox", &ListOptions { limit: Some(ROWS), ..Default::default() }).await.unwrap_or_default();
-        let (count, first) = (rows.len(), rows.first().map(|row| row.id.clone()));
+        let options = ListOptions { limit: Some(ROWS), ..Default::default() };
+        let rows = service.list("inbox", &options).await.unwrap_or_default();
+        // An empty inbox still leaves a mail to draw when the account holds one anywhere: the newest of all mail, or a
+        // draft, which the test account keeps for this.
+        let mut first = rows.first().map(|row| row.id.clone());
+        for folder in ["all", "drafts"] {
+            if first.is_none() {
+                first = service.list(folder, &options).await.unwrap_or_default().first().map(|row| row.id.clone());
+            }
+        }
+        let count = rows.len();
         let _ = app.upgrade_in_event_loop(move |app| {
             FOUND.set((folders, count));
             match first {
@@ -93,6 +104,7 @@ pub fn mailbox_opened(service: &Arc<Service>, app: &Weak<App>, folders: usize) {
 
 fn draw_first(service: &Arc<Service>, app: &App, id: String) {
     reached("opening the first mail");
+    crate::view::open_mail(service, &app.as_weak(), id.clone());
     let (service, weak, labels) = (service.clone(), app.as_weak(), print_dialog::labels(app));
     tokio::spawn(async move {
         let _ = service.view_select(Some(id)).await;
@@ -118,11 +130,14 @@ fn finished_without_mail() {
     note(path, &report(folders, 0, 0, 0));
 }
 
-/// The first mail is drawn. Only its size is kept.
-pub fn finish(width: u32, height: u32) {
+/// The first mail is drawn: its picture beside the note.
+pub fn finish(png: &[u8], width: u32, height: u32) {
     let Some(path) = WRITE_TO.take() else { return };
     let (folders, rows) = FOUND.get();
     log::info!("the account check: {folders} folders, {rows} inbox rows, a mail drawn {width} by {height}");
+    let mut picture = path.clone().into_os_string();
+    picture.push(".png");
+    let _ = std::fs::write(PathBuf::from(picture), png);
     note(path, &report(folders, rows, width, height));
 }
 

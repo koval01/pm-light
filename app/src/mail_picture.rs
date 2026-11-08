@@ -383,7 +383,7 @@ fn deliver(picture: &Picture, purpose: Purpose) {
         Purpose::Account => {
             let size = image::ImageReader::new(std::io::Cursor::new(&picture.png)).with_guessed_format().ok();
             let (width, height) = size.and_then(|reader| reader.into_dimensions().ok()).unwrap_or((0, 0));
-            crate::account_check::finish(width, height);
+            crate::account_check::finish(&picture.png, width, height);
         }
         Purpose::Copy => {
             if system::copy(&picture.png) {

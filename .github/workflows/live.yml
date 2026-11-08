@@ -3,8 +3,9 @@
 # the tokens, sends nothing, and changes nothing but the read mark of that one mail.
 #
 # Started by hand only, and every run waits for the owner's approval in the environment `live-account`, the only
-# place the session is. The log is public: the app and live_check print numbers and fixed words, never mail, and
-# nothing is kept as an artifact.
+# place the session is. The log carries numbers and fixed words only. The artifacts show the test account's first
+# mail, open in the window and as the web engine drew it: the account holds nothing of worth, and its owner wants
+# them seen. Nothing of the session is in either.
 name: Live account
 
 on:
@@ -76,6 +77,12 @@ jobs:
           note="$PWD/target/debug/account"
           "$app" "--check-account=$note" > target/debug/account.log 2>&1 &
           for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
+          sleep 4
+          if [ "$RUNNER_OS" = macOS ]; then
+            screencapture -x target/debug/account-window.png
+          else
+            powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms, System.Drawing; \$s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; \$b=New-Object System.Drawing.Bitmap \$s.Width, \$s.Height; [System.Drawing.Graphics]::FromImage(\$b).CopyFromScreen(\$s.Location, [System.Drawing.Point]::Empty, \$s.Size); \$b.Save('target/debug/account-window.png')"
+          fi
           grep -E "account check|mail picture|session|WARN|ERROR" target/debug/account.log | cut -c1-200 || true
           kill %1 2>/dev/null || true
           test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
@@ -87,6 +94,8 @@ jobs:
         env:
           LIVE_SESSION: ${{ secrets.LIVE_SESSION }}
           PML_JOURNAL_ECHO: "1"
+          # X errors reported where they happen, with the request that caused them, instead of later and unnamed.
+          GDK_SYNCHRONIZE: "1"
         run: |
           # shellcheck disable=SC2016 # expanded by the inner shell, inside its own D-Bus session
           dbus-run-session -- bash -c '
@@ -98,8 +107,21 @@ jobs:
             xvfb-run -a -s "-screen 0 1440x900x24" target/debug/proton-mail-light "--check-account=$note" \
               > target/debug/account.log 2>&1 &
             for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
+            sleep 4
+            import -display "$(ls /tmp/.X11-unix | sed -n "s/^X/:/p" | head -n 1)" -window root target/debug/account-window.png || true
             grep -E "account check|mail picture|session|WARN|ERROR" target/debug/account.log | cut -c1-200 || true
             kill %1 2>/dev/null || true
             test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
             cat "$note.txt"
             ! grep -qx "failed" "$note.txt"'
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: account-${{ runner.os }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            target/debug/account.png
+            target/debug/account.txt
+            target/debug/account-window.png
