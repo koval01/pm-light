@@ -33,14 +33,23 @@ fn asked(width: f64, height: f64) -> String {
 pub fn capture(view: &WebView, width: f64, height: f64, then: impl FnOnce(Option<Vec<u8>>) + 'static) -> bool {
     let page = view.webview();
     let handler = CallDevToolsProtocolMethodCompletedHandler::create(Box::new(move |result, answer: String| {
-        then(result.ok().and_then(|()| super::png_of_devtools(&answer)));
+        // The HRESULT alone: a number, never the error's text.
+        if let Some(code) = result.as_ref().err().map(|error| error.code().0) {
+            log::warn!("DevTools did not draw the page: {code:#010x}");
+        }
+        let png = result.ok().and_then(|()| super::png_of_devtools(&answer));
+        log::debug!("DevTools answered with {} bytes, a picture: {}", answer.len(), png.is_some());
+        then(png);
         Ok(())
     }));
     // Safety: a call on the page's own interface, on the window's thread that made it.
-    unsafe {
+    let asked = unsafe {
         page.CallDevToolsProtocolMethod(&HSTRING::from("Page.captureScreenshot"), &HSTRING::from(asked(width, height)), &handler)
-            .is_ok()
+    };
+    if let Some(code) = asked.as_ref().err().map(|error| error.code().0) {
+        log::warn!("DevTools could not be asked: {code:#010x}");
     }
+    asked.is_ok()
 }
 
 /// Copies `bytes` into memory the clipboard can own, under `format`. True once the clipboard has it.

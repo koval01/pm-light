@@ -35,6 +35,8 @@ jobs:
     # The same build as every push. `./` is the form actionlint and GitHub's documentation give for a workflow of the
     # same repository and commit.
     uses: ./.github/workflows/build.yml # zizmor: ignore[self-repository]
+    with:
+      release: true
 
   publish:
     name: Publish

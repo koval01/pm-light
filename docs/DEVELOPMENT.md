@@ -85,8 +85,9 @@ exception carries `#[expect(..., reason = "...")]` at the one place it is needed
 fenced off whole. Before a change is pushed: `scripts/check.sh`, `scripts/platforms.sh`, and for anything in the
 window, a look at the bundle running.
 
-`.github/workflows/build.yml` does the same on macOS, Windows and Linux on every push to main and every pull request.
-It starts the app on each with `--check-picture`, which draws a made-up mail through the system's web engine: read
+`.github/workflows/build.yml` does the same on macOS, Windows and Linux on every push to main and every pull request,
+with the dependencies cached from main. There it starts the debug build the tests made; the release profile, a quarter
+of an hour of whole-program optimisation, is built only for a release. It starts the app on each with `--check-picture`, which draws a made-up mail through the system's web engine: read
 `started.png` and `picture.png` after a change that touches them. `security.yml` runs cargo-deny, gitleaks and zizmor,
 `codeql.yml` GitHub's code scanning, `scorecard.yml` the OpenSSF Scorecard, and pull requests get a dependency review.
 A release is a tag `v<version>` (`release.yml`). `main` is protected by `.github/rulesets/main.json`, applied with

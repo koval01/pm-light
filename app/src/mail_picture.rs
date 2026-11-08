@@ -67,6 +67,20 @@ pub struct Picture {
 
 thread_local! {
     static VIEW: RefCell<Option<WebView>> = const { RefCell::new(None) };
+    /// How far the picture has come, for the journal and for a check that stops on the way.
+    static STAGE: std::cell::Cell<&'static str> = const { std::cell::Cell::new("not begun") };
+}
+
+/// The stage the picture has reached, to the journal.
+fn reached(stage: &'static str) {
+    STAGE.set(stage);
+    log::debug!("the mail picture: {stage}");
+}
+
+/// The last stage the picture reached.
+#[must_use]
+pub fn stage() -> &'static str {
+    STAGE.get()
 }
 
 /// Whether this system can hand a picture to its menu for sharing.
@@ -252,6 +266,7 @@ fn failed(what: &str) {
 
 fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
     go_away();
+    reached("making the page");
     let weak = app.as_weak();
     let built = crate::webviews::page(|builder| {
         crate::mail_view::keep_to_drawing(builder)
@@ -259,6 +274,7 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
             .with_navigation_handler(|url| print_view::own_page(&url))
             .with_on_page_load_handler(move |event, _| {
                 if matches!(event, PageLoadEvent::Finished) {
+                    reached("page loaded");
                     let (weak, prepared) = (weak.clone(), prepared.clone());
                     let _ = slint::invoke_from_event_loop(move || {
                         if weak.upgrade().is_some() {
@@ -277,8 +293,12 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
         Ok(view) => {
             crate::webviews::scripts_settled(&view);
             VIEW.set(Some(view));
+            reached("page made");
         }
-        Err(_) => failed("no webview"),
+        Err(error) => {
+            log::warn!("no webview for the mail picture: {}", crate::webviews::failure(&error));
+            failed("no webview");
+        }
     }
 }
 
@@ -287,7 +307,10 @@ fn place(prepared: &PrintDocument, purpose: Purpose) {
     VIEW.with_borrow(|view| {
         let Some(view) = view else { return };
         let done = view.evaluate_script_with_callback(&script, move |_| {
-            let _ = slint::invoke_from_event_loop(move || measure(purpose));
+            let _ = slint::invoke_from_event_loop(move || {
+                reached("mail placed");
+                measure(purpose);
+            });
         });
         if done.is_err() {
             failed("not placed");
@@ -300,7 +323,11 @@ fn measure(purpose: Purpose) {
         let Some(view) = view else { return };
         let done = view.evaluate_script_with_callback(MEASURE, move |measured| {
             let (height, cut) = drawn_height(&measured);
-            let _ = slint::invoke_from_event_loop(move || sized(height, cut, purpose));
+            let _ = slint::invoke_from_event_loop(move || {
+                reached("measured");
+                log::debug!("the mail picture is {height:.0} points high");
+                sized(height, cut, purpose);
+            });
         });
         if done.is_err() {
             failed("not measured");
@@ -318,9 +345,11 @@ fn sized(height: f64, cut: bool, purpose: Purpose) {
         }
     });
     Timer::single_shot(SETTLES, move || {
+        reached("drawing asked for");
         let asked = VIEW.with_borrow(|view| {
             view.as_ref().is_some_and(|view| {
                 system::capture(view, WIDTH, height, move |png| {
+                    reached("drawn");
                     go_away();
                     match png {
                         Some(png) => deliver(&Picture { png, cut }, purpose),

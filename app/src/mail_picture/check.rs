@@ -5,12 +5,14 @@
 //! On macOS the clipboard is one of its own, never the person's; elsewhere it is the system's, so the flag is for CI.
 //! Beside the picture, `<file>.txt` says what came of it, in numbers and words of this file only.
 
-use super::{Purpose, draw, for_a_picture, options, system};
+use super::{Purpose, draw, for_a_picture, options, stage, system};
 use crate::{App, modal, print_dialog};
 use proton_core::print::sample_document;
 use std::{cell::RefCell, io::Cursor, path::PathBuf};
 
 const ARGUMENT: &str = "--check-picture=";
+/// Far longer than a picture takes: past it the check reports the stage it stopped at.
+const PATIENCE: std::time::Duration = std::time::Duration::from_secs(20);
 
 thread_local! {
     static WRITE_TO: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
@@ -30,6 +32,14 @@ pub fn run_if_asked(app: &App) {
     modal::after_show(app, |app| {
         let prepared = sample_document(&options(true), &print_dialog::labels(&app));
         draw(&app, for_a_picture(prepared), Purpose::Check);
+        slint::Timer::single_shot(PATIENCE, || {
+            if let Some(path) = WRITE_TO.take() {
+                log::warn!("the mail picture stopped at: {}", stage());
+                let mut note = path.into_os_string();
+                note.push(".txt");
+                let _ = std::fs::write(PathBuf::from(note), format!("failed\nstopped at: {}\n", stage()));
+            }
+        });
     });
 }
 

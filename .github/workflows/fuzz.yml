@@ -40,6 +40,14 @@ jobs:
           rustup toolchain install nightly --profile minimal
           cargo +nightly install cargo-fuzz --locked --version 0.13.2
 
+      # The fuzz workspace's compiled dependencies, one cache for all its targets, saved from main.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: fuzz
+          shared-key: fuzz
+          cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' && matrix.target == 'mime' }}
+
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: fuzz/corpus/${{ matrix.target }}

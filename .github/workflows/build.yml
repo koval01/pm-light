@@ -12,6 +12,11 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      release:
+        description: Build the release profile and the macOS bundle, for publishing
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,6 +38,10 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env:
+      # A push or a pull request starts the debug build the tests have already made, in a minute; the release profile,
+      # with its whole-program optimisation that takes a quarter of an hour, is built only for a release.
+      OUT: target/${{ inputs.release && 'native' || 'debug' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,7 +54,11 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             libxdo-dev libxkbcommon-dev libxkbcommon-x11-0 libfontconfig1-dev libdbus-1-dev xvfb imagemagick
 
+      # The compiled dependencies, saved from main, also after a failed run, and taken by every pull request.
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
@@ -56,10 +69,16 @@ jobs:
         run: scripts/check.sh
 
       - name: Build
-        run: cargo build --profile native --locked -p proton-mail-light
+        shell: bash
+        run: |
+          if [ "$OUT" = target/native ]; then
+            cargo build --profile native --locked -p proton-mail-light
+          else
+            cargo build --locked -p proton-mail-light
+          fi
 
       - name: Bundle for macOS
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && inputs.release
         run: |
           scripts/bundle-macos.sh
           ditto -c -k --keepParent "target/native/Proton Mail Light.app" "target/native/Proton-Mail-Light-macos.zip"
@@ -71,11 +90,12 @@ jobs:
           PML_JOURNAL_ECHO: "1"
           RUST_BACKTRACE: "1"
         run: |
-          "target/native/Proton Mail Light.app/Contents/MacOS/proton-mail-light" \
-            "--check-picture=$PWD/target/native/picture.png" > target/native/started.log 2>&1 & app=$!
+          program="$OUT/proton-mail-light"
+          if [ -d "$OUT/Proton Mail Light.app" ]; then program="$OUT/Proton Mail Light.app/Contents/MacOS/proton-mail-light"; fi
+          "$program" "--check-picture=$PWD/$OUT/picture.png" > "$OUT/started.log" 2>&1 & app=$!
           sleep 25
-          kill -0 $app || { cat target/native/started.log; echo "The app quit by itself"; exit 1; }
-          screencapture -x target/native/started.png
+          kill -0 $app || { cat "$OUT/started.log"; echo "The app quit by itself"; exit 1; }
+          screencapture -x "$OUT/started.png"
           kill $app
 
       - name: Start on Windows
@@ -85,19 +105,20 @@ jobs:
           PML_JOURNAL_ECHO: "1"
           RUST_BACKTRACE: "1"
         run: |
-          $picture = Join-Path $PWD "target\native\picture.png"
-          $app = Start-Process -FilePath target\native\proton-mail-light.exe -ArgumentList "--check-picture=$picture" `
-            -RedirectStandardOutput target\native\started.log -RedirectStandardError target\native\started.err.log -PassThru
+          $out = $env:OUT
+          $picture = Join-Path $PWD "$out/picture.png"
+          $app = Start-Process -FilePath "$out/proton-mail-light.exe" -ArgumentList "--check-picture=$picture" `
+            -RedirectStandardOutput "$out/started.log" -RedirectStandardError "$out/started.err.log" -PassThru
           Start-Sleep -Seconds 25
           if ($app.HasExited) {
-            Get-Content target\native\started.log, target\native\started.err.log -ErrorAction SilentlyContinue
+            Get-Content "$out/started.log", "$out/started.err.log" -ErrorAction SilentlyContinue
             throw "The app quit by itself with code $($app.ExitCode)"
           }
           Add-Type -AssemblyName System.Windows.Forms, System.Drawing
           $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
           $shot = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
           [System.Drawing.Graphics]::FromImage($shot).CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
-          $shot.Save("target\native\started.png")
+          $shot.Save((Join-Path $PWD "$out/started.png"))
           Stop-Process -Id $app.Id
 
       - name: Start on Linux
@@ -108,17 +129,16 @@ jobs:
         run: |
           # shellcheck disable=SC2016 # expanded by the inner shell, under the virtual screen
           xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" bash -c '
-            target/native/proton-mail-light "--check-picture=$PWD/target/native/picture.png" \
-              > target/native/started.log 2>&1 & app=$!
+            "$OUT/proton-mail-light" "--check-picture=$PWD/$OUT/picture.png" > "$OUT/started.log" 2>&1 & app=$!
             sleep 25
-            kill -0 $app || { cat target/native/started.log; echo "The app quit by itself"; exit 1; }
-            import -window root target/native/started.png
+            kill -0 $app || { cat "$OUT/started.log"; echo "The app quit by itself"; exit 1; }
+            import -window root "$OUT/started.png"
             kill $app'
 
       - name: The mail picture was drawn
         shell: bash
         run: |
-          note=target/native/picture.png.txt
+          note="$OUT/picture.png.txt"
           test -f "$note" || { echo "No report of the picture check"; exit 1; }
           cat "$note"
           grep -qx "failed" "$note" && { echo "The picture check failed"; exit 1; }
@@ -133,10 +153,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            target/native/proton-mail-light
-            target/native/proton-mail-light.exe
-            target/native/Proton-Mail-Light-macos.zip
-            target/native/started.png
-            target/native/started*.log
-            target/native/picture.png
-            target/native/picture.png.txt
+            ${{ env.OUT }}/proton-mail-light
+            ${{ env.OUT }}/proton-mail-light.exe
+            ${{ env.OUT }}/Proton-Mail-Light-macos.zip
+            ${{ env.OUT }}/started.png
+            ${{ env.OUT }}/started*.log
+            ${{ env.OUT }}/picture.png
+            ${{ env.OUT }}/picture.png.txt
