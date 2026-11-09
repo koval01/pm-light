@@ -87,3 +87,8 @@ reason = "zvariant is unmaintained, an informational notice; Linux's D-Bus, thro
 id = "RUSTSEC-2026-0372"
 ignoreUntil = 2027-05-01
 reason = "zvariant_derive is unmaintained, an informational notice; Linux's D-Bus, through a dependency"
+
+[[IgnoredVulns]]
+id = "RUSTSEC-2026-0459"
+ignoreUntil = 2026-12-15
+reason = "SQLite bundled by libsqlite3-sys 0.38 for arti's Tor directory cache: needs a database and -wal written by someone else, and only the app writes that folder; tor-dirmgr 0.48 allows no rusqlite with the fix"

@@ -247,14 +247,15 @@ with no sanitizer in front of them.
 
 ### Advisories in dependencies
 
-`cargo audit` reports three, all through the `pgp` crate inside Proton's own crates, which are at the newest revision
-(`c468e28`). None has a fix available here.
+`cargo audit` reports four: three through the `pgp` crate inside Proton's own crates, which are at the newest revision
+(`c468e28`), and one through arti. None has a fix available here.
 
 | Crate                 | Advisory          | Effect here                                                                                                                                                     |
 | --------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `rsa` 0.9.10          | RUSTSEC-2023-0071 | Marvin timing attack. It needs many measured decryptions. This client decrypts locally and reveals no timing to a sender, since opening a mail contacts nobody. |
 | `crypto-bigint` 0.5.5 | RUSTSEC-2026-0387 | Non-constant-time operations, reached through `cx448`. Same reasoning; only keys of that type are affected.                                                     |
 | `ml-dsa` 0.0.4        | RUSTSEC-2025-0144 | Timing in post-quantum signing, which an attacker would have to measure locally.                                                                                |
+| `libsqlite3-sys` 0.38.2 | RUSTSEC-2026-0459 | The SQLite it bundles can return stale memory for a database whose `-wal` file has another page size. Only arti's Tor directory cache uses it, in the app's own data folder, which nothing else writes: whoever could plant the files there already holds the app. `tor-dirmgr` 0.48 allows no `rusqlite` with the fix (0.41); the next arti release is taken as soon as it does. |
 
 GitHub's Dependabot reports more, from GitHub's own advisory database:
 

@@ -9,6 +9,7 @@ ignore = [
     { id = "RUSTSEC-2023-0071", reason = "rsa in Proton's pgp crates: a timing attack that needs measured local decryptions" },
     { id = "RUSTSEC-2026-0387", reason = "crypto-bigint through cx448 in Proton's crates, same reasoning" },
     { id = "RUSTSEC-2025-0144", reason = "ml-dsa signing timing, which an attacker would have to measure locally" },
+    { id = "RUSTSEC-2026-0459", reason = "SQLite in arti's directory cache, which only the app writes; tor-dirmgr 0.48 holds rusqlite below the fix" },
 ]
 unmaintained = "workspace"
 
