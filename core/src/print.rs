@@ -316,7 +316,8 @@ fn heading(item: &PrintItem<'_>, options: &PrintOptions, labels: &PrintLabels) -
         rows.push_str(&technical_rows(m, labels));
     }
     let table = if rows.is_empty() { String::new() } else { format!("<table>{rows}</table>") };
-    format!("{subject}{table}{}<hr>", history_row(item, labels))
+    // A block of its own: its rules share the shadow root with the mail, and must not reach the mail's tables.
+    format!(r#"<div class="print-head">{subject}{table}{}<hr></div>"#, history_row(item, labels))
 }
 
 /// Where a mark must be drawn for it to land at `sheet_mm` from the top of the paper. The page's
@@ -356,7 +357,9 @@ fn style(options: &PrintOptions) -> String {
     )
 }
 
-/// Mail is written for screens of any width. Paper has one.
+/// Mail is written for screens of any width. Paper has one. WebKit ignores `max-width` on a table, so a table of a fixed
+/// width is laid out by its content instead; one that asks for a share of the page keeps it, and so do its cells'
+/// padding and the mail's own headings, which the rules of the printout's heading do not reach.
 fn fit(options: &PrintOptions) -> String {
     let ink = if options.save_ink {
         "*{background:none!important;color:#000!important;box-shadow:none!important}"
@@ -371,11 +374,11 @@ fn fit(options: &PrintOptions) -> String {
         ""
     };
     format!(
-        "h1{{font-size:16pt;margin:0 0 3mm;overflow-wrap:anywhere;break-after:avoid}}\
-         table{{border-collapse:collapse;max-width:100%}}\
-         th{{text-align:left;font-weight:600;padding:.4mm 4mm .4mm 0;vertical-align:top;white-space:nowrap}}\
-         td{{padding:.4mm 0;overflow-wrap:anywhere}}\
-         hr{{border:0;border-top:.25mm solid #888;margin:3mm 0 5mm;clear:both}}\
+        ".print-head h1{{font-size:16pt;margin:0 0 3mm;overflow-wrap:anywhere;break-after:avoid}}\
+         .print-head table{{border-collapse:collapse;max-width:100%}}\
+         .print-head th{{text-align:left;font-weight:600;padding:.4mm 4mm .4mm 0;vertical-align:top;white-space:nowrap}}\
+         .print-head td{{padding:.4mm 0;overflow-wrap:anywhere}}\
+         .print-head hr{{border:0;border-top:.25mm solid #888;margin:3mm 0 5mm;clear:both}}\
          .check-code{{float:right;margin:0 0 2mm 4mm}}\
          .seal-sheet{{break-before:page}}\
          .seal-sheet h2{{font-size:13pt;margin:0 0 2mm}}\
@@ -393,7 +396,8 @@ fn fit(options: &PrintOptions) -> String {
          .print-body{{overflow-wrap:anywhere}}\
          .print-body *{{max-width:100%!important;box-sizing:border-box}}\
          .print-body img{{height:auto!important;break-inside:avoid}}\
-         .print-body table{{width:auto!important;table-layout:auto}}\
+         .print-body table:not([width$=\"%\"]):not([style*=\"%\"]){{width:auto!important;table-layout:auto}}\
+         .print-body td,.print-body th{{overflow-wrap:anywhere}}\
          .print-body pre{{white-space:pre-wrap}}\
          .print-body blockquote,.print-body tr{{break-inside:avoid}}\
          {gray}{ink}"

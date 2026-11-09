@@ -28,7 +28,7 @@ fn body() -> String {
          <p>This mail exists only to check how a mail is drawn. Its text has <b>bold</b>, <i>italic</i> and \
          <a href=\"https://example.com\">a link</a>.</p>\
          <p><img src=\"{SQUARE}\" width=\"64\" height=\"64\" alt=\"A blue square\"></p>\
-         <table style=\"border-collapse:collapse\" border=\"1\" cellpadding=\"6\">{rows}</table>\
+         <table width=\"100%\" style=\"border-collapse:collapse\" border=\"1\" cellpadding=\"6\">{rows}</table>\
          <ol>{lines}</ol>\
          <p style=\"background:#fff3c4;padding:8px\">The end of the sample.</p>"
     )

@@ -66,6 +66,34 @@ fn colours_follow_the_options() {
     assert!(fit(&PrintOptions { save_ink: true, ..plain() }).contains("background:none"));
 }
 
+/// Every rule of `fit` shares the shadow root with the mail: none may be one for any table, cell, heading or line.
+#[test]
+fn the_heading_rules_do_not_reach_the_mail() {
+    for options in [plain(), PrintOptions { grayscale: true, save_ink: true, ..plain() }] {
+        let css = fit(&options);
+        for rule in css.split('}').filter(|rule| !rule.trim().is_empty()) {
+            let selectors = rule.split('{').next().unwrap_or_default();
+            for selector in selectors.split(',') {
+                let reaches_only_its_own = selector.starts_with('.') || selector == "*";
+                assert!(reaches_only_its_own, "a rule for every `{selector}` reaches the mail too");
+            }
+        }
+    }
+    let m = sample();
+    let item = PrintItem { message: &m, body: "<p>x</p>".into(), earlier: None, seal: None };
+    let head = heading(&item, &PrintOptions { headers: true, ..plain() }, &labels());
+    assert!(head.starts_with(r#"<div class="print-head">"#) && head.ends_with("<hr></div>"));
+}
+
+#[test]
+fn a_table_that_asks_for_a_share_of_the_page_keeps_it() {
+    let css = fit(&plain());
+    let autosized = css.split('}').find(|rule| rule.contains("width:auto!important")).unwrap_or_default();
+    assert!(autosized.starts_with(".print-body table:not("), "every table was laid out by its content: {autosized}");
+    assert!(autosized.contains(r#":not([width$="%"])"#) && autosized.contains(r#":not([style*="%"])"#));
+    assert!(css.contains(".print-body td,.print-body th{overflow-wrap:anywhere}"), "a long word must not widen a cell");
+}
+
 #[test]
 fn a_new_sheet_for_each_message_is_a_choice() {
     assert!(style(&plain()).contains("break-before:page"));
