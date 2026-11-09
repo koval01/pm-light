@@ -96,7 +96,7 @@ jobs:
           else
             powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms, System.Drawing; \$s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; \$b=New-Object System.Drawing.Bitmap \$s.Width, \$s.Height; [System.Drawing.Graphics]::FromImage(\$b).CopyFromScreen(\$s.Location, [System.Drawing.Point]::Empty, \$s.Size); \$b.Save('target/debug/account-window.png')"
           fi
-          grep -E "account check|mail picture|session|WARN|ERROR" target/debug/account.log | cut -c1-200 || true
+          grep -E "account check|mail picture|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
           kill %1 2>/dev/null || true
           test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
           cat "$note.txt"
@@ -122,7 +122,7 @@ jobs:
             for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
             sleep 4
             import -display "$(ls /tmp/.X11-unix | sed -n "s/^X/:/p" | head -n 1)" -window root target/debug/account-window.png || true
-            grep -E "account check|mail picture|session|WARN|ERROR" target/debug/account.log | cut -c1-200 || true
+            grep -E "account check|mail picture|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
             kill %1 2>/dev/null || true
             test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
             cat "$note.txt"
