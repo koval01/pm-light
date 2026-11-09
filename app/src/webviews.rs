@@ -135,6 +135,12 @@ impl OnePage {
         self.served.lock().as_ref().is_some_and(|(address, _)| address == url)
     }
 
+    /// Any page this protocol served, the one now or an earlier one. A webview can still report an earlier page after
+    /// a newer one was handed over, when two mails open one right after the other: that is no link to send out.
+    pub fn is_ours(&self, url: &str) -> bool {
+        url.strip_prefix(&self.origin()).is_some_and(|rest| rest.starts_with('/'))
+    }
+
     /// By path: on Windows wry turns the address into an http one and back, and only the path stays.
     /// `policy` goes out as a header. A page whose policy carries a fresh nonce keeps it in its own
     /// `<meta>` and passes `None`: a header without the nonce would block its script.
@@ -157,3 +163,6 @@ impl OnePage {
         built.unwrap_or_else(|_| Response::new(Cow::Borrowed(&[][..])))
     }
 }
+
+#[cfg(test)]
+mod tests;

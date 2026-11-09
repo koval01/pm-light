@@ -215,11 +215,17 @@ const fn when_the_page_dies(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
 /// Only the page handed over may load. A link goes to the browser, and nothing else goes at all:
 /// a relative link in a mail would resolve inside the protocol, so only the exact address counts.
 fn own_page(url: &str) -> bool {
-    let own = SERVED.is_own(url) || url == "about:blank";
-    if !own {
-        crate::view::open_link(url);
+    if SERVED.is_own(url) || url == "about:blank" {
+        return true;
     }
-    own
+    // An earlier page of the mail's own, reported late: neither loaded again nor sent to the browser, where on
+    // Windows its http address opened Edge.
+    if SERVED.is_ours(url) {
+        log::info!("an earlier page of the mail view was left alone");
+        return false;
+    }
+    crate::view::open_link(url);
+    false
 }
 
 /// Draws a new mail out of sight, and shows it once it is whole.

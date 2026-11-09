@@ -186,6 +186,7 @@ All are fixed unless listed under [Known limits](#known-limits).
 | Medium   | Any trusted certificate for proton.me was accepted                                                     | Proton's keys are pinned                                |
 | Medium   | Secrets stayed in memory: passwords, and the key secret in saved sessions                              | `Zeroizing` on each path                                |
 | Medium   | A token refresh landing during a lock could save the session unsealed, or bring it back into memory    | Secrets go first, and a refresh after a lock is dropped |
+| Medium   | On Windows, two mails opened in a row could send the mail view's earlier page to Edge, unasked         | The view's own pages never go out as links              |
 | Medium   | The app password could be guessed without limit                                                        | A pause and persistent freezes                          |
 | Medium   | A proxy in the environment was obeyed, which would have taken names away from Quad9                    | Proxies are ignored                                     |
 | Medium   | Any 4xx to a token refresh, 429 and 409 among them, deleted the session; any error at startup did too  | Only 400/401/422 count, twice, 10 s apart               |
