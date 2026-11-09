@@ -5,7 +5,7 @@
 #
 #   scripts/photograph-tour.sh <note> <folder for the pictures>
 #
-# On Linux the screen is the virtual one xvfb-run made: the first display found.
+# On Linux the screen is the virtual one in DISPLAY.
 set -euo pipefail
 
 note=$1
@@ -15,7 +15,7 @@ mkdir -p "$folder"
 shoot() {
     case "$(uname -s)" in
         Darwin) screencapture -x "$1" ;;
-        Linux) import -display "$(find /tmp/.X11-unix -name 'X*' | sed -n 's|.*/X|:|p' | head -n 1)" -window root "$1" ;;
+        Linux) import -display "${DISPLAY:?}" -window root "$1" ;;
         *)
             powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms, System.Drawing;
                 \$s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds;
@@ -23,6 +23,14 @@ shoot() {
                 [System.Drawing.Graphics]::FromImage(\$b).CopyFromScreen(\$s.Location, [System.Drawing.Point]::Empty, \$s.Size);
                 \$b.Save('$1')"
             ;;
+    esac
+}
+
+# Windows: how many Edge processes run at each step, since the runner's Edge has stood in front of the window.
+edge() {
+    case "$(uname -s)" in
+        Darwin | Linux) ;;
+        *) echo "$name: Edge processes $(powershell -NoProfile -Command '(Get-Process msedge -ErrorAction SilentlyContinue | Measure-Object).Count')" ;;
     esac
 }
 
@@ -37,8 +45,8 @@ while [ "$SECONDS" -lt "$end" ] && [ ! -f "$note.done" ]; do
             *)
                 # The step's file is written once the app is done with it; a moment more for the screen to show it.
                 sleep 1
-                shoot "$folder/$name.png" || echo "no picture of $name"
-                taken=$((taken + 1))
+                if shoot "$folder/$name.png"; then taken=$((taken + 1)); else echo "no picture of $name"; fi
+                edge
                 ;;
         esac
         rm -f "$note.step"

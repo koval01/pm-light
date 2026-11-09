@@ -100,10 +100,18 @@ jobs:
             echo "Edge processes once the mail was drawn: $(powershell -NoProfile -Command '(Get-Process msedge -ErrorAction SilentlyContinue | Measure-Object).Count')"
             powershell -NoProfile -Command 'Stop-Process -Name msedge -Force -ErrorAction SilentlyContinue'
           fi
+          # shellcheck disable=SC2016 # PowerShell's own variables
+          edge_parents() {
+            # The program that started each Edge: this app, or the system. Names of programs only.
+            powershell -NoProfile -Command '$p = Get-CimInstance Win32_Process; $p | Where-Object Name -eq "msedge.exe" | ForEach-Object { $id = $_.ParentProcessId; ($p | Where-Object ProcessId -eq $id).Name } | Sort-Object | Get-Unique -AsString'
+          }
           if ! grep -qx "failed" "$note.txt" 2>/dev/null; then
             scripts/photograph-tour.sh "$note" target/debug/screens
           fi
-          grep -E "account check|mail picture|screen tour|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+          if [ "$RUNNER_OS" = Windows ]; then
+            echo "Edge started by: $(edge_parents | tr '\r\n' '  ')"
+          fi
+          grep -E "account check|mail picture|screen tour|session|link|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
           kill %1 2>/dev/null || true
           test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
           cat "$note.txt"
@@ -124,13 +132,16 @@ jobs:
             cargo run --locked -q -p proton-mail-light --example seed_session
             unset LIVE_SESSION
             note="$PWD/target/debug/account"
-            xvfb-run -a -s "-screen 0 1440x900x24" target/debug/proton-mail-light "--check-account=$note" \
-              > target/debug/account.log 2>&1 &
+            # A screen of its own, with no access control, so that the photographer can reach it as the app does.
+            Xvfb :99 -screen 0 1440x900x24 -nolisten tcp > /dev/null 2>&1 &
+            export DISPLAY=:99
+            sleep 1
+            target/debug/proton-mail-light "--check-account=$note" > target/debug/account.log 2>&1 &
             for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
             if ! grep -qx "failed" "$note.txt" 2>/dev/null; then
               scripts/photograph-tour.sh "$note" target/debug/screens
             fi
-            grep -E "account check|mail picture|screen tour|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+            grep -E "account check|mail picture|screen tour|session|link|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
             kill %1 2>/dev/null || true
             test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
             cat "$note.txt"

@@ -13,7 +13,7 @@ use proton_core::{
     Service,
     model::{MessageChanges, MessageMeta},
 };
-use slint::{ComponentHandle, LogicalSize, Timer, Weak, platform::WindowEvent, winit_030::WinitWindowAccessor};
+use slint::{ComponentHandle, LogicalSize, Timer, Weak, winit_030::WinitWindowAccessor};
 use std::{
     cell::{Cell, RefCell},
     path::{Path, PathBuf},
@@ -87,9 +87,10 @@ impl Step {
 fn steps(mails: usize) -> Vec<Step> {
     let mut steps = vec![Step::Mail(0)];
     steps.extend((1..mails).map(Step::Mail));
+    // While a mail of the inbox is open: a reply and a forward take the open mail.
+    steps.extend(LETTERS.into_iter().map(Step::Letter));
     steps.extend(FOLDERS.into_iter().map(Step::Folder));
     steps.push(Step::Search("sale"));
-    steps.extend(LETTERS.into_iter().map(Step::Letter));
     steps.extend(settings::tabs::all().map(|tab| Step::Settings(tab.id)));
     steps.extend([Step::Smallest, Step::Maximised, Step::FullScreen]);
     steps.extend(LOOKS.into_iter().map(|(name, choice, palette)| Step::Look(name, choice, palette)));
@@ -239,12 +240,7 @@ fn show(service: &Arc<Service>, app: &App, rows: &[MessageMeta], step: &Step) {
             app.set_query_text((*text).into());
             app.invoke_search((*text).into());
         }
-        Step::Letter(mode) => {
-            if let Some(row) = rows.first() {
-                view::open_mail(service, &app.as_weak(), row.id.clone());
-            }
-            app.invoke_compose((*mode).into());
-        }
+        Step::Letter(mode) => app.invoke_compose((*mode).into()),
         Step::Settings(tab) => settings::open(service, app, tab),
         Step::Smallest => {
             window.set_size(SMALLEST);
@@ -267,7 +263,7 @@ fn show(service: &Arc<Service>, app: &App, rows: &[MessageMeta], step: &Step) {
         Step::Compact(on) => app.global::<Theme>().set_compact(*on),
         Step::Zoom(_, zoom) => {
             let system = window.scale_factor() / ZOOM.get();
-            window.dispatch_event(WindowEvent::ScaleFactorChanged { scale_factor: system * zoom });
+            crate::rescale::rescale(window, system * zoom);
             ZOOM.set(*zoom);
             mail_view::zoom_to(f64::from(*zoom));
             look::sharpen_logo(app);
