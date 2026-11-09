@@ -20,7 +20,7 @@ liblzma = { version = "0.4", features = ["static"] }
 liblzma = { version = "0.4", features = ["static"] }
 proton-core = { path = "../core" }
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures = { version = "0.3", default-features = false, features = ["std"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }

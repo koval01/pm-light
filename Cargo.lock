@@ -7173,7 +7173,7 @@ dependencies = [
  "ammonia",
  "argon2",
  "arti-client",
- "base64 0.22.1",
+ "base64 0.23.1",
  "chacha20poly1305",
  "chrono",
  "chrono-tz",
@@ -7261,7 +7261,7 @@ name = "proton-mail-light"
 version = "0.1.0"
 dependencies = [
  "auto-launch",
- "base64 0.22.1",
+ "base64 0.23.1",
  "block2 0.6.2",
  "chrono",
  "dirs",
