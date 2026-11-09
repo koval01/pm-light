@@ -134,7 +134,10 @@ started with `--check-account=<file>`, opens its inbox and draws its first mail 
 borrows the session the maintainer's Mac saved, handed over with `scripts/live-session.sh`, never refreshes the tokens,
 and sends nothing. It runs by hand only, and only from main: the environment `live-account`, which holds the session,
 takes no other branch. Its log is public, with only numbers and fixed words. Its artifacts show the test account's
-first mail, which holds nothing of worth.
+first mail, which holds nothing of worth, and the whole screen at each step of a tour of the window (`screen_tour.rs`):
+every mail of the inbox, every folder, the search, a new letter, a reply and a forward, every settings page, the
+smallest window, maximised and full screen, the looks and palettes, the reader below the list, compact rows, zoom, and
+Russian and German. The app and `scripts/photograph-tour.sh` take turns through a file, so no picture is taken early.
 
 `live_tidy` keeps that account fit for the check: a Sieve filter sends to spam all mail not from Proton, and
 `--import` fills the inbox with made-up letters through Proton's import call (`core/src/import.rs`), so the check

@@ -33,6 +33,7 @@ mod print_view;
 mod protection;
 mod reader;
 mod recipients;
+mod screen_tour;
 mod search;
 mod session;
 mod settings;

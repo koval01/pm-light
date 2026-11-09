@@ -1,11 +1,13 @@
 # The account check: the app opens the test account on every system with the session its owner handed over
-# (scripts/live-session.sh), reads it, and draws its first mail through the system's web engine. It never refreshes
-# the tokens, sends nothing, and changes nothing but the read mark of that one mail.
+# (scripts/live-session.sh), reads it, and draws its first mail through the system's web engine. Then it walks the
+# window through its mail, folders, letters, settings pages, sizes, looks, zooms and languages, and the screen is
+# photographed at each (app/src/screen_tour.rs, scripts/photograph-tour.sh). It never refreshes the tokens, sends
+# nothing and saves nothing; the mail it opened is marked unread again where it was.
 #
 # Started by hand only, and only from main: the environment `live-account`, the only place the session is, takes no
 # other branch. The three systems run at once, so an approval, if the environment asks for one, is given once for
-# all. The log carries numbers and fixed words only. The artifacts show the test account's first mail, open in the
-# window and as the web engine drew it: the account holds nothing of worth, and its owner wants them seen. Nothing of the session is in either.
+# all. The log carries numbers and fixed words only. The artifacts show the test account's mail and the screens: the
+# account holds nothing of worth, and its owner wants them seen. Nothing of the session is in either.
 name: Live account
 
 on:
@@ -42,7 +44,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
             libxdo-dev libxkbcommon-dev libxkbcommon-x11-0 libfontconfig1-dev libdbus-1-dev xvfb \
-            gnome-keyring dbus-x11
+            gnome-keyring dbus-x11 imagemagick
 
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
@@ -88,15 +90,20 @@ jobs:
           unset LIVE_SESSION
           app=target/debug/proton-mail-light
           note="$PWD/target/debug/account"
+          if [ "$RUNNER_OS" = Windows ]; then
+            # The runner opens Edge by itself at times, in front of everything: counted, then closed.
+            echo "Edge processes before the app: $(powershell -NoProfile -Command '(Get-Process msedge -ErrorAction SilentlyContinue | Measure-Object).Count')"
+          fi
           "$app" "--check-account=$note" > target/debug/account.log 2>&1 &
           for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
-          sleep 4
-          if [ "$RUNNER_OS" = macOS ]; then
-            screencapture -x target/debug/account-window.png
-          else
-            powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms, System.Drawing; \$s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; \$b=New-Object System.Drawing.Bitmap \$s.Width, \$s.Height; [System.Drawing.Graphics]::FromImage(\$b).CopyFromScreen(\$s.Location, [System.Drawing.Point]::Empty, \$s.Size); \$b.Save('target/debug/account-window.png')"
+          if [ "$RUNNER_OS" = Windows ]; then
+            echo "Edge processes once the mail was drawn: $(powershell -NoProfile -Command '(Get-Process msedge -ErrorAction SilentlyContinue | Measure-Object).Count')"
+            powershell -NoProfile -Command 'Stop-Process -Name msedge -Force -ErrorAction SilentlyContinue'
           fi
-          grep -E "account check|mail picture|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+          if ! grep -qx "failed" "$note.txt" 2>/dev/null; then
+            scripts/photograph-tour.sh "$note" target/debug/screens
+          fi
+          grep -E "account check|mail picture|screen tour|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
           kill %1 2>/dev/null || true
           test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
           cat "$note.txt"
@@ -120,9 +127,10 @@ jobs:
             xvfb-run -a -s "-screen 0 1440x900x24" target/debug/proton-mail-light "--check-account=$note" \
               > target/debug/account.log 2>&1 &
             for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
-            sleep 4
-            import -display "$(ls /tmp/.X11-unix | sed -n "s/^X/:/p" | head -n 1)" -window root target/debug/account-window.png || true
-            grep -E "account check|mail picture|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+            if ! grep -qx "failed" "$note.txt" 2>/dev/null; then
+              scripts/photograph-tour.sh "$note" target/debug/screens
+            fi
+            grep -E "account check|mail picture|screen tour|session|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
             kill %1 2>/dev/null || true
             test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
             cat "$note.txt"
@@ -137,4 +145,4 @@ jobs:
           path: |
             target/debug/account.png
             target/debug/account.txt
-            target/debug/account-window.png
+            target/debug/screens/*.png

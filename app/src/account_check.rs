@@ -3,9 +3,10 @@
 //! account's session, by hand and after the owner approves each run.
 //!
 //! It never refreshes the tokens, so the session it borrows stays the owner's; it never asks about Tor, and goes
-//! straight to Proton. The first mail opens in the window, as a click would open it, for CI to photograph, and its
-//! drawing is kept as `<file>.png`: the test account holds nothing of worth, and its owner wants them seen. The
-//! journal and `<file>.txt` still carry numbers and fixed words only.
+//! straight to Proton. The first mail opens in the window, as a click would open it, and its drawing is kept as
+//! `<file>.png`; then `screen_tour` walks the window through its pages for CI to photograph. The test account holds
+//! nothing of worth, and its owner wants the pictures seen. The journal and `<file>.txt` carry numbers and fixed words
+//! only.
 
 use crate::{App, mail_picture, print_dialog};
 use proton_core::{PrintScope, Service, model::ListOptions};
@@ -99,6 +100,7 @@ pub fn mailbox_opened(service: &Arc<Service>, app: &Weak<App>, folders: usize) {
         let count = rows.len();
         let _ = app.upgrade_in_event_loop(move |app| {
             FOUND.set((folders, count));
+            crate::screen_tour::remember(&service, rows);
             match first {
                 Some(id) => draw_first(&service, &app, id),
                 None => finished_without_mail(),
@@ -143,7 +145,10 @@ pub fn finish(png: &[u8], width: u32, height: u32) {
     let mut picture = path.clone().into_os_string();
     picture.push(".png");
     let _ = std::fs::write(PathBuf::from(picture), png);
-    note(path, &report(folders, rows, width, height));
+    note(path.clone(), &report(folders, rows, width, height));
+    if let Some(app) = crate::actions::main_window() {
+        crate::screen_tour::start(&app, path);
+    }
 }
 
 /// The check could not go on.

@@ -13,7 +13,7 @@ mod mail_pages;
 mod print_check;
 mod program_pages;
 pub mod rows;
-mod tabs;
+pub mod tabs;
 
 use crate::{App, Say, Settings, SettingsRow, SettingsSection, mail_view, view};
 use proton_core::{Service, error::Error};
