@@ -73,8 +73,8 @@ pub fn derive_key(password: &str, salt: &[u8]) -> Result<VaultKey> {
 
 pub fn seal(key: &[u8; KEY_BYTES], salt: &[u8], plain: &[u8]) -> Result<Envelope> {
     let nonce: [u8; NONCE_BYTES] = rand::random();
-    let sealed = XChaCha20Poly1305::new(Key::from_slice(key))
-        .encrypt(XNonce::from_slice(&nonce), plain)
+    let sealed = XChaCha20Poly1305::new(<&Key>::from(key))
+        .encrypt(&XNonce::from(nonce), plain)
         .map_err(Error::crypto)?;
     Ok(Envelope {
         salt: STANDARD.encode(salt),
@@ -87,11 +87,9 @@ pub fn seal(key: &[u8; KEY_BYTES], salt: &[u8], plain: &[u8]) -> Result<Envelope
 pub fn open(key: &[u8; KEY_BYTES], envelope: &Envelope) -> Result<Zeroizing<Vec<u8>>> {
     let nonce = STANDARD.decode(&envelope.nonce).map_err(|_| Error::WrongPassword)?;
     let sealed = STANDARD.decode(&envelope.sealed).map_err(|_| Error::WrongPassword)?;
-    if nonce.len() != NONCE_BYTES {
-        return Err(Error::WrongPassword);
-    }
-    XChaCha20Poly1305::new(Key::from_slice(key))
-        .decrypt(XNonce::from_slice(&nonce), sealed.as_slice())
+    let nonce = XNonce::try_from(nonce.as_slice()).map_err(|_| Error::WrongPassword)?;
+    XChaCha20Poly1305::new(<&Key>::from(key))
+        .decrypt(&nonce, sealed.as_slice())
         .map(Zeroizing::new)
         .map_err(|_| Error::WrongPassword)
 }

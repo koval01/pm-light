@@ -165,7 +165,7 @@ fn seal(cipher: &XChaCha20Poly1305, record: &Record) -> Option<Vec<u8>> {
     let nonce: [u8; NONCE_BYTES] = rand::random();
     let plain = Zeroizing::new(serde_json::to_vec(record).ok()?);
     let sealed =
-        cipher.encrypt(XNonce::from_slice(&nonce), Payload { msg: &plain, aad: CONTEXT }).ok()?;
+        cipher.encrypt(&XNonce::from(nonce), Payload { msg: &plain, aad: CONTEXT }).ok()?;
     let length = u32::try_from(NONCE_BYTES + sealed.len()).ok()?;
     let mut frame = Vec::with_capacity(LENGTH_BYTES + NONCE_BYTES + sealed.len());
     frame.extend_from_slice(&length.to_le_bytes());
@@ -181,7 +181,8 @@ fn open_frames(cipher: &XChaCha20Poly1305, mut bytes: &[u8], out: &mut Vec<Recor
         let Some((frame, after)) = rest.split_at_checked(length) else { return };
         bytes = after;
         let Some((nonce, sealed)) = frame.split_at_checked(NONCE_BYTES) else { continue };
-        let opened = cipher.decrypt(XNonce::from_slice(nonce), Payload { msg: sealed, aad: CONTEXT });
+        let Ok(nonce) = XNonce::try_from(nonce) else { continue };
+        let opened = cipher.decrypt(&nonce, Payload { msg: sealed, aad: CONTEXT });
         if let Some(record) = opened.ok().and_then(|plain| serde_json::from_slice(&plain).ok()) {
             out.push(record);
         }

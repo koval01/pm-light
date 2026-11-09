@@ -69,7 +69,7 @@ impl MailStore {
         let Ok(plain) = serde_json::to_vec(value).map(Zeroizing::new) else { return };
         let nonce: [u8; NONCE_BYTES] = rand::random();
         let payload = Payload { msg: &plain, aad: name.as_bytes() };
-        let Ok(sealed) = self.cipher.encrypt(XNonce::from_slice(&nonce), payload) else { return };
+        let Ok(sealed) = self.cipher.encrypt(&XNonce::from(nonce), payload) else { return };
         let path = self.path(&name);
         let partial = path.with_extension("partial");
         let mut options = OpenOptions::new();
@@ -92,7 +92,8 @@ impl MailStore {
         let bytes = fs::read(&path).ok()?;
         let opened = bytes.split_at_checked(NONCE_BYTES).and_then(|(nonce, sealed)| {
             let payload = Payload { msg: sealed, aad: name.as_bytes() };
-            let plain = self.cipher.decrypt(XNonce::from_slice(nonce), payload).ok()?;
+            let nonce = XNonce::try_from(nonce).ok()?;
+            let plain = self.cipher.decrypt(&nonce, payload).ok()?;
             serde_json::from_slice(&Zeroizing::new(plain)).ok()
         });
         if opened.is_none() {
