@@ -50,7 +50,7 @@ regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["gzip", "http2", "json", "multipart", "rustls-tls-webpki-roots", "socks"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-webpki = "0.103"
-sha2 = "0.10"
+sha2 = "0.11"
 webpki-roots = "1"
 percent-encoding = "2"
 serde = { version = "1", features = ["derive", "rc"] }
