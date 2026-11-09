@@ -194,7 +194,17 @@ fn a_password_opens_a_session_key_and_a_wrong_one_does_not() {
         .unwrap();
     let (key, _) = pgp.session_key_export(&opened).unwrap();
     assert_eq!(key.as_ref(), &material.session_key.key[..]);
-    assert!(pgp.new_decryptor().with_passphrase("wrong").decrypt_session_key(&packet).is_err());
+    // A packet sealed by a password carries no check of its own (OpenPGP's SKESK v4): a wrong password is usually
+    // refused, but now and then opens it into some other key. It never yields the real one, and the mail it holds
+    // stays shut, since its data packet is checked.
+    for _ in 0..3 {
+        let material = f.crypto.encrypt_body("secret", ADDRESS, None).unwrap();
+        let packet = f.crypto.wrap_for_password(&material.session_key, "correct horse").unwrap();
+        if let Ok(opened) = pgp.new_decryptor().with_passphrase("wrong").decrypt_session_key(&packet) {
+            let (key, _) = pgp.session_key_export(&opened).unwrap();
+            assert_ne!(key.as_ref(), &material.session_key.key[..], "a wrong password opened the real key");
+        }
+    }
 }
 
 #[test]
