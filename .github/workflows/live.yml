@@ -98,7 +98,7 @@ jobs:
           for _ in $(seq 1 150); do [ -f "$note.txt" ] && break; sleep 1; done
           if [ "$RUNNER_OS" = Windows ]; then
             echo "Edge processes once the mail was drawn: $(powershell -NoProfile -Command '(Get-Process msedge -ErrorAction SilentlyContinue | Measure-Object).Count')"
-            powershell -NoProfile -Command 'Stop-Process -Name msedge -Force -ErrorAction SilentlyContinue'
+            powershell -NoProfile -Command 'Stop-Process -Name msedge -Force -ErrorAction SilentlyContinue' || true
           fi
           # shellcheck disable=SC2016 # PowerShell's own variables
           edge_parents() {
