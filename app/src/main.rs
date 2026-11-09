@@ -20,6 +20,7 @@ mod look;
 mod mail_picture;
 mod mail_view;
 mod memory;
+mod memory_check;
 mod menu;
 mod modal;
 mod moment_picker;
@@ -66,6 +67,8 @@ mod ui {
 }
 pub use ui::*;
 
+// AddressSanitizer sees only the system's allocator: a build for it (`--cfg checked_memory`) leaves mimalloc out.
+#[cfg(not(checked_memory))]
 #[global_allocator]
 static ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
 

@@ -4,27 +4,33 @@
 /// Goes first: everything after this runs with the protections in place. The journal has not
 /// started yet, so what did not take is handed back to be written there.
 pub fn harden_process() -> Vec<&'static str> {
+    #[cfg(not(target_os = "windows"))]
+    let mut missing = Vec::new();
     #[cfg(unix)]
-    // Safety: plain system calls on this process, with valid arguments.
-    unsafe {
+    {
         // A crash must not leave a file holding tokens and mail.
         let none = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
-        libc::setrlimit(libc::RLIMIT_CORE, &raw const none);
+        // Safety: a limit of this process, from a structure alive for the call.
+        if unsafe { libc::setrlimit(libc::RLIMIT_CORE, &raw const none) } != 0 {
+            missing.push("core files could not be turned off");
+        }
     }
+    // Debug builds stay debuggable.
     #[cfg(all(target_os = "macos", not(debug_assertions)))]
-    // Safety: as above. Debug builds stay debuggable.
-    unsafe {
-        libc::ptrace(libc::PT_DENY_ATTACH, 0, std::ptr::null_mut(), 0);
+    // Safety: a request about this process alone, with no address to read or write.
+    if unsafe { libc::ptrace(libc::PT_DENY_ATTACH, 0, std::ptr::null_mut(), 0) } != 0 {
+        missing.push("debuggers could not be kept out");
     }
-    #[cfg(target_os = "linux")]
-    // Safety: as above.
-    unsafe {
-        libc::prctl(libc::PR_SET_DUMPABLE, 0, 0, 0, 0);
+    // A build for AddressSanitizer leaves the process readable: its leak check reads it from outside.
+    #[cfg(all(target_os = "linux", not(checked_memory)))]
+    // Safety: a setting of this process, with plain numbers.
+    if unsafe { libc::prctl(libc::PR_SET_DUMPABLE, 0, 0, 0, 0) } != 0 {
+        missing.push("the process could not be made unreadable to others");
     }
     #[cfg(target_os = "windows")]
     return windows::harden();
     #[cfg(not(target_os = "windows"))]
-    Vec::new()
+    missing
 }
 
 #[cfg(target_os = "windows")]

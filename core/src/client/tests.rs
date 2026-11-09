@@ -197,6 +197,7 @@ async fn a_proxy_in_the_environment_is_ignored() {
         std::env::set_var("ALL_PROXY", &proxy.base);
     }
     let (client, _) = holding_a_session(&server.base);
+    // Safety: as above, the same test's own variables, taken away again.
     unsafe {
         std::env::remove_var("HTTP_PROXY");
         std::env::remove_var("ALL_PROXY");

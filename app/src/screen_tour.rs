@@ -3,7 +3,8 @@
 //!
 //! The two take turns through files beside the check's note. Once a step has settled, the app writes its name to
 //! `<file>.step`; CI photographs the screen under that name and removes the file, and the app goes on. A step CI never
-//! answers is left after a while, so a missing photographer cannot hold the check. `<file>.done` ends the tour.
+//! answers is left after a while, so a missing photographer cannot hold the check. Then `memory_check` opens the mail
+//! round after round and writes `<file>.memory`, and `<file>.done` ends it all.
 //!
 //! Nothing here is kept: the look, the language and the window's size change only on screen, zoom goes back to 100, a
 //! letter opened here is put away unsaved, and the mail the tour opened is marked unread again if it was so before.
@@ -273,9 +274,22 @@ fn show(service: &Arc<Service>, app: &App, rows: &[MessageMeta], step: &Step) {
 }
 
 /// The tour is over: the mail it opened is unread again where it was, the language is the person's, and CI is told.
+/// The steps are over: the language is the person's again, and the memory check takes the window next.
 fn end() {
-    let Some(tour) = TOUR.take() else { return };
+    let ready = TOUR.with_borrow(|tour| {
+        let tour = tour.as_ref()?;
+        Some((tour.service.clone(), tour.app.upgrade()?, tour.rows.clone(), beside(&tour.note, ".memory")))
+    });
     look::apply_language();
+    match ready {
+        Some((service, app, rows, file)) => crate::memory_check::run(&service, &app, &rows, file, finish),
+        None => finish(),
+    }
+}
+
+/// The mail the tour opened is unread again where it was, and CI is told the tour is over.
+fn finish() {
+    let Some(tour) = TOUR.take() else { return };
     let unread: Vec<String> = tour.rows.iter().filter(|row| row.unread && row.messages == 0).map(|row| row.id.clone()).collect();
     let (service, done) = (tour.service.clone(), beside(&tour.note, ".done"));
     log::info!("the screen tour ended after {} steps; {} mails to mark unread again", tour.next, unread.len());

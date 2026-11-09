@@ -70,13 +70,22 @@ fn a_picture_on_a_pasteboard_reads_back_as_png_and_as_tiff() {
 /// A page of 200 by 100 points with a black square from (10, 10) to (60, 60), counted from its bottom left.
 #[cfg(target_os = "macos")]
 fn square_pdf() -> Vec<u8> {
+    pdf_with_pages(&["0 0 200 100"])
+}
+
+/// A PDF of a page for each media box given, each with the same black square.
+#[cfg(target_os = "macos")]
+fn pdf_with_pages(boxes: &[&str]) -> Vec<u8> {
     let content = "0 0 0 rg 10 10 50 50 re f";
-    let objects = [
+    let kids: Vec<String> = (0..boxes.len()).map(|page| format!("{} 0 R", 3 + page * 2)).collect();
+    let mut objects = vec![
         "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
-        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".to_string(),
-        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 100] /Contents 4 0 R >>".to_string(),
-        format!("<< /Length {} >>\nstream\n{content}\nendstream", content.len()),
+        format!("<< /Type /Pages /Kids [{}] /Count {} >>", kids.join(" "), boxes.len()),
     ];
+    for (page, media) in boxes.iter().enumerate() {
+        objects.push(format!("<< /Type /Page /Parent 2 0 R /MediaBox [{media}] /Contents {} 0 R >>", 4 + page * 2));
+        objects.push(format!("<< /Length {} >>\nstream\n{content}\nendstream", content.len()));
+    }
     let mut pdf = b"%PDF-1.4\n".to_vec();
     let mut offsets = Vec::new();
     for (number, object) in objects.iter().enumerate() {
@@ -109,6 +118,61 @@ fn a_pdf_page_becomes_pixels_twice_as_fine_on_white() {
 fn what_is_not_a_pdf_is_no_picture() {
     let data = objc2_foundation::NSData::with_bytes(b"<html>not a pdf</html>");
     assert!(macos::drawn(&data).is_none());
+}
+
+/// The size of a picture `drawn` made, or nothing.
+#[cfg(target_os = "macos")]
+fn drawn_size(pdf: &[u8]) -> Option<(u32, u32)> {
+    let png = macos::drawn(&objc2_foundation::NSData::with_bytes(pdf))?;
+    image::load_from_memory(&png).ok().map(|picture| (picture.width(), picture.height()))
+}
+
+/// What reaches AppKit's PDF and bitmap calls behind `unsafe`: pages of no size, of a size past any picture, upside
+/// down, unreadable, cut short, nothing at all. Each must give a picture within bounds or none, never a crash, and
+/// under the address sanitizer never a touch outside memory.
+#[cfg(target_os = "macos")]
+#[test]
+fn hostile_pdfs_give_a_bounded_picture_or_none() {
+    let most = (TALLEST * SCALE).round();
+    let bounded = |size: Option<(u32, u32)>| size.is_none_or(|(wide, high)| f64::from(wide) <= most && f64::from(high) <= most && wide > 0 && high > 0);
+    for media in ["0 0 0 0", "0 0 0 100", "0 0 200 0", "0 0 -200 -100", "200 100 0 0", "0 0 0.4 0.4", "0 0 1 1", "0 0 99999 99999",
+        "0 0 1 999999", "0 0 999999 1", "0 0 abc def", "0 0", "", "1e308 1e308 -1e308 -1e308", "0 0 nan nan"] {
+        assert!(bounded(drawn_size(&pdf_with_pages(&[media]))), "media box [{media}]");
+    }
+    let whole = square_pdf();
+    for cut in [0, 1, 8, whole.len() / 3, whole.len() / 2, whole.len() - 10] {
+        let part = whole.get(..cut).unwrap_or_default();
+        assert!(bounded(drawn_size(part)), "a PDF cut at {cut}");
+    }
+    assert_eq!(drawn_size(&[]), None);
+    assert_eq!(drawn_size(&[0; 4096]), None);
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn of_many_pages_only_the_first_is_drawn() {
+    assert_eq!(drawn_size(&pdf_with_pages(&["0 0 300 150", "0 0 50 50", "0 0 2000 2000"])), Some((600, 300)));
+}
+
+/// Hundreds of pictures one after another: the address sanitizer catches a use after free, and memory must not pile up.
+#[cfg(target_os = "macos")]
+#[test]
+fn drawing_again_and_again_is_the_same_picture() {
+    let pdf = objc2_foundation::NSData::with_bytes(&square_pdf());
+    let first = macos::drawn(&pdf).unwrap_or_default();
+    for _ in 0..300 {
+        assert_eq!(macos::drawn(&pdf).unwrap_or_default(), first);
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn a_pasteboard_takes_nothing_one_byte_and_much() {
+    for size in [0_usize, 1, 3, 4096, 20 * 1024 * 1024] {
+        let bytes: Vec<u8> = (0..size).map(|index| u8::try_from(index % 251).unwrap_or(0)).collect();
+        let read = macos::put_and_read_back(&bytes).map(|(read, _)| read);
+        assert!(read.is_none_or(|read| read == bytes), "{size} bytes came back changed");
+    }
 }
 
 fn tiny_png() -> Vec<u8> {

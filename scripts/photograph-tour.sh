@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Photographs the whole screen at each step of the app's screen tour (app/src/screen_tour.rs), for the account check
 # in .github/workflows/live.yml. The app writes a step's name to <note>.step once it has settled; this takes the
-# picture under that name, removes the file, and the app goes on. <note>.done, or ten minutes, ends it.
+# picture under that name, removes the file, and the app goes on. <note>.done, or fifteen minutes, ends it.
 #
 #   scripts/photograph-tour.sh <note> <folder for the pictures>
 #
@@ -35,7 +35,7 @@ edge() {
 }
 
 taken=0
-end=$((SECONDS + 600))
+end=$((SECONDS + 900))
 while [ "$SECONDS" -lt "$end" ] && [ ! -f "$note.done" ]; do
     if [ -f "$note.step" ]; then
         name=$(head -c 64 "$note.step")

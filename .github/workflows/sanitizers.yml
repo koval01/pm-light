@@ -1,0 +1,113 @@
+# Memory errors and undefined behaviour that tests alone would pass over. AddressSanitizer watches every read and
+# write of the core's tests, with LeakSanitizer after them, and of the app's tests on Linux and macOS, which aim at the
+# app's `unsafe` calls into the systems: hostile PDFs, pasteboards, process numbers that do not exist, zoom. Miri runs
+# the core's pure code, where no system call stands in its way. A build for them takes `--cfg checked_memory`, which
+# swaps mimalloc for the system's allocator, whose every block the sanitizer sees. They need a nightly compiler; the
+# app itself never does.
+name: Sanitizers
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "41 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sanitizers-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  core:
+    name: Core under AddressSanitizer and LeakSanitizer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Nightly compiler with its sources
+        run: rustup toolchain install nightly --profile minimal --component rust-src
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: sanitizer-core
+          cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # The standard library is built with the sanitizer too, or what it allocates would go unseen.
+      - name: Tests
+        env:
+          RUSTFLAGS: -Zsanitizer=address --cfg checked_memory
+          RUSTDOCFLAGS: -Zsanitizer=address --cfg checked_memory
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1
+        run: cargo +nightly test --locked -Zbuild-std -p proton-core --lib --target x86_64-unknown-linux-gnu
+
+  app:
+    name: App's unsafe calls under AddressSanitizer on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Linux libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            libxdo-dev libxkbcommon-dev libxkbcommon-x11-0 libfontconfig1-dev libdbus-1-dev
+      - name: Nightly compiler
+        run: rustup toolchain install nightly --profile minimal
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: sanitizer-app
+          cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Leaks are not asked about here: GTK's and AppKit's own would bury ours, and macOS has no leak checker.
+      - name: Tests
+        env:
+          RUSTFLAGS: -Zsanitizer=address --cfg checked_memory
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1
+          TARGET: ${{ matrix.target }}
+        run: cargo +nightly test --locked -p proton-mail-light --bins --test zoom --target "$TARGET"
+
+  miri:
+    name: Core's pure code under Miri
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Nightly compiler with Miri
+        run: |
+          rustup toolchain install nightly --profile minimal --component miri,rust-src
+          cargo +nightly miri setup
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          shared-key: miri
+          cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Mail parsing, cleaning, search, seals and the rest that never leaves the process. Time and the system's
+      # randomness are let in, which some of them read.
+      - name: Tests
+        env:
+          MIRIFLAGS: -Zmiri-disable-isolation
+        run: |
+          cargo +nightly miri test --locked -p proton-core --lib -- \
+            html:: mime:: search:: seal:: text:: safety:: file_kind:: sieve:: mailto:: vcard:: eml:: calendar:: \
+            pattern:: keymap:: ranking:: image_metadata:: mapping::

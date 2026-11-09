@@ -365,14 +365,14 @@ fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBu
         let preferences = configuration.preferences();
         let listed: Bool = msg_send![kind, respondsToSelector: sel!(_features)];
         let settable: Bool = msg_send![&*preferences, respondsToSelector: sel!(_setEnabled:forFeature:)];
-        if listed.as_bool() && settable.as_bool() {
-            let features: Retained<NSArray<AnyObject>> = msg_send![kind, _features];
-            for feature in &features {
-                let key: Retained<NSString> = msg_send![&*feature, key];
-                if off.contains(&key.to_string().as_str()) {
-                    let _: () = msg_send![&*preferences, _setEnabled: false, forFeature: &*feature];
-                    log::debug!("a WebKit feature turned off: {key}");
-                }
+        // Private calls may answer nothing in another version of WebKit: that is a feature left as it is, never a
+        // panic, which a result that cannot be nothing would be.
+        let features: Option<Retained<NSArray<AnyObject>>> = if listed.as_bool() && settable.as_bool() { msg_send![kind, _features] } else { None };
+        for feature in features.iter().flat_map(|features| features.iter()) {
+            let key: Option<Retained<NSString>> = msg_send![&*feature, key];
+            if let Some(key) = key.filter(|key| off.contains(&key.to_string().as_str())) {
+                let _: () = msg_send![&*preferences, _setEnabled: false, forFeature: &*feature];
+                log::debug!("a WebKit feature turned off: {key}");
             }
         }
         builder.with_webview_configuration(configuration)

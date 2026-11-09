@@ -14,16 +14,22 @@ thread_local! {
     static TIMER: RefCell<Option<Timer>> = const { RefCell::new(None) };
 }
 
+#[cfg(not(checked_memory))]
 unsafe extern "C" {
     /// From `mimalloc`, which the program is linked with.
     fn mi_collect(force: bool);
 }
 
 /// Hands what this thread has freed back to the system, for a thread with nothing left to do.
+#[cfg(not(checked_memory))]
 pub fn give_back() {
     // Safety: takes no pointers, and only tidies the calling thread's own heap.
     unsafe { mi_collect(true) };
 }
+
+/// A build for AddressSanitizer runs on the system's allocator, which gives back by itself.
+#[cfg(checked_memory)]
+pub const fn give_back() {}
 
 /// The system's libraries use their own heap, which keeps holes it could return.
 #[cfg(target_os = "macos")]
@@ -37,6 +43,13 @@ fn give_back_system_heap() {
 
 #[cfg(not(target_os = "macos"))]
 const fn give_back_system_heap() {}
+
+/// The figure the footer shows, after the heaps gave back what they could: for the account check's memory rounds.
+pub fn settled_megabytes() -> Option<u64> {
+    give_back();
+    give_back_system_heap();
+    system::used().map(megabytes)
+}
 
 const fn megabytes(bytes: u64) -> u64 {
     (bytes + BYTES_IN_A_MEGABYTE / 2) / BYTES_IN_A_MEGABYTE
@@ -103,6 +116,32 @@ mod system {
         pids.truncate(usize::try_from(count).ok()?);
         let related = pids.into_iter().filter(|pid| *pid == own || (responsible(*pid) == ours && is_webkit(*pid)));
         Some(related.filter_map(footprint).sum())
+    }
+
+    /// The calls behind `unsafe` given numbers no process has, and run often, for the address sanitizer to watch.
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn this_process_has_a_footprint_and_no_process_has_none() {
+            let own = i32::try_from(process::id()).unwrap_or(0);
+            assert!(footprint(own).is_some_and(|bytes| bytes > 0));
+            for nobody in [-1, i32::MIN, i32::MAX, 999_999_999] {
+                assert_eq!(footprint(nobody), None, "pid {nobody}");
+                assert!(!is_webkit(nobody), "pid {nobody}");
+            }
+            assert!(!is_webkit(own), "the test is no WebKit process");
+        }
+
+        #[test]
+        fn the_whole_figure_holds_this_process_and_stays_steady_when_asked_often() {
+            let own = i32::try_from(process::id()).unwrap_or(0);
+            let alone = footprint(own).unwrap_or(0);
+            for _ in 0..200 {
+                assert!(used().is_some_and(|bytes| bytes >= alone / 2), "the process itself went missing");
+            }
+        }
     }
 }
 
@@ -193,6 +232,36 @@ mod system {
         let pids = super::counted(own, &processes(), |name| name.eq_ignore_ascii_case(WEBVIEW));
         let total: u64 = pids.into_iter().filter_map(private_working_set).sum();
         (total > 0).then_some(total)
+    }
+
+    /// The calls behind `unsafe` given numbers no process has, and run often.
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn the_list_of_processes_holds_this_one_by_name() {
+            let own = process::id();
+            let all = processes();
+            assert!(all.iter().any(|(pid, _, name)| *pid == own && name.to_ascii_lowercase().ends_with(".exe")));
+            assert!(all.iter().all(|(_, _, name)| !name.contains('\0')), "a name kept its end mark");
+        }
+
+        #[test]
+        fn this_process_has_a_working_set_and_no_process_has_none() {
+            assert!(private_working_set(process::id()).is_some_and(|bytes| bytes > 0));
+            // 0 is the idle process, which cannot be opened; the others are no process at all.
+            for nobody in [0, u32::MAX, 0xFFFF_FFF0] {
+                assert_eq!(private_working_set(nobody), None, "pid {nobody}");
+            }
+        }
+
+        #[test]
+        fn asked_often_the_figure_stays() {
+            for _ in 0..100 {
+                assert!(used().is_some_and(|bytes| bytes > 0));
+            }
+        }
     }
 }
 

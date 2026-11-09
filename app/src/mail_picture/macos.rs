@@ -53,10 +53,14 @@ pub fn capture(view: &WebView, _width: f64, _height: f64, then: impl FnOnce(Opti
 
 /// The first page of a PDF drawn into pixels, on white, at the scale its size allows. Nothing for what is not one.
 pub fn drawn(pdf: &NSData) -> Option<Vec<u8>> {
-    // Safety: AppKit's own classes, each result checked for nothing before it is used, on the window's thread
-    // where drawing into a context belongs.
+    // Every class first: a missing one must end this before the graphics state is changed, never between its save
+    // and its restore.
+    let (reps, bitmaps, contexts, colors, paths) =
+        (class(c"NSPDFImageRep")?, class(c"NSBitmapImageRep")?, class(c"NSGraphicsContext")?, class(c"NSColor")?, class(c"NSBezierPath")?);
+    // Safety: AppKit's own classes, each result checked for nothing before it is used. The context drawn into is a
+    // bitmap's own, made current for this thread only and put back before the block ends.
     unsafe {
-        let rep: Option<Retained<AnyObject>> = msg_send![class(c"NSPDFImageRep")?, imageRepWithData: pdf];
+        let rep: Option<Retained<AnyObject>> = msg_send![reps, imageRepWithData: pdf];
         let rep = rep?;
         let pages: isize = msg_send![&*rep, pageCount];
         let bounds: NSRect = msg_send![&*rep, bounds];
@@ -66,7 +70,7 @@ pub fn drawn(pdf: &NSData) -> Option<Vec<u8>> {
         }
         let scale = scale_for(width, height);
         let (wide, high) = (pixels(width * scale)?, pixels(height * scale)?);
-        let allocated: Allocated<AnyObject> = msg_send![class(c"NSBitmapImageRep")?, alloc];
+        let allocated: Allocated<AnyObject> = msg_send![bitmaps, alloc];
         let planes: *mut *mut u8 = std::ptr::null_mut();
         let space = NSString::from_str("NSDeviceRGBColorSpace");
         let bitmap: Option<Retained<AnyObject>> = msg_send![
@@ -84,16 +88,15 @@ pub fn drawn(pdf: &NSData) -> Option<Vec<u8>> {
         ];
         let bitmap = bitmap?;
         let _: () = msg_send![&*bitmap, setSize: NSSize::new(width, height)];
-        let contexts = class(c"NSGraphicsContext")?;
         let context: Option<Retained<AnyObject>> = msg_send![contexts, graphicsContextWithBitmapImageRep: &*bitmap];
         let context = context?;
         let whole = NSRect::new(NSPoint::new(0.0, 0.0), NSSize::new(width, height));
         let _: () = msg_send![contexts, saveGraphicsState];
         let _: () = msg_send![contexts, setCurrentContext: &*context];
-        let white: Option<Retained<AnyObject>> = msg_send![class(c"NSColor")?, whiteColor];
+        let white: Option<Retained<AnyObject>> = msg_send![colors, whiteColor];
         if let Some(white) = white {
             let _: () = msg_send![&*white, setFill];
-            let _: () = msg_send![class(c"NSBezierPath")?, fillRect: whole];
+            let _: () = msg_send![paths, fillRect: whole];
         }
         let _: Bool = msg_send![&*rep, drawInRect: whole];
         let _: () = msg_send![&*context, flushGraphics];
@@ -126,8 +129,11 @@ pub fn copy(png: &[u8]) -> bool {
     }
 }
 
-/// Safety: `board` is an `NSPasteboard`, used on the window's thread.
+/// # Safety
+///
+/// `board` is an `NSPasteboard`.
 unsafe fn put(board: &AnyObject, png: &NSData) -> bool {
+    // Safety: the caller hands a pasteboard, and both are plain calls on it with data and a type it takes.
     unsafe {
         let _: isize = msg_send![board, clearContents];
         let placed: Bool = msg_send![board, setData: png, forType: &*NSString::from_str("public.png")];

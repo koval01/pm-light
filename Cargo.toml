@@ -26,6 +26,14 @@ unimplemented = "deny"
 string_slice = "deny"
 indexing_slicing = "deny"
 exit = "deny"
+# Every unsafe block says why it is sound, in a `// Safety:` comment right above it.
+undocumented_unsafe_blocks = "deny"
+unnecessary_safety_comment = "deny"
+
+# `checked_memory`: a build for AddressSanitizer (.github/workflows/sanitizers.yml), with the system's allocator, whose
+# every block the sanitizer sees.
+[workspace.lints.rust]
+unexpected_cfgs = { level = "deny", check-cfg = ["cfg(checked_memory)"] }
 
 # Debugging and tests: lines in backtraces for our own code, and no debug info for dependencies, which with Tor are
 # hundreds of crates and filled the target folder by the tens of gigabytes.
@@ -34,6 +42,9 @@ debug = "line-tables-only"
 
 [profile.dev.package."*"]
 debug = false
+# Dependencies optimized: unoptimized, their unwind tables passed the 16 MB macOS's linker can index, and it
+# warned on every debug build. Tests run faster too; the app's own code stays unoptimized for the debugger.
+opt-level = 3
 
 [profile.release]
 codegen-units = 1
