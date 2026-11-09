@@ -36,7 +36,7 @@ fn the_window_comes_back_from_full_screen_before_the_looks() {
     let first_look = all.iter().position(|step| matches!(step, Step::Look(..)));
     assert!(full.is_some() && first_look == full.map(|at| at + 1));
     assert_eq!(all.iter().rev().find(|step| matches!(step, Step::Look(..))), Some(&Step::Look("light", 1, 0)));
-    assert_eq!(all.iter().rev().find(|step| matches!(step, Step::Zoom(..))), Some(&Step::Zoom("zoom-100", 1.0)));
+    assert_eq!(all.iter().rev().find(|step| matches!(step, Step::Zoom(..))), Some(&Step::Zoom("zoom-100", 100)));
 }
 
 #[test]
@@ -59,4 +59,11 @@ fn a_one_mail_inbox_still_has_a_tour() {
     let all = steps(1);
     assert_eq!(all.iter().filter(|step| matches!(step, Step::Mail(_))).count(), 1);
     assert!(all.len() > 40);
+}
+
+#[test]
+fn the_tour_zooms_only_to_what_the_setting_offers() {
+    for (_, zoom) in ZOOMS {
+        assert!(crate::look::ZOOMS.contains(&zoom), "the setting has no zoom of {zoom}");
+    }
 }

@@ -111,7 +111,7 @@ jobs:
           if [ "$RUNNER_OS" = Windows ]; then
             echo "Edge started by: $(edge_parents | tr '\r\n' '  ')"
           fi
-          grep -E "account check|mail picture|screen tour|session|link|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+          grep -E "account check|mail picture|screen tour|session|link|earlier page|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
           kill %1 2>/dev/null || true
           test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
           cat "$note.txt"
@@ -141,7 +141,7 @@ jobs:
             if ! grep -qx "failed" "$note.txt" 2>/dev/null; then
               scripts/photograph-tour.sh "$note" target/debug/screens
             fi
-            grep -E "account check|mail picture|screen tour|session|link|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+            grep -E "account check|mail picture|screen tour|session|link|earlier page|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
             kill %1 2>/dev/null || true
             test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
             cat "$note.txt"

@@ -5,17 +5,17 @@
 //! `<file>.step`; CI photographs the screen under that name and removes the file, and the app goes on. A step CI never
 //! answers is left after a while, so a missing photographer cannot hold the check. `<file>.done` ends the tour.
 //!
-//! Nothing here is kept: the look, the language and the window's size change only on screen, a letter opened here is
-//! put away unsaved, and the mail the tour opened is marked unread again if it was so before.
+//! Nothing here is kept: the look, the language and the window's size change only on screen, zoom goes back to 100, a
+//! letter opened here is put away unsaved, and the mail the tour opened is marked unread again if it was so before.
 
-use crate::{App, Settings, Theme, composer, look, mail_view, settings, view};
+use crate::{App, Settings, Theme, composer, look, preferences, settings, view};
 use proton_core::{
     Service,
     model::{MessageChanges, MessageMeta},
 };
 use slint::{ComponentHandle, LogicalSize, Timer, Weak, winit_030::WinitWindowAccessor};
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     path::{Path, PathBuf},
     sync::Arc,
     time::Duration,
@@ -43,7 +43,7 @@ const LOOKS: [(&str, i32, i32); 9] = [
     ("high-contrast", 1, 5),
     ("light", 1, 0),
 ];
-const ZOOMS: [(&str, f32); 3] = [("zoom-125", 1.25), ("zoom-150", 1.5), ("zoom-100", 1.0)];
+const ZOOMS: [(&str, u32); 3] = [("zoom-125", 125), ("zoom-150", 150), ("zoom-100", 100)];
 const LANGUAGES: [&str; 2] = ["ru", "de"];
 
 #[derive(Clone, Debug, PartialEq)]
@@ -59,7 +59,7 @@ enum Step {
     Look(&'static str, i32, i32),
     Rows(bool),
     Compact(bool),
-    Zoom(&'static str, f32),
+    Zoom(&'static str, u32),
     Language(&'static str),
 }
 
@@ -119,8 +119,6 @@ struct Tour {
 thread_local! {
     static SEEN: RefCell<Option<(Arc<Service>, Vec<MessageMeta>)>> = const { RefCell::new(None) };
     static TOUR: RefCell<Option<Tour>> = const { RefCell::new(None) };
-    /// The zoom the tour set, over the system's scale.
-    static ZOOM: Cell<f32> = const { Cell::new(1.0) };
 }
 
 /// The inbox the account check read, for the tour that follows it.
@@ -261,12 +259,10 @@ fn show(service: &Arc<Service>, app: &App, rows: &[MessageMeta], step: &Step) {
         }
         Step::Rows(on) => app.global::<Theme>().set_rows(*on),
         Step::Compact(on) => app.global::<Theme>().set_compact(*on),
+        // As the setting does it, so that the mail's page follows: the one zoom the tour keeps, and it ends at 100.
         Step::Zoom(_, zoom) => {
-            let system = window.scale_factor() / ZOOM.get();
-            crate::rescale::rescale(window, system * zoom);
-            ZOOM.set(*zoom);
-            mail_view::zoom_to(f64::from(*zoom));
-            look::sharpen_logo(app);
+            preferences::change(|chosen| chosen.zoom = *zoom);
+            look::apply_zoom(app);
         }
         Step::Language(language) => {
             proton_core::timing::set_language(language);
