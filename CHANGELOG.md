@@ -6,7 +6,9 @@ A fixed vulnerability is always listed, with its advisory.
 
 ## [Unreleased]
 
-The first release, `0.1.0`, is being prepared.
+## [0.1.0] - 2026-11-09
+
+The first release. The builds are not signed by Apple or Microsoft, and the macOS one is not notarized.
 
 ### Added
 
@@ -26,4 +28,5 @@ The first release, `0.1.0`, is being prepared.
   Proton's proxy, when asked for.
 - Only Proton's own TLS keys are accepted, names are looked up only through Quad9 over DoH, and redirects are refused.
 
-[Unreleased]: https://github.com/koval01/pm-light/commits/main
+[Unreleased]: https://github.com/koval01/pm-light/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/koval01/pm-light/releases/tag/v0.1.0
