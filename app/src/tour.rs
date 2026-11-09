@@ -13,6 +13,11 @@ pub fn offer(app: &App) {
     if !preferences::get().tour_pending || app.get_tour_step() > 0 {
         return;
     }
+    // A check run by a machine looks at the mail, which the tour would cover; it stays waiting for a person.
+    if crate::account_check::asked() {
+        log::info!("the tour left for a person, in an account check");
+        return;
+    }
     let weak = app.as_weak();
     Timer::single_shot(AFTER_THE_MAILBOX, move || {
         if let Some(app) = weak.upgrade() {
