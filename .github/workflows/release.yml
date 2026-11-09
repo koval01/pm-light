@@ -52,17 +52,16 @@ jobs:
         with:
           path: built
 
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          path: source
+
+      # The same packing every push checks in build.yml.
       - name: Pack
         env:
           TAG: ${{ github.ref_name }}
-        run: |
-          mkdir release
-          cp "built/proton-mail-light-macOS/Proton-Mail-Light-macos.zip" "release/proton-mail-light-$TAG-macos.zip"
-          (cd built/proton-mail-light-Windows && zip -9 "../../release/proton-mail-light-$TAG-windows-x64.zip" proton-mail-light.exe)
-          chmod +x built/proton-mail-light-Linux/proton-mail-light
-          tar -C built/proton-mail-light-Linux -czf "release/proton-mail-light-$TAG-linux-x64.tar.gz" proton-mail-light
-          (cd release && sha256sum -- * > SHA256SUMS)
-          cat release/SHA256SUMS
+        run: source/scripts/pack-release.sh "$TAG" built release
 
       # SLSA provenance of every program, signed through Sigstore with this workflow's identity. GitHub keeps it for
       # `gh attestation verify <file> --repo koval01/pm-light`, and the release carries the signed bundle as well.

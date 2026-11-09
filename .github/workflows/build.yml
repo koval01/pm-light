@@ -179,3 +179,29 @@ jobs:
             ${{ env.OUT }}/started*.log
             ${{ env.OUT }}/picture.png
             ${{ env.OUT }}/picture.png.txt
+
+  # What a release does with these programs, on every push: a path the artifacts no longer have fails here, and not
+  # after a whole release build, as it once did.
+  pack:
+    name: Packing for a release
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: built
+          pattern: proton-mail-light-*
+      - name: Pack
+        env:
+          RELEASE: ${{ inputs.release }}
+        run: |
+          # An ordinary build makes no macOS bundle.
+          if [ "$RELEASE" = true ]; then
+            scripts/pack-release.sh v0.0.0-check built packed
+          else
+            scripts/pack-release.sh v0.0.0-check built packed --no-macos
+          fi
