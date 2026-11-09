@@ -3,7 +3,7 @@
 
 use crate::{App, Theme, preferences};
 use image::{ImageFormat, RgbaImage, imageops, imageops::FilterType};
-use slint::{ComponentHandle, Image, Rgba8Pixel, SharedPixelBuffer, platform::WindowEvent, winit_030::WinitWindowAccessor};
+use slint::{ComponentHandle, Image, Rgba8Pixel, SharedPixelBuffer, winit_030::WinitWindowAccessor};
 
 const MAIL_TEXT: [f32; 3] = [0.9, 1.0, 1.2];
 pub const ZOOMS: [u32; 5] = [90, 100, 110, 125, 150];
@@ -152,7 +152,7 @@ pub fn apply_zoom(app: &App) {
     #[allow(clippy::cast_possible_truncation)]
     let scale_factor = (system * zoom()) as f32;
     if (window.scale_factor() - scale_factor).abs() > f32::EPSILON {
-        window.dispatch_event(WindowEvent::ScaleFactorChanged { scale_factor });
+        crate::rescale::rescale(window, scale_factor);
     }
     crate::mail_view::zoom_to(zoom());
     sharpen_logo(app);
