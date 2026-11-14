@@ -5,7 +5,14 @@ reach Tor's relays and nothing else: a connection to Proton or Quad9 then went a
 around Quad9's DNS over HTTPS. The owner of an address comes from RIPEstat, and Tor's relays from Onionoo, both open.
 Prints a table by owner, and stops the run on anything not allowed.
 
+On this machine the app may reach only itself: under Tor its clients and its webviews talk to its own SOCKS door on
+the loopback interface. A port is the app's own when the trace shows one of its sockets holding it (`getsockname`,
+which the app calls on the door it opens); any other local port is another program, and stops the run.
+
     python3 -I scripts/connections.py <trace> --way direct|tor [--gravatar]
+    python3 -I scripts/connections.py --self-test
+
+The self-test proves the rules on made-up traces, with no network, and runs before every real check.
 """
 
 import argparse
@@ -21,6 +28,11 @@ ADDRESS = re.compile(
     r'(?:connect|sendto|sendmsg)\(.*?sa_family=AF_INET6?,\s*sin6?_port=htons\((\d+)\).*?'
     r'(?:sin_addr=inet_addr\("([0-9.]+)"\)|inet_pton\(AF_INET6,\s*"([0-9a-fA-F:.]+)")'
 )
+# What a traced process's own socket holds, as `getsockname` answers, whole or resumed after another call.
+OWN = re.compile(
+    r'getsockname(?:\(\d+,\s*| resumed>\s*)\{sa_family=AF_INET6?,\s*sin6?_port=htons\((\d+)\).*?'
+    r'(?:sin_addr=inet_addr\("([0-9.]+)"\)|inet_pton\(AF_INET6,\s*"([0-9a-fA-F:.]+)").*\)\s*=\s*0\s*$'
+)
 # Autonomous systems, by the words in their holders' names, and whom each stands for.
 PROTON, QUAD9, GRAVATAR = "Proton", "Quad9", "Gravatar"
 OWNERS = {PROTON: ("PROTON",), QUAD9: ("QUAD9",), GRAVATAR: ("AUTOMATTIC",)}
@@ -32,18 +44,25 @@ def fetch(url):
         return json.load(answer)
 
 
-def destinations(trace):
-    found = defaultdict(set)
-    with open(trace, encoding="utf-8", errors="replace") as lines:
-        for line in lines:
-            match = ADDRESS.search(line)
-            if match:
-                port, four, six = match.groups()
-                address = ipaddress.ip_address(four or six)
-                if getattr(address, "ipv4_mapped", None):
-                    address = address.ipv4_mapped
-                found[address].add(int(port))
-    return found
+def address_of(four, six):
+    address = ipaddress.ip_address(four or six)
+    return getattr(address, "ipv4_mapped", None) or address
+
+
+def destinations(lines):
+    """Where connections went, and the loopback ports the traced processes' own sockets held."""
+    found, own = defaultdict(set), set()
+    for line in lines:
+        match = ADDRESS.search(line)
+        if match:
+            port, four, six = match.groups()
+            found[address_of(four, six)].add(int(port))
+        held = OWN.search(line)
+        if held:
+            port, four, six = held.groups()
+            if address_of(four, six).is_loopback and int(port) != 0:
+                own.add(int(port))
+    return found, own
 
 
 def holder(address, asns):
@@ -76,30 +95,26 @@ def owner_of(name):
     return None
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("trace")
-    parser.add_argument("--way", choices=["direct", "tor"], required=True)
-    parser.add_argument("--gravatar", action="store_true")
-    arguments = parser.parse_args()
-    found = destinations(arguments.trace)
-    allowed = {PROTON, QUAD9} | ({GRAVATAR} if arguments.gravatar else set())
-    tor = relays() if arguments.way == "tor" else set()
-    asns, table, problems = {}, defaultdict(lambda: [0, set()]), []
+def judge(found, own, way, allowed, tor, name_of):
+    """A table of whom the connections reached, by owner and verdict, and what is not allowed."""
+    table, problems = defaultdict(lambda: [0, set()]), []
     for address, ports in sorted(found.items(), key=lambda item: (item[0].version, item[0])):
         if 53 in ports:
             problems.append(f"a DNS lookup to {address}, around Quad9's DNS over HTTPS")
-        if address.is_loopback or address.is_private or address.is_link_local:
+        if address.is_loopback and ports <= own:
+            name, verdict = "the app's own door on this machine", "own"
+        elif address.is_loopback or address.is_private or address.is_link_local:
             name, verdict = "this machine or its network", "local"
-            if ports - {53}:
-                problems.append(f"a connection to {address} on this machine, ports {sorted(ports)}")
-        elif arguments.way == "tor":
-            name = "a Tor relay" if address in tor else holder(address, asns)
+            others = ports - own if address.is_loopback else ports
+            if others - {53}:
+                problems.append(f"a connection to {address} on this machine, ports {sorted(others)}, not the app's own")
+        elif way == "tor":
+            name = "a Tor relay" if address in tor else name_of(address)
             verdict = "allowed" if address in tor else "around Tor"
             if address not in tor:
                 problems.append(f"{address} ({name}), not a Tor relay: it went around Tor")
         else:
-            name = holder(address, asns)
+            name = name_of(address)
             owner = owner_of(name)
             verdict = "allowed" if owner in allowed else "not allowed"
             if owner not in allowed:
@@ -107,7 +122,92 @@ def main():
         row = table[(name, verdict)]
         row[0] += 1
         row[1] |= ports
-    print(f"{len(found)} addresses reached, the way {arguments.way}")
+    return table, problems
+
+
+def held(port, address="127.0.0.1", answer="0"):
+    return f'5169  getsockname(27, {{sa_family=AF_INET, sin_port=htons({port}), sin_addr=inet_addr("{address}")}}, [128 => 16]) = {answer}'
+
+
+def reached(port, address="127.0.0.1", call="connect"):
+    return f'5170  {call}(28, {{sa_family=AF_INET, sin_port=htons({port}), sin_addr=inet_addr("{address}")}}, 16) = -1 EINPROGRESS'
+
+
+def reached_six(port, address):
+    return (
+        f"5170  connect(9, {{sa_family=AF_INET6, sin6_port=htons({port}), sin6_flowinfo=htonl(0), "
+        f'inet_pton(AF_INET6, "{address}", &sin6_addr), sin6_scope_id=0}}, 28) = 0'
+    )
+
+
+def self_test():
+    """Each made-up trace, the way, Gravatar allowed or not, and the verdict its one address must get."""
+    six_held = (
+        "5169  getsockname(5, {sa_family=AF_INET6, sin6_port=htons(4000), sin6_flowinfo=htonl(0), "
+        'inet_pton(AF_INET6, "::1", &sin6_addr), sin6_scope_id=0}, [128 => 28]) = 0'
+    )
+    resumed = '5169  <... getsockname resumed>{sa_family=AF_INET, sin_port=htons(39071), sin_addr=inet_addr("127.0.0.1")}, [128 => 16]) = 0'
+    relay, proton, google, gravatar = "95.216.10.20", "185.70.42.37", "142.250.0.1", "192.0.73.2"
+    owners = {proton: "AS62371 PROTON Proton AG", google: "AS15169 GOOGLE", gravatar: "AS2635 AUTOMATTIC"}
+    cases = [
+        ("the app's own door, held and reached", [held(39071), reached(39071)], "tor", False, "own"),
+        ("a door held in a call resumed later", [resumed, reached(39071)], "tor", False, "own"),
+        ("the own door over IPv6", [six_held, reached_six(4000, "::1")], "tor", False, "own"),
+        ("a local port the app never held", [reached(39071)], "tor", False, "local"),
+        ("a local port beside the one held", [held(39071), reached(39071), reached(9050)], "tor", False, "local"),
+        ("a getsockname that failed", [held(39071, answer="-1 EBADF (Bad file descriptor)"), reached(39071)], "tor", False, "local"),
+        ("a port held on every address, not loopback", [held(39071, "0.0.0.0"), reached(39071)], "tor", False, "local"),
+        ("the system's resolver", [reached(53, "127.0.0.53", "sendto")], "direct", False, "local"),
+        ("a lookup to a server's port 53", [reached(53, proton, "sendto")], "direct", False, "allowed"),
+        ("the home network", [reached(80, "192.168.1.1")], "direct", False, "local"),
+        ("a Tor relay", [reached(9001, relay)], "tor", False, "allowed"),
+        ("Proton reached around Tor", [reached(443, proton)], "tor", False, "around Tor"),
+        ("Proton reached directly", [reached(443, proton)], "direct", False, "allowed"),
+        ("someone else reached directly", [reached(443, google)], "direct", False, "not allowed"),
+        ("Gravatar while it is off", [reached(443, gravatar)], "direct", False, "not allowed"),
+        ("Gravatar while it is on", [reached(443, gravatar)], "direct", True, "allowed"),
+    ]
+    # Whether each must stop the run: all but these.
+    passing = {
+        "the app's own door, held and reached",
+        "a door held in a call resumed later",
+        "the own door over IPv6",
+        "a Tor relay",
+        "Proton reached directly",
+        "Gravatar while it is on",
+    }
+    tor = {ipaddress.ip_address(relay)}
+    failed = 0
+    for title, lines, way, gravatar, verdict in cases:
+        found, own = destinations(lines)
+        allowed = {PROTON, QUAD9} | ({GRAVATAR} if gravatar else set())
+        table, problems = judge(found, own, way, allowed, tor, lambda address: owners.get(str(address), "nobody known"))
+        verdicts = {given for _, given in table}
+        if not found or bool(problems) == (title in passing) or verdicts != {verdict}:
+            failed += 1
+            print(f"::error::self-test, {title}: own {sorted(own)}, verdicts {sorted(verdicts)}, problems {problems}")
+    print(f"self-test: {len(cases) - failed} of {len(cases)} cases hold")
+    return 1 if failed else 0
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("trace", nargs="?")
+    parser.add_argument("--way", choices=["direct", "tor"])
+    parser.add_argument("--gravatar", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    arguments = parser.parse_args()
+    if arguments.self_test:
+        return self_test()
+    if not arguments.trace or not arguments.way:
+        parser.error("a trace and --way are needed")
+    with open(arguments.trace, encoding="utf-8", errors="replace") as lines:
+        found, own = destinations(lines)
+    allowed = {PROTON, QUAD9} | ({GRAVATAR} if arguments.gravatar else set())
+    tor = relays() if arguments.way == "tor" else set()
+    asns = {}
+    table, problems = judge(found, own, arguments.way, allowed, tor, lambda address: holder(address, asns))
+    print(f"{len(found)} addresses reached, the way {arguments.way}; the app's own ports here: {sorted(own)}")
     for (name, verdict), (count, ports) in sorted(table.items()):
         print(f"  {verdict:<12} {name}: {count} addresses, ports {sorted(ports)}")
     for problem in problems:

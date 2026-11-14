@@ -6,7 +6,8 @@
 #   format        rustfmt, by rustfmt.toml: a file written another way fails
 #   lints         clippy over every crate and test, warnings as errors; the rules are in Cargo.toml
 #                 and forbid unwrap, expect, panic and indexing that can fail
-#   tests         every test, including the dictionaries and the English-only check
+#   tests         every test, including the dictionaries and the English-only check, and the rules the long
+#                 run judges connections by (scripts/connections.py --self-test)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # Old builds go however this ends: a failed check builds as much as a passing one.
@@ -23,5 +24,6 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 
 echo "== tests"
 cargo test --workspace --locked
+python3 -I scripts/connections.py --self-test
 
 echo "== all checks passed"

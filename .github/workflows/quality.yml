@@ -1,6 +1,7 @@
 # The quality of the code beyond what clippy and the tests hold: dependencies that nothing uses, which only widen what
 # can go wrong, slips of spelling in code and documents (_typos.toml), and how much of the code the tests run, shown in
-# the run's summary. The shape of the code is held by app/tests/structure.rs and the format by check.sh.
+# the run's summary, and the rules the long run judges connections by. The shape of the code is held by
+# app/tests/structure.rs and the format by check.sh.
 name: Quality
 
 on:
@@ -47,6 +48,17 @@ jobs:
         with:
           tool: typos@1.52.0
       - run: typos
+
+  judges:
+    name: The long run's rules for connections
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Made-up traces, no network: a rule that stops judging is caught here, not in an hour-long run.
+      - run: python3 -I scripts/connections.py --self-test
 
   coverage:
     name: Test coverage

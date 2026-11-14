@@ -77,8 +77,10 @@ jobs:
             echo "seed $seed"
             # Every connection, of the app and of every process it starts, with no data: -s 0. The app makes itself
             # unreadable to other processes (PR_SET_DUMPABLE, protection.rs), and a tracer of the same user then sees
-            # only pointers where addresses stand: strace runs as root, and the app as this user (-u).
-            sudo -E strace -u "$USER" -f -qq -s 0 -e trace=connect,sendto,sendmsg -o target/debug/connections.trace \
+            # only pointers where addresses stand: strace runs as root, and the app as this user (-u). getsockname
+            # names the ports the app holds itself, such as its Tor door, which its own clients reach.
+            sudo -E strace -u "$USER" -f -qq -s 0 -e trace=connect,sendto,sendmsg,getsockname \
+              -o target/debug/connections.trace \
               env HOME="$HOME" target/debug/proton-mail-light "--check-account=$note" "--soak-minutes=$MINUTES" \
               "--soak-seed=$seed" $tor > target/debug/account.log 2>&1 &
             app=$!
@@ -93,8 +95,9 @@ jobs:
             fi
             scripts/check-log.sh target/debug/account.log
             echo "trace: $(wc -l < target/debug/connections.trace 2>/dev/null || echo no) lines, $(grep -c "connect(" target/debug/connections.trace 2>/dev/null || echo 0) connects"
-            # The app runs as this user, and strace, which started it, as root.
-            pkill -f target/debug/proton-mail-light || true
+            # The app runs as this user, and strace, which started it, as root. Only a command line that starts with
+            # the program is the app: this script and strace name it too, further on, and a looser pattern ends them.
+            pkill -f "^target/debug/proton-mail-light " || true
             sudo kill "$app" 2>/dev/null || true
             wait "$app" 2>/dev/null || true
             test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }'
@@ -105,7 +108,9 @@ jobs:
         if: ${{ !cancelled() }}
         env:
           WAY: ${{ matrix.way }}
-        run: python3 -I scripts/connections.py target/debug/connections.trace --way "$WAY"
+        run: |
+          python3 -I scripts/connections.py --self-test
+          python3 -I scripts/connections.py target/debug/connections.trace --way "$WAY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
