@@ -40,13 +40,17 @@ jobs:
           shared-key: sanitizer-core
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Reports name the functions, not only their addresses.
+      - name: Symbolizer
+        run: echo "ASAN_SYMBOLIZER_PATH=$(command -v llvm-symbolizer || find /usr/bin -name "llvm-symbolizer-*" | sort -V | tail -n 1)" >> "$GITHUB_ENV"
       # The standard library is built with the sanitizer too, or what it allocates would go unseen.
       - name: Tests
         env:
           RUSTFLAGS: -Zsanitizer=address --cfg checked_memory
           RUSTDOCFLAGS: -Zsanitizer=address --cfg checked_memory
-          # The one-definition check stops in SQLite's C, which arti builds in; everything else stays on.
-          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=0
+          # Two definitions of one global are a violation when their sizes differ (level 1); the strict level also
+          # stops on identical ones, which SQLite's C, built in by arti, has.
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=1
         run: cargo +nightly test --locked -Zbuild-std -p proton-core --lib --target x86_64-unknown-linux-gnu
 
   app:
@@ -78,14 +82,26 @@ jobs:
           shared-key: sanitizer-app
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # Leaks are not asked about here: GTK's and AppKit's own would bury ours, and macOS has no leak checker. On macOS
-      # nothing is stripped as dead: the linker took away code the sanitizer's initializers point at, in tor-hsclient.
+      - name: Symbolizer
+        if: runner.os == 'Linux'
+        run: echo "ASAN_SYMBOLIZER_PATH=$(command -v llvm-symbolizer || find /usr/bin -name "llvm-symbolizer-*" | sort -V | tail -n 1)" >> "$GITHUB_ENV"
+      # Leaks are not asked about here: GTK's and AppKit's own would bury ours, and macOS has no leak checker.
+      #
+      # tor-keymgr and tor-hsclient register their keys at start, through `inventory`, in an array of pointers in
+      # macOS's `__mod_init_func`. The sanitizer pads that array like any global, and Apple's linker then refuses it:
+      # "initializer pointer has no target". In those two crates alone the sanitizer leaves globals as they are.
       - name: Tests
         env:
-          RUSTFLAGS: -Zsanitizer=address --cfg checked_memory ${{ runner.os == 'macOS' && '-Clink-dead-code' || '' }}
-          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=0
+          RUSTFLAGS: -Zsanitizer=address --cfg checked_memory
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=1
           TARGET: ${{ matrix.target }}
-        run: cargo +nightly test --locked -p proton-mail-light --bins --test zoom --target "$TARGET"
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then
+            set -- -Zprofile-rustflags \
+              --config 'profile.dev.package.tor-keymgr.rustflags=["-Cllvm-args=-asan-globals=0"]' \
+              --config 'profile.dev.package.tor-hsclient.rustflags=["-Cllvm-args=-asan-globals=0"]'
+          fi
+          cargo +nightly test "$@" --locked -p proton-mail-light --bins --test zoom --target "$TARGET"
 
   # The hostile mail, HTML, CSS and files, which never run on a machine of a person: built with network, then run
   # in a container with none, a read-only file system, no capabilities and hard limits (scripts/attacks.sh).
