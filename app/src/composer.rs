@@ -366,12 +366,7 @@ fn finish_typing(window: &ComposeWindow) {
 
 fn finish(notice: i32) {
     let _ = slint::invoke_from_event_loop(move || {
-        if let Some(open) = OPEN.take() {
-            if let Some(app) = actions::main_window() {
-                modal::dismiss(app.window(), open.window.window());
-            }
-            let _ = open.window.hide();
-        }
+        put_down(OPEN.take());
         *DRAFT.lock() = None;
         view::after_compose(notice);
     });
@@ -863,14 +858,19 @@ pub fn after_failure() {
 
 /// The session is gone: the letter is not saved, because there is nowhere left to save it.
 pub fn abandon() {
-    if let Some(open) = OPEN.take() {
-        if let Some(app) = actions::main_window() {
-            modal::dismiss(app.window(), open.window.window());
-        }
-        let _ = open.window.hide();
-    }
+    put_down(OPEN.take());
     *DRAFT.lock() = None;
     CONTACTS.lock().clear();
+}
+
+/// The page goes first, and then the window it sat in.
+fn put_down(open: Option<Open>) {
+    let Some(Open { view, window, .. }) = open else { return };
+    crate::webviews::let_go("the editor", Some(view));
+    if let Some(app) = actions::main_window() {
+        modal::dismiss(app.window(), window.window());
+    }
+    let _ = window.hide();
 }
 
 /// Hands the open compose window to `then`, or gives `then` back when there is none.

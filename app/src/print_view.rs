@@ -44,7 +44,7 @@ pub fn own_page(url: &str) -> bool {
 
 pub fn go_away() {
     WATCH.with(Timer::stop);
-    VIEW.with_borrow_mut(|view| drop(view.take()));
+    crate::webviews::let_go("printing", VIEW.take());
 }
 
 #[cfg(target_os = "macos")]

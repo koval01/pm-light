@@ -89,6 +89,15 @@ const LARGEST: f64 = 16_384.0;
 /// Webviews whose last place had no room, so that the journal says so once and not on every frame of a move.
 static SHRUNK: Mutex<Vec<&'static str>> = Mutex::new(Vec::new());
 
+/// Lets a webview go, and says so in the journal. On Linux its X11 window goes with it, and an X11 error ends the
+/// program without a word of its own: these two lines tell where it was.
+pub fn let_go(what: &'static str, view: Option<wry::WebView>) {
+    let Some(view) = view else { return };
+    log::debug!("the webview for {what} goes");
+    drop(view);
+    log::debug!("the webview for {what} is gone");
+}
+
 /// Notes whether `what` has room now, and answers whether it has just lost it.
 fn newly_squeezed(what: &'static str, squeezed: bool) -> bool {
     let mut shrunk = SHRUNK.lock();

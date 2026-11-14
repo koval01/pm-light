@@ -222,7 +222,7 @@ fn area(height: f64) -> Rect {
 }
 
 pub fn go_away() {
-    VIEW.with_borrow_mut(|view| drop(view.take()));
+    crate::webviews::let_go("the mail picture", VIEW.take());
 }
 
 /// Told once: the picture is the mail, readable by whoever gets it.

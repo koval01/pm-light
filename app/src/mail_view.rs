@@ -509,7 +509,7 @@ pub fn close() {
 /// Nothing of a mail may outlive the session.
 pub fn destroy() {
     WAITING.set(false);
-    VIEW.with_borrow_mut(|view| drop(view.take()));
+    crate::webviews::let_go("a mail", VIEW.take());
 }
 
 /// Starts WebKit before it is needed, so that the first mail opens like any other.

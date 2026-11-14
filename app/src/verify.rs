@@ -161,7 +161,7 @@ pub fn place(app: &App) {
 }
 
 pub fn close() {
-    VIEW.set(None);
+    crate::webviews::let_go("the verification page", VIEW.take());
     if let Some(tor) = crate::tor_link::tor() {
         tor.close_page_door();
     }

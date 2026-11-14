@@ -261,7 +261,7 @@ fn save() {
 
 pub fn close() {
     let Some(mut open) = OPEN.take() else { return };
-    drop(open.view.take());
+    crate::webviews::let_go("a preview", open.view.take());
     if let Some(app) = actions::main_window() {
         modal::dismiss(app.window(), open.window.window());
     }
