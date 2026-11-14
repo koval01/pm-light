@@ -482,3 +482,33 @@ async fn under_tor_no_name_is_looked_up_here() {
     let refused = crate::dns::NoLookups.resolve("mail-api.proton.me".parse().unwrap()).await;
     assert!(refused.is_err());
 }
+
+/// A check clicks anywhere: whatever it asks but a read must never reach Proton, and the session must stay.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_check_changes_nothing_and_reads_still_work() {
+    let server = serve(|_, _| Some((200, FINE)));
+    let (client, _) = holding_a_session(&server.base);
+    client.forbid_changes();
+    let requests = client.record_requests();
+    assert!(matches!(
+        client.put::<Value>("/mail/v4/messages/read", json!({"IDs": ["a"]})).await,
+        Err(Error::RefusedInCheck)
+    ));
+    assert!(matches!(client.post::<Value>("/mail/v4/messages/send", json!({})).await, Err(Error::RefusedInCheck)));
+    assert!(matches!(client.act(Method::DELETE, "/auth/v4").await, Err(Error::RefusedInCheck)));
+    assert!(server.seen.lock().is_empty(), "a change reached the server: {:?}", server.seen.lock());
+    assert!(get(&client).await.is_ok(), "a read must still go");
+    assert_eq!(*server.seen.lock(), ["/x"]);
+    assert!(client.session().is_some(), "a refused change ended the session");
+    let summary = requests.summary();
+    assert_eq!((summary.total, summary.refused), (4, 3));
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn without_a_check_changes_go_and_nothing_is_recorded() {
+    let server = serve(|_, _| Some((200, FINE)));
+    let (client, _) = holding_a_session(&server.base);
+    assert!(client.put::<Value>("/mail/v4/messages/read", json!({"IDs": ["a"]})).await.is_ok());
+    assert_eq!(*server.seen.lock(), ["/mail/v4/messages/read"]);
+    assert!(!client.changes_forbidden());
+}

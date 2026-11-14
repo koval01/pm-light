@@ -27,23 +27,12 @@ impl Service {
     pub async fn folders(&self) -> Result<Vec<Folder>> {
         let fetch = |kind: &'static str, kind_id: u8| async move {
             let reply: Value = self.client.get(&format!("/core/v4/labels?Type={kind_id}")).await?;
-            Ok::<_, Error>(
-                reply
-                    .get("Labels")
-                    .and_then(Value::as_array)
-                    .map(|labels| {
-                        labels
-                            .iter()
-                            .map(|l| Folder {
-                                id: text(l, "ID"),
-                                name: text(l, "Name"),
-                                kind,
-                                color: Some(text(l, "Color")),
-                            })
-                            .collect::<Vec<_>>()
-                    })
-                    .unwrap_or_default(),
-            )
+            Ok::<_, Error>(reply.get("Labels").and_then(Value::as_array).map_or_default(|labels| {
+                labels
+                    .iter()
+                    .map(|l| Folder { id: text(l, "ID"), name: text(l, "Name"), kind, color: Some(text(l, "Color")) })
+                    .collect::<Vec<_>>()
+            }))
         };
         let (folders, labels) =
             futures::try_join!(fetch("folder", api::LABEL_TYPE_FOLDER), fetch("label", api::LABEL_TYPE_LABEL))?;

@@ -111,7 +111,7 @@ pub fn unsubscribe(service: Arc<Service>, app: &App) {
             actions::toast(if done { crate::toasts::UNSUBSCRIBED } else { crate::toasts::FAILED });
         });
     } else if !url.is_empty() {
-        view::open_link(&url);
+        crate::outside::open_link(&url);
     } else if let Some(mailto) = methods.mailto {
         composer::start_prepared(&service, compose::compose_prepared(&mailto.to, &mailto.subject, &mailto.body));
     }

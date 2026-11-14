@@ -11,7 +11,7 @@ pub fn initials(name: &str, email: &str) -> String {
     let from_name: String =
         name.split_whitespace().filter_map(|word| word.chars().find(|c| c.is_alphanumeric())).take(2).collect();
     let letters = if from_name.is_empty() {
-        email.chars().find(|c| c.is_alphanumeric()).map(String::from).unwrap_or_default()
+        email.chars().find(|c| c.is_alphanumeric()).map_or_default(String::from)
     } else {
         from_name
     };
@@ -25,7 +25,7 @@ pub fn dress(service: &Service, app: &App) {
 }
 
 fn first_address(service: &Service) -> (String, String) {
-    service.addresses().first().map(|address| (address.display_name.clone(), address.email.clone())).unwrap_or_default()
+    service.addresses().first().map_or_default(|address| (address.display_name.clone(), address.email.clone()))
 }
 
 fn open(service: &Arc<Service>, app: &App) {

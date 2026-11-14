@@ -5,7 +5,7 @@ fn the_sample_is_one_mail_with_its_heading_and_body() {
     let labels = PrintLabels { from: "From".into(), date_format: "%d.%m.%Y %H:%M".into(), ..PrintLabels::default() };
     let made = sample_document(&PrintOptions::default(), &labels);
     assert_eq!(made.parts.len(), 1);
-    let html = made.parts.first().map(|part| part.html.as_str()).unwrap_or_default();
+    let html = made.parts.first().map_or_default(|part| part.html.as_str());
     assert!(
         html.contains("A sample mail") && html.contains("Sample Sender") && html.contains("The end of the sample.")
     );

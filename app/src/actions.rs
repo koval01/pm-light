@@ -94,6 +94,9 @@ where
 }
 
 fn asked(level: MessageLevel, title: &str, text: &str, yes: &str, no: &str) -> bool {
+    if crate::checks::refuses("a question to the person") {
+        return false;
+    }
     let window = main_window();
     let mut dialog = MessageDialog::new();
     // With a parent this is a sheet. Without one macOS shows it from another process, and the whole
@@ -112,6 +115,11 @@ fn asked(level: MessageLevel, title: &str, text: &str, yes: &str, no: &str) -> b
         MessageDialogResult::Ok => true,
         _ => false,
     }
+}
+
+/// The system's dialog for files, unless a check is running, which no one would answer.
+pub fn file_dialog() -> Option<FileDialog> {
+    (!crate::checks::refuses("a dialog for files")).then(FileDialog::new)
 }
 
 /// A question before something that cannot be taken back.
@@ -340,7 +348,7 @@ pub fn write_out(app: &App, file: &Attachment, data: &[u8]) {
             return;
         }
     }
-    let Some(path) = FileDialog::new().set_file_name(&name).save_file() else { return };
+    let Some(path) = file_dialog().and_then(|dialog| dialog.set_file_name(&name).save_file()) else { return };
     match std::fs::write(&path, data) {
         Ok(()) => {
             log::info!("a file was saved");
@@ -370,7 +378,9 @@ pub fn save_eml() {
         let name = safety::safe_file_name(&format!("{}.eml", message.meta.subject));
         if let Some(weak) = weak {
             let _ = weak.upgrade_in_event_loop(move |app| {
-                let Some(path) = FileDialog::new().set_file_name(&name).save_file() else { return };
+                let Some(path) = file_dialog().and_then(|dialog| dialog.set_file_name(&name).save_file()) else {
+                    return;
+                };
                 match std::fs::write(&path, data) {
                     Ok(()) => {
                         log::info!("a message was saved as .eml");

@@ -108,7 +108,7 @@ fn pdf_with_pages(boxes: &[&str]) -> Vec<u8> {
 fn a_pdf_page_becomes_pixels_twice_as_fine_on_white() {
     let pdf = objc2_foundation::NSData::with_bytes(&square_pdf());
     let png = macos::drawn(&pdf).unwrap_or_default();
-    let picture = image::load_from_memory(&png).map(|picture| picture.to_rgba8()).unwrap_or_default();
+    let picture = image::load_from_memory(&png).map_or_default(|picture| picture.to_rgba8());
     assert_eq!(picture.dimensions(), (400, 200), "the page's own size, twice");
     // Pixels count from the top: the square sits at the bottom left.
     assert_eq!(picture.get_pixel(70, 130).0, [0, 0, 0, 255], "inside the square");

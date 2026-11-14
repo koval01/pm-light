@@ -222,7 +222,7 @@ impl View {
 
     fn unshelve(&mut self) {
         let found = self.shelves.iter().position(|(kept, _)| *kept == self.folder);
-        let shelf = found.map(|at| self.shelves.remove(at).1).unwrap_or_default();
+        let shelf = found.map_or_default(|at| self.shelves.remove(at).1);
         self.rows = shelf.rows;
         self.has_more = shelf.has_more;
         self.updated_at = shelf.updated_at;

@@ -12,7 +12,6 @@ use proton_core::{
     seal::{self, SealedMail},
     service::SheetReport,
 };
-use rfd::FileDialog;
 use slint::ComponentHandle;
 
 const CODES: &str = "print-codes";
@@ -81,7 +80,8 @@ fn show_report(ctx: &Ctx, report: &SheetReport) {
 }
 
 fn read_scans(parent: &App) -> Result<Option<Vec<Vec<u8>>>, Error> {
-    let dialog = FileDialog::new().set_parent(&parent.window().window_handle()).add_filter("Scans", &SCAN_TYPES);
+    let Some(dialog) = crate::actions::file_dialog() else { return Ok(None) };
+    let dialog = dialog.set_parent(&parent.window().window_handle()).add_filter("Scans", &SCAN_TYPES);
     let Some(picked) = dialog.pick_files() else { return Ok(None) };
     let mut files = Vec::new();
     for path in picked {

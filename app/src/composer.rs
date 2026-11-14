@@ -322,7 +322,7 @@ fn show_people(window: &ComposeWindow) {
 /// Asks whether new addresses can receive mail at all. Without an answer nothing is marked: a failed
 /// lookup says nothing about the domain, and Proton has the last word when sending.
 fn check_domains(service: &Arc<Service>) {
-    let domains = DRAFT.lock().as_mut().map(|draft| draft.people.unchecked_domains()).unwrap_or_default();
+    let domains = DRAFT.lock().as_mut().map_or_default(|draft| draft.people.unchecked_domains());
     for domain in domains {
         let service = service.clone();
         tokio::spawn(async move {
@@ -730,7 +730,7 @@ fn connect_editing(service: &Arc<Service>, window: &ComposeWindow) {
     });
     let attaching = service.clone();
     window.on_attach(move || {
-        if let Some(paths) = FileDialog::new().pick_files() {
+        if let Some(paths) = actions::file_dialog().and_then(FileDialog::pick_files) {
             add_paths(&attaching, paths);
         }
     });

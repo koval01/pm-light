@@ -70,6 +70,8 @@ pub enum Error {
     InvalidAddress(String),
     #[error("{0}")]
     Crypto(String),
+    #[error("a check changes nothing")]
+    RefusedInCheck,
     #[error("{0}")]
     Other(String),
 }
@@ -119,6 +121,7 @@ impl Error {
             Self::BadTime => "badTime",
             Self::PastTime => "pastTime",
             Self::Crypto(_) => "crypto",
+            Self::RefusedInCheck => "refusedInCheck",
             Self::Other(_) => "other",
         }
     }

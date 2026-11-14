@@ -57,7 +57,7 @@ fn reload(service: &Arc<Service>) {
     });
 }
 
-fn close() {
+pub fn close() {
     let Some(window) = OPEN.take() else { return };
     if let Some(app) = actions::main_window() {
         modal::dismiss(app.window(), window.window());

@@ -66,8 +66,7 @@ fn keep(found: &mut Vec<String>, codes: Vec<String>) {
 fn codes_by_pattern(picture: &GrayImage, hints: &mut DecodeHints) -> Vec<String> {
     let (width, height) = picture.dimensions();
     rxing::helpers::detect_multiple_in_luma_with_hints(picture.as_raw().clone(), width, height, hints)
-        .map(|found| found.iter().map(|code| code.getText().to_string()).collect())
-        .unwrap_or_default()
+        .map_or_default(|found| found.iter().map(|code| code.getText().to_string()).collect())
 }
 
 #[derive(Clone, Copy)]

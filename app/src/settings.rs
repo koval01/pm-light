@@ -260,12 +260,12 @@ fn draw(ctx: &Ctx, id: &str) {
 fn hear(ctx: &Ctx, tab: &str, id: &str, part: i32, value: i32) {
     if id == "site" {
         if let Some(found) = tabs::find(tab) {
-            view::open_link(&tabs::web_address(found.web));
+            crate::outside::open_link(&tabs::web_address(found.web));
         }
         return;
     }
     if let Some(slug) = id.strip_prefix("manage:") {
-        view::open_link(&if slug.is_empty() {
+        crate::outside::open_link(&if slug.is_empty() {
             "https://account.proton.me".to_string()
         } else {
             tabs::web_address(slug)
@@ -336,7 +336,7 @@ pub fn account_lines(
     storage: Option<&proton_core::model::Storage>,
 ) -> (String, String) {
     let ctx = Ctx { service: service.clone(), app: app.as_weak() };
-    let space = storage.map(|storage| account_pages::storage_text(&ctx, storage)).unwrap_or_default();
+    let space = storage.map_or_default(|storage| account_pages::storage_text(&ctx, storage));
     (account_pages::plan_text(&ctx, account), space)
 }
 

@@ -299,6 +299,11 @@ impl Service {
     }
 
     pub async fn sign_out(&self) -> Result<()> {
+        // The server would refuse the sign-out anyway; the session on this machine must not go either.
+        if self.client.changes_forbidden() {
+            log::info!("signing out refused, a check changes nothing");
+            return Err(Error::RefusedInCheck);
+        }
         log::info!("signing out");
         self.client.set_leaving(true);
         let result = self.client.act(Method::DELETE, "/auth/v4").await;

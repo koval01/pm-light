@@ -6,7 +6,7 @@ use super::{
     Ctx,
     rows::{self, SettingsRow, button, choice, entry, fact, field, ghost, hint, meter, note, plain, section, strong},
 };
-use crate::{actions, tray, view};
+use crate::{actions, tray};
 use parking_lot::Mutex;
 use proton_core::model::{Member, MemberState, Organization, Referrals, ReferredState, SmtpToken};
 
@@ -297,11 +297,11 @@ fn copy(ctx: &Ctx, text: &str) {
 
 pub fn heard(ctx: &Ctx, id: &str) {
     match id {
-        "open-android" => view::open_link(ANDROID),
-        "open-ios" => view::open_link(IOS),
-        "open-desktop" => view::open_link(DESKTOP),
-        "open-bridge" => view::open_link(BRIDGE),
-        "open-export" => view::open_link(EXPORT_TOOL),
+        "open-android" => crate::outside::open_link(ANDROID),
+        "open-ios" => crate::outside::open_link(IOS),
+        "open-desktop" => crate::outside::open_link(DESKTOP),
+        "open-bridge" => crate::outside::open_link(BRIDGE),
+        "open-export" => crate::outside::open_link(EXPORT_TOOL),
         "referral-copy" => copy(ctx, &with(|state| state.link.clone())),
         "copy-user" => copy(ctx, &with(|state| state.new_token.clone()).map_or_else(String::new, |(name, _)| name)),
         "copy-token" => copy(ctx, &with(|state| state.new_token.clone()).map_or_else(String::new, |(_, code)| code)),

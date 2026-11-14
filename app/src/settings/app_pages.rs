@@ -373,7 +373,7 @@ pub fn heard(ctx: &Ctx, tab: &str, id: &str, value: i32) {
         "date" => change_time(ctx, &app, TimeSetting::DateFormat, &date_options(ctx)),
         "week" => change_time(ctx, &app, TimeSetting::WeekStart, &words(ctx, &WEEK_DAYS)),
         "zone" => choose_zone(ctx, &app),
-        "system-notifications" => crate::view::open_notification_settings(),
+        "system-notifications" => crate::outside::open_notification_settings(),
         "notifications" => {
             preferences::change(|preferences| preferences.notifications = value == 1);
             application(ctx);

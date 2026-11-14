@@ -24,7 +24,7 @@ const WAYS_OUT: &[(&str, &[&str], &str)] = &[
     ("ToSocketAddrs", &[], "the system's resolver"),
     ("lookup_host", &[], "the system's resolver"),
     ("getaddrinfo", &[], "the system's resolver"),
-    ("open::that", &["app/src/view.rs"], "a link to the browser, which asks first under Tor"),
+    ("open::that", &["app/src/outside.rs"], "a link to the browser, which asks first under Tor"),
     (
         ".with_url(",
         &["app/src/mail_view.rs", "app/src/composer.rs", "app/src/preview.rs", "app/src/verify.rs"],

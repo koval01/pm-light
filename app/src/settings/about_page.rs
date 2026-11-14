@@ -9,7 +9,7 @@ use super::{
     Ctx,
     rows::{self, ghost, note, plain, section},
 };
-use crate::{preview, view};
+use crate::preview;
 use proton_core::REPOSITORY;
 
 /// The license and its additional terms, as the repository holds them.
@@ -104,7 +104,7 @@ pub fn page(ctx: &Ctx) {
 pub fn heard(ctx: &Ctx, id: &str) {
     let Some(app) = ctx.app.upgrade() else { return };
     match id {
-        "repository" => view::open_link(REPOSITORY),
+        "repository" => crate::outside::open_link(REPOSITORY),
         "about-license" => preview::show_text(&app, "LICENSE.txt", format!("{NOTICE}\n\n{LICENSE}").into_bytes()),
         "about-notices" => match liblzma::decode_all(NOTICES) {
             Ok(texts) => preview::show_text(&app, "THIRD-PARTY-LICENSES.txt", texts),

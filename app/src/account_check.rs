@@ -149,7 +149,10 @@ pub fn finish(png: &[u8], width: u32, height: u32) {
     let _ = std::fs::write(PathBuf::from(picture), png);
     note(path.clone(), &report(folders, rows, width, height));
     if let Some(app) = crate::actions::main_window() {
-        crate::screen_tour::start(&app, path);
+        match crate::soak::minutes() {
+            Some(minutes) => crate::soak::start(&app, path, minutes),
+            None => crate::screen_tour::start(&app, path),
+        }
     }
 }
 

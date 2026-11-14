@@ -406,7 +406,7 @@ fn connect_verification(service: &Arc<Service>, app: &App) {
         let Some(app) = weak.upgrade() else { return };
         let auth = app.global::<Auth>();
         auth.set_verify_in_browser(true);
-        view::open_link(&auth.get_verify_address());
+        crate::outside::open_link(&auth.get_verify_address());
     });
     let (returning, weak) = (service.clone(), app.as_weak());
     auth.on_verify_done(move || {
@@ -420,7 +420,7 @@ fn connect_verification(service: &Arc<Service>, app: &App) {
             verify::place(&app);
         }
     });
-    auth.on_repository_requested(|| view::open_link(proton_core::REPOSITORY));
+    auth.on_repository_requested(|| crate::outside::open_link(proton_core::REPOSITORY));
     crate::account_panel::connect(service, app);
 }
 

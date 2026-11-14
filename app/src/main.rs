@@ -7,6 +7,7 @@ mod account_panel;
 mod actions;
 mod auth;
 mod autolock;
+mod checks;
 mod composer;
 mod contacts;
 mod folder_names;
@@ -26,6 +27,7 @@ mod modal;
 mod moment_picker;
 mod notifications;
 mod numbers;
+mod outside;
 mod palette;
 mod preferences;
 mod preview;
@@ -41,6 +43,7 @@ mod session;
 mod settings;
 mod shortcuts;
 mod single_instance;
+mod soak;
 mod splash;
 mod stalls;
 mod startup;
@@ -163,7 +166,7 @@ fn connect_window(service: &Arc<Service>, app: &App) {
 }
 
 fn connect_list(service: &Arc<Service>, app: &App) {
-    app.on_open_link(|url| view::open_link(&url));
+    app.on_open_link(|url| crate::outside::open_link(&url));
     let paging = service.clone();
     app.on_load_more(move || {
         let service = paging.clone();
@@ -229,6 +232,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The account check borrows the session: a refresh would rotate the tokens of whoever saved it.
     if account_check::asked() {
         service.forbid_token_refresh();
+        service.forbid_changes();
         account_check::begin();
     }
 

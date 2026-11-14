@@ -39,7 +39,7 @@ fn trash(app: &App) {
     app.invoke_act(if forever { "delete" } else { "trash" }.into());
 }
 
-fn scroll(app: &App, direction: i32) {
+pub fn scroll(app: &App, direction: i32) {
     if app.get_has_mail() {
         mail_view::scroll_page(direction);
     } else {

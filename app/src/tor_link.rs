@@ -53,8 +53,9 @@ pub fn begin(service: &Arc<Service>, app: &App) {
     if let Some(choice) = preferences::get().tor {
         go(service, &app.as_weak(), choice);
     } else if crate::account_check::asked() {
-        // A check run by a machine: straight to Proton, and nothing kept as the person's answer.
-        go(service, &app.as_weak(), preferences::TorChoice { on: false, route: Route::default() });
+        // A check run by a machine: straight to Proton unless its long run asks for Tor, and nothing kept as the
+        // person's answer.
+        go(service, &app.as_weak(), preferences::TorChoice { on: crate::soak::through_tor(), route: Route::default() });
     } else {
         log::info!("Tor has not been asked about yet");
         app.set_asking_tor(true);
@@ -154,7 +155,7 @@ pub fn line(status: &TorStatus, words: &Words) -> String {
 /// this start goes out another way.
 pub fn leave() {
     preferences::change(|preferences| {
-        let route = preferences.tor.map(|choice| choice.route).unwrap_or_default();
+        let route = preferences.tor.map_or_default(|choice| choice.route);
         preferences.tor = Some(preferences::TorChoice { on: false, route });
     });
     guard::relaunch();

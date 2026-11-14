@@ -73,7 +73,7 @@ fn rows_of(ctx: &Ctx, app: &App) -> Vec<crate::SettingsRow> {
 /// its address, as Tor Browser shows them. Only once Proton has been reached: before that there is no circuit.
 fn circuit_rows(ctx: &Ctx, route: proton_core::tor::Route) -> Vec<crate::SettingsRow> {
     use rows::{Rail, hop};
-    let hops = tor_link::tor().map(|tor| tor.status().hops).unwrap_or_default();
+    let hops = tor_link::tor().map_or_default(|tor| tor.status().hops);
     let Some(last) = hops.len().checked_sub(1) else { return Vec::new() };
     let onion = route == proton_core::tor::Route::Onion;
     let mut lines = vec![hop(

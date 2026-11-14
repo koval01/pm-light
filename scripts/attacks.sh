@@ -3,7 +3,7 @@
 # Only ever run this in Docker, never on the host.
 set -euo pipefail
 
-IMAGE=rust:1.99-slim
+IMAGE=rust:1.100-slim
 SOURCE="$(cd "$(dirname "$0")/.." && pwd)"
 
 # Everything this run makes in Docker goes when it ends, however it ends.

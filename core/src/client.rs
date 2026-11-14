@@ -4,6 +4,7 @@ use crate::{
     dns::Quad9,
     error::{Error, HumanVerification, Result},
     journal::clean_path,
+    request_log::RequestLog,
 };
 use parking_lot::Mutex;
 use rand::RngCore;
@@ -19,6 +20,10 @@ use std::{
     time::{Duration, Instant},
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
+
+mod answers;
+pub use answers::first_batch_failure;
+use answers::{check, refuses_session, retry_delay};
 
 /// The host Proton's own apps use.
 pub const PROTON_API: &str = "https://mail-api.proton.me";
@@ -124,6 +129,9 @@ pub struct Client {
     kept: Arc<Mutex<HashMap<String, KeptAnswer>>>,
     listener: Mutex<Option<SessionListener>>,
     refresh_forbidden: AtomicBool,
+    /// A check borrowing the session asks only: anything but a read is refused here, before it leaves.
+    changes_forbidden: AtomicBool,
+    requests: std::sync::OnceLock<Arc<RequestLog>>,
     leaving: AtomicBool,
 }
 
@@ -164,62 +172,6 @@ struct Options {
     body: Option<Value>,
     no_auth: bool,
     batch: bool,
-}
-
-fn retry_delay(header: Option<&str>) -> f64 {
-    header
-        .and_then(|value| value.parse::<f64>().ok())
-        .filter(|seconds| seconds.is_finite() && *seconds >= 0.0)
-        .unwrap_or(DEFAULT_RETRY_SECONDS)
-}
-
-fn verification_in(body: &Value) -> Option<HumanVerification> {
-    let details = body.get("Details")?;
-    let token = details.get("HumanVerificationToken")?.as_str().filter(|t| !t.is_empty())?;
-    let methods = details.get("HumanVerificationMethods").and_then(Value::as_array);
-    Some(HumanVerification {
-        token: token.to_string(),
-        methods: methods
-            .map(|list| list.iter().filter_map(Value::as_str).map(str::to_string).collect())
-            .unwrap_or_default(),
-        web_url: details.get("WebUrl").and_then(Value::as_str).unwrap_or_default().to_string(),
-    })
-}
-
-/// Only these answers to a refresh rule the session invalid, as in `refreshHandlers.ts` of Proton's
-/// web client. Anything else, a 409 or 429 or 5xx among them, means trying again later.
-const fn refuses_session(error: &Error) -> bool {
-    matches!(error, Error::Api { status: 400 | 401 | 422, .. })
-}
-
-/// Proton's verdict on a parsed reply, whatever the HTTP status says.
-fn check(status: u16, body: &Value, batch: bool) -> Result<()> {
-    let code = body.get("Code").and_then(Value::as_i64);
-    if code == Some(CODE_HUMAN_VERIFICATION)
-        && let Some(challenge) = verification_in(body)
-    {
-        return Err(Error::Verification(challenge));
-    }
-    let accepted = matches!(code, None | Some(CODE_OK)) || (batch && code == Some(CODE_BATCH));
-    if (200..300).contains(&status) && accepted {
-        return Ok(());
-    }
-    let message = body.get("Error").and_then(Value::as_str);
-    Err(Error::Api {
-        status,
-        code: code.unwrap_or(0),
-        message: message.map_or_else(|| format!("HTTP {status}"), str::to_string),
-    })
-}
-
-/// Items of a batch reply that Proton did not act on.
-pub fn first_batch_failure(body: &Value) -> Option<String> {
-    let failed = body.get("Responses")?.as_array()?.iter().find_map(|item| {
-        let response = item.get("Response")?;
-        (response.get("Code")?.as_i64() != Some(CODE_OK)).then_some(response)
-    })?;
-    let code = failed.get("Code").and_then(Value::as_i64).unwrap_or(0);
-    Some(failed.get("Error").and_then(Value::as_str).map_or_else(|| format!("code {code}"), str::to_string))
 }
 
 fn random_hex() -> String {
@@ -290,6 +242,8 @@ impl Client {
             kept: Arc::default(),
             listener: Mutex::new(None),
             refresh_forbidden: AtomicBool::new(false),
+            changes_forbidden: AtomicBool::new(false),
+            requests: std::sync::OnceLock::new(),
             leaving: AtomicBool::new(false),
         }
     }
@@ -365,6 +319,20 @@ impl Client {
     /// would sign the app out, so an expired token simply ends the borrower's work.
     pub fn forbid_refresh(&self) {
         self.refresh_forbidden.store(true, Ordering::Relaxed);
+    }
+
+    /// For a check that must change nothing of the account, whatever is clicked: every request but a read is refused.
+    pub fn forbid_changes(&self) {
+        self.changes_forbidden.store(true, Ordering::Relaxed);
+    }
+
+    pub fn changes_forbidden(&self) -> bool {
+        self.changes_forbidden.load(Ordering::Relaxed)
+    }
+
+    /// Keeps a record of every request from now on, for a check to summarize.
+    pub fn record_requests(&self) -> Arc<RequestLog> {
+        self.requests.get_or_init(|| Arc::new(RequestLog::new())).clone()
     }
 
     pub fn session(&self) -> Option<Session> {
@@ -448,6 +416,14 @@ impl Client {
         no_auth: bool,
         attach: &(dyn Fn(reqwest::RequestBuilder) -> reqwest::RequestBuilder + Send + Sync),
     ) -> Result<Response> {
+        let refused = self.changes_forbidden() && method != Method::GET;
+        if let Some(requests) = self.requests.get() {
+            requests.record(method.as_str(), path, refused);
+        }
+        if refused {
+            log::info!("{method} {}: refused, a check changes nothing", clean_path(path));
+            return Err(Error::RefusedInCheck);
+        }
         let transport = self.transport()?;
         let url = format!("{}{path}", transport.base);
         let mut retried = false;

@@ -290,7 +290,7 @@ fn walk_css(parser: &mut Parser<'_, '_>, out: &mut String, depth: usize) {
                 let mut inner = String::new();
                 let safe = parser
                     .parse_nested_block(|p| {
-                        let value = p.expect_string().map(std::string::ToString::to_string).unwrap_or_default();
+                        let value = p.expect_string().map_or_default(std::string::ToString::to_string);
                         inner = value;
                         Ok::<(), ParseError<'_, ()>>(())
                     })

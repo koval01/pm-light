@@ -6,14 +6,11 @@
 //! answers is left after a while, so a missing photographer cannot hold the check. Then `memory_check` opens the mail
 //! round after round and writes `<file>.memory`, and `<file>.done` ends it all.
 //!
-//! Nothing here is kept: the look, the language and the window's size change only on screen, zoom goes back to 100, a
-//! letter opened here is put away unsaved, and the mail the tour opened is marked unread again if it was so before.
+//! Nothing here is kept: the look, the language and the window's size change only on screen, zoom goes back to 100, and
+//! a letter opened here is put away unsaved. The account itself cannot change in a check (`checks`).
 
 use crate::{App, Settings, Theme, composer, look, preferences, settings, view};
-use proton_core::{
-    Service,
-    model::{MessageChanges, MessageMeta},
-};
+use proton_core::{Service, model::MessageMeta};
 use slint::{ComponentHandle, LogicalSize, Timer, Weak, winit_030::WinitWindowAccessor};
 use std::{
     cell::RefCell,
@@ -122,9 +119,14 @@ thread_local! {
     static TOUR: RefCell<Option<Tour>> = const { RefCell::new(None) };
 }
 
-/// The inbox the account check read, for the tour that follows it.
+/// The inbox the account check read, for the tour or the long run that follows it.
 pub fn remember(service: &Arc<Service>, rows: Vec<MessageMeta>) {
     SEEN.set(Some((service.clone(), rows)));
+}
+
+/// What `remember` kept, once.
+pub fn take_seen() -> Option<(Arc<Service>, Vec<MessageMeta>)> {
+    SEEN.take()
 }
 
 fn beside(note: &Path, ending: &str) -> PathBuf {
@@ -135,7 +137,7 @@ fn beside(note: &Path, ending: &str) -> PathBuf {
 
 /// From the account check, once its note is written.
 pub fn start(app: &App, note: PathBuf) {
-    let Some((service, rows)) = SEEN.take() else { return };
+    let Some((service, rows)) = take_seen() else { return };
     let steps = steps(rows.len());
     log::info!("the screen tour: {} steps", steps.len());
     let _ = std::fs::remove_file(beside(&note, ".step"));
@@ -282,7 +284,6 @@ fn show(service: &Arc<Service>, app: &App, rows: &[MessageMeta], step: &Step) {
     log::info!("the screen tour: {}", step.word());
 }
 
-/// The tour is over: the mail it opened is unread again where it was, the language is the person's, and CI is told.
 /// The steps are over: the language is the person's again, and the memory check takes the window next.
 fn end() {
     let ready = TOUR.with_borrow(|tour| {
@@ -296,22 +297,11 @@ fn end() {
     }
 }
 
-/// The mail the tour opened is unread again where it was, and CI is told the tour is over.
+/// CI is told the tour is over.
 fn finish() {
     let Some(tour) = TOUR.take() else { return };
-    let unread: Vec<String> =
-        tour.rows.iter().filter(|row| row.unread && row.messages == 0).map(|row| row.id.clone()).collect();
-    let (service, done) = (tour.service.clone(), beside(&tour.note, ".done"));
-    log::info!("the screen tour ended after {} steps; {} mails to mark unread again", tour.next, unread.len());
-    tokio::spawn(async move {
-        if !unread.is_empty() {
-            let changes = MessageChanges { unread: Some(true), ..MessageChanges::default() };
-            if let Err(error) = service.patch(&unread, &changes).await {
-                log::warn!("the screen tour could not mark the mail unread again: {}", error.kind());
-            }
-        }
-        let _ = std::fs::write(done, "done\n");
-    });
+    log::info!("the screen tour ended after {} steps", tour.next);
+    let _ = std::fs::write(beside(&tour.note, ".done"), "done\n");
 }
 
 #[cfg(test)]

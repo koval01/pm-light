@@ -111,6 +111,9 @@ fn place(prepared: &PrintDocument, app: &App) {
 }
 
 pub fn print(app: &App, prepared: PrintDocument) {
+    if crate::checks::refuses("the system's print panel") {
+        return;
+    }
     go_away();
     let weak = app.as_weak();
     let built = crate::webviews::page(|builder| {

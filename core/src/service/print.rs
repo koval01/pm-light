@@ -96,8 +96,7 @@ impl Service {
             .key_fingerprints()
             .into_iter()
             .find(|key| key.primary && key.address_id.as_deref() == Some(address_id.as_str()))
-            .map(|key| key.fingerprint)
-            .unwrap_or_default();
+            .map_or_default(|key| key.fingerprint);
         let mail = SealedMail {
             signer: signer.clone(),
             sealed_at: now_seconds().saturating_mul(1000),

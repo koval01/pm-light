@@ -55,6 +55,9 @@ static RELAUNCH_ASKED: AtomicBool = AtomicBool::new(false);
 
 /// Quits, and starts the app again once this copy has let go of everything.
 pub fn relaunch() {
+    if crate::checks::refuses("starting again") {
+        return;
+    }
     log::info!("starting again on purpose");
     RELAUNCH_ASKED.store(true, Ordering::Relaxed);
     let _ = slint::quit_event_loop();

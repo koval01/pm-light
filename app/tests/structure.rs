@@ -13,9 +13,9 @@ const MOST_LINES: usize = 500;
 /// Files that grew past `MOST_LINES` before the rule, each at most as long as it was then: they may only shrink, and
 /// leave this list once they are short enough.
 const STILL_LONG: &[(&str, usize)] = &[
-    ("app/src/view.rs", 1428),
+    ("app/src/view.rs", 1386),
     ("app/src/composer.rs", 982),
-    ("core/src/client.rs", 710),
+    ("core/src/client.rs", 686),
     ("core/src/html.rs", 634),
     ("core/src/search.rs", 578),
     ("core/src/model.rs", 572),

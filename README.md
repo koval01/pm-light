@@ -7,7 +7,7 @@
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16464/badge)](https://www.bestpractices.dev/projects/16464)
 [![Release](https://img.shields.io/github/v/release/koval01/pm-light?include_prereleases&sort=semver)](https://github.com/koval01/pm-light/releases)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
-[![Rust 1.99](https://img.shields.io/badge/rust-1.99-orange?logo=rust)](rust-toolchain.toml)
+[![Rust 1.100](https://img.shields.io/badge/rust-1.100-orange?logo=rust)](rust-toolchain.toml)
 ![macOS | Windows | Linux](https://img.shields.io/badge/systems-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
 ![Unofficial](https://img.shields.io/badge/Proton-unofficial%20client-555)
 

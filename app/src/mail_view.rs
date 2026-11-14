@@ -230,7 +230,7 @@ fn own_page(url: &str) -> bool {
         log::info!("an earlier page of the mail view was left alone");
         return false;
     }
-    crate::view::open_link(url);
+    crate::outside::open_link(url);
     false
 }
 

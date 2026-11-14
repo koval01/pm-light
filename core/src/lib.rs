@@ -25,6 +25,7 @@ pub mod model;
 mod pattern;
 pub mod print;
 pub mod ranking;
+pub mod request_log;
 pub mod safety;
 pub mod scan;
 pub mod seal;

@@ -72,7 +72,11 @@ fn handle(app: &App, id: &str) {
                 palette::open(&service, app);
             }
         }
-        QUIT => drop(slint::quit_event_loop()),
+        QUIT => {
+            if !crate::checks::refuses("quitting") {
+                drop(slint::quit_event_loop());
+            }
+        }
         DETAILS => view::open_info(1),
         PROTECTION => view::open_info(2),
         HEADERS => view::open_info(3),

@@ -157,6 +157,15 @@ impl Service {
         self.client.forbid_refresh();
     }
 
+    /// For a check that clicks anywhere: nothing of the account may change, on the server or on this machine.
+    pub fn forbid_changes(&self) {
+        self.client.forbid_changes();
+    }
+
+    pub fn record_requests(&self) -> std::sync::Arc<crate::request_log::RequestLog> {
+        self.client.record_requests()
+    }
+
     pub fn is_signed_in(&self) -> bool {
         self.client.session().is_some() && self.key_secret.lock().is_some()
     }
