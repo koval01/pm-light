@@ -50,7 +50,7 @@ jobs:
           RUSTDOCFLAGS: -Zsanitizer=address --cfg checked_memory
           # Two definitions of one global are a violation when their sizes differ (level 1); the strict level also
           # stops on identical ones, which SQLite's C, built in by arti, has.
-          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=1
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=1:fast_unwind_on_malloc=0
         run: cargo +nightly test --locked -Zbuild-std -p proton-core --lib --target x86_64-unknown-linux-gnu
 
   app:
@@ -133,14 +133,16 @@ jobs:
           shared-key: miri
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # Mail parsing, cleaning, search, seals and the rest that never leaves the process. Time and the system's
-      # randomness are let in, which some of them read. Tree Borrows, the newer model of which references may do what:
-      # under the older Stacked Borrows, servo_arc, under lol_html's selectors, breaks a rule on a zero-sized retag
-      # (docs/SECURITY.md).
+      # The core's own logic that never leaves the process: mail parsing, search, seals, filters, addresses and the
+      # rest. Time and the system's randomness are let in, which some of them read. Tree Borrows, the newer model of
+      # which references may do what: under the older Stacked Borrows, servo_arc, under lol_html's selectors, breaks a
+      # rule on a zero-sized retag (docs/SECURITY.md). Decoding real pictures (file_kind, image_metadata, scan) and
+      # cleaning large HTML ran a runner out after forty minutes at Miri's pace, a thousand times slower than a build:
+      # those run under AddressSanitizer above and in the fuzzers instead.
       - name: Tests
         env:
           MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-tree-borrows
         run: |
           cargo +nightly miri test --locked -p proton-core --lib -- \
-            html:: mime:: search:: seal:: text:: safety:: file_kind:: sieve:: mailto:: vcard:: eml:: calendar:: \
-            pattern:: keymap:: ranking:: image_metadata:: mapping::
+            mime:: search:: seal:: text:: safety:: sieve:: mailto:: vcard:: eml:: calendar:: pattern:: keymap:: \
+            ranking:: mapping::

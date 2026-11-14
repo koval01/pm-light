@@ -60,7 +60,7 @@ fn pin_of(certificate: &CertificateDer<'_>) -> Option<String> {
 #[derive(Debug)]
 struct Pinned {
     usual: Arc<WebPkiServerVerifier>,
-    pins: &'static [&'static str],
+    pins: Vec<String>,
     /// Whether an issuer's key may match too, and not only the server's own.
     issuers_too: bool,
 }
@@ -76,8 +76,7 @@ impl ServerCertVerifier for Pinned {
     ) -> Result<ServerCertVerified, Error> {
         let verified = self.usual.verify_server_cert(end_entity, intermediates, server_name, ocsp_response, now)?;
         let issuers = if self.issuers_too { intermediates } else { &[] };
-        let pinned =
-            std::iter::once(end_entity).chain(issuers).filter_map(pin_of).any(|pin| self.pins.contains(&pin.as_str()));
+        let pinned = std::iter::once(end_entity).chain(issuers).filter_map(pin_of).any(|pin| self.pins.contains(&pin));
         if pinned { Ok(verified) } else { Err(Error::General(UNTRUSTED_KEY.to_string())) }
     }
 
@@ -133,12 +132,12 @@ pub fn quad9_config() -> Result<ClientConfig, Error> {
     Ok(config)
 }
 
-fn pinned_verifier(pins: &'static [&'static str], issuers_too: bool, roots: RootCertStore) -> Result<Pinned, Error> {
+fn pinned_verifier(pins: &[&str], issuers_too: bool, roots: RootCertStore) -> Result<Pinned, Error> {
     let provider = Arc::new(ring::default_provider());
     let usual = WebPkiServerVerifier::builder_with_provider(Arc::new(roots), provider)
         .build()
         .map_err(|e| Error::General(e.to_string()))?;
-    Ok(Pinned { usual, pins, issuers_too })
+    Ok(Pinned { usual, pins: pins.iter().map(ToString::to_string).collect(), issuers_too })
 }
 
 pub fn pinned_config(pins: &'static [&'static str]) -> Result<ClientConfig, Error> {

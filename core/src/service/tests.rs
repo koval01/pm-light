@@ -404,11 +404,11 @@ fn sender_rules_read_every_page() {
             .map(|i| format!(r#"{{"ID":"{i}","Location":14,"Email":"a{i}@b.c"}}"#))
             .collect::<Vec<_>>()
             .join(",");
-        let full: &'static str = Box::leak(format!(r#"{{"Code":1000,"IncomingDefaults":[{full}]}}"#).into_boxed_str());
+        let full = format!(r#"{{"Code":1000,"IncomingDefaults":[{full}]}}"#);
         Some(if path.contains("Page=0") {
             (200, full)
         } else {
-            (200, r#"{"Code":1000,"IncomingDefaults":[{"ID":"x","Location":0,"Domain":"b.c"}]}"#)
+            (200, r#"{"Code":1000,"IncomingDefaults":[{"ID":"x","Location":0,"Domain":"b.c"}]}"#.to_string())
         })
     });
     let (service, store, _) = restarted_at(&server.base);
@@ -455,9 +455,9 @@ pub(super) fn finishes<T: Send + 'static>(work: impl Future<Output = T> + Send +
     finished.recv_timeout(std::time::Duration::from_secs(10)).expect("it froze")
 }
 
-fn a_page_of_mail(rows: usize) -> &'static str {
+fn a_page_of_mail(rows: usize) -> String {
     let rows = (0..rows).map(|id| format!(r#"{{"ID":"{id}"}}"#)).collect::<Vec<_>>().join(",");
-    format!(r#"{{"Code":1000,"Messages":[{rows}]}}"#).leak()
+    format!(r#"{{"Code":1000,"Messages":[{rows}]}}"#)
 }
 
 pub(super) fn mailbox_at(base: &str) -> (Arc<Service>, Arc<Mutex<Vec<crate::view::ViewUpdate>>>) {
@@ -726,7 +726,7 @@ fn a_folder_comes_back_at_once_and_is_then_asked_again() {
 
 #[test]
 fn a_failed_refresh_keeps_what_is_on_screen() {
-    let server = serve(|_, index| Some(if index == 0 { (200, a_page_of_mail(2)) } else { (500, "{}") }));
+    let server = serve(|_, index| Some(if index == 0 { (200, a_page_of_mail(2)) } else { (500, "{}".to_string()) }));
     let (service, updates) = mailbox_at(&server.base);
     let working = service;
     finishes(async move {
@@ -753,7 +753,8 @@ fn spam_is_not_read_ahead() {
 
 #[test]
 fn the_inbox_is_read_ahead_only_from_the_top() {
-    let server = serve(|path, _| Some((200, if path.contains('?') { a_page_of_mail(9) } else { A_PLAIN_MESSAGE })));
+    let server =
+        serve(|path, _| Some((200, if path.contains('?') { a_page_of_mail(9) } else { A_PLAIN_MESSAGE.to_string() })));
     let (service, _) = mailbox_at(&server.base);
     let working = service;
     finishes(async move {

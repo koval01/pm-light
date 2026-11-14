@@ -64,12 +64,12 @@ fn chain(host: &str) -> (RootCertStore, CertificateDer<'static>, CertificateDer<
 fn the_onion_site_may_match_by_its_issuer_and_nothing_else_may() {
     let host = "mail-api.example.onion";
     let (roots, leaf, issuer) = chain(host);
-    let pin: &'static str = Box::leak(pin_of(&issuer).unwrap().into_boxed_str());
-    let pins: &'static [&'static str] = Box::leak(vec![pin].into_boxed_slice());
+    let pin = pin_of(&issuer).unwrap();
+    let pins = [pin.as_str()];
     let name = ServerName::try_from(host).unwrap();
-    let onion = pinned_verifier(pins, true, roots.clone()).unwrap();
+    let onion = pinned_verifier(&pins, true, roots.clone()).unwrap();
     assert!(onion.verify_server_cert(&leaf, std::slice::from_ref(&issuer), &name, &[], UnixTime::now()).is_ok());
-    let proton = pinned_verifier(pins, false, roots).unwrap();
+    let proton = pinned_verifier(&pins, false, roots).unwrap();
     assert!(proton.verify_server_cert(&leaf, &[issuer], &name, &[], UnixTime::now()).is_err());
 }
 
@@ -90,18 +90,18 @@ fn a_certificate_from_a_trusted_authority_is_still_refused_without_the_key() {
 #[test]
 fn that_refusal_comes_from_the_key_and_not_from_the_chain() {
     let (roots, leaf) = rogue_authority("mail-api.proton.me");
-    let pin: &'static str = Box::leak(pin_of(&leaf).unwrap().into_boxed_str());
-    let pins: &'static [&'static str] = Box::leak(vec![pin].into_boxed_slice());
-    let verifier = pinned_verifier(pins, false, roots).unwrap();
+    let pin = pin_of(&leaf).unwrap();
+    let pins = [pin.as_str()];
+    let verifier = pinned_verifier(&pins, false, roots).unwrap();
     assert!(verify(&verifier, &leaf, "mail-api.proton.me").is_ok());
 }
 
 #[test]
 fn the_right_key_on_the_wrong_name_is_refused_too() {
     let (roots, leaf) = rogue_authority("evil.example");
-    let pin: &'static str = Box::leak(pin_of(&leaf).unwrap().into_boxed_str());
-    let pins: &'static [&'static str] = Box::leak(vec![pin].into_boxed_slice());
-    let verifier = pinned_verifier(pins, false, roots).unwrap();
+    let pin = pin_of(&leaf).unwrap();
+    let pins = [pin.as_str()];
+    let verifier = pinned_verifier(&pins, false, roots).unwrap();
     assert!(verify(&verifier, &leaf, "mail-api.proton.me").is_err());
 }
 

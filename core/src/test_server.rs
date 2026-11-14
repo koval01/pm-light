@@ -38,9 +38,9 @@ fn read_request(stream: &mut TcpStream) -> String {
     String::from_utf8_lossy(&request).split_whitespace().nth(1).unwrap_or_default().to_string()
 }
 
-/// `answer` gets the path and how many requests came before. `None` closes the server, and from
-/// then on nothing answers, as when a network drops.
-pub fn serve(answer: impl Fn(&str, usize) -> Option<(u16, &'static str)> + Send + 'static) -> Server {
+/// `answer` gets the path and how many requests came before, and gives a status and a body, written in the code or
+/// made for the request. `None` closes the server, and from then on nothing answers, as when a network drops.
+pub fn serve<B: AsRef<str>>(answer: impl Fn(&str, usize) -> Option<(u16, B)> + Send + 'static) -> Server {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let seen = Arc::new(Mutex::new(Vec::new()));
@@ -51,6 +51,7 @@ pub fn serve(answer: impl Fn(&str, usize) -> Option<(u16, &'static str)> + Send 
             let path = read_request(&mut stream);
             log.lock().push(path.clone());
             let Some((status, body)) = answer(&path, index) else { return };
+            let body = body.as_ref();
             let length = body.len();
             let reply = format!(
                 "HTTP/1.1 {status} X\r\nRetry-After: 0\r\nConnection: close\r\n\
