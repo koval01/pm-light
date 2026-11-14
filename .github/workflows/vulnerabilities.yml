@@ -45,12 +45,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # The vendored crates are another project's code, and the components list is generated.
+      # What CodeQL reads, by .github/codeql/codeql-config.yml: not the vendored crates, which are another project's
+      # code, and not the tests, whose keys, passwords and temporary folders are fixed on purpose. The components list
+      # is generated.
       - name: Scan
         run: |
           semgrep scan --metrics=off --sarif --output semgrep.sarif \
             --config p/rust --config p/security-audit --config p/secrets --config p/github-actions \
-            --exclude vendor --exclude app/components
+            --exclude vendor --exclude app/components \
+            --exclude 'tests.rs' --exclude '*_tests.rs' --exclude 'app/tests' --exclude 'core/src/test_server.rs' \
+            --exclude '*.asc' --exclude '*.pem' --exclude 'test_vectors.json'
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
         if: ${{ !cancelled() }}
         with:
