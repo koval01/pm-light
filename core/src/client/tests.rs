@@ -512,3 +512,105 @@ async fn without_a_check_changes_go_and_nothing_is_recorded() {
     assert_eq!(*server.seen.lock(), ["/mail/v4/messages/read"]);
     assert!(!client.changes_forbidden());
 }
+
+/// A server slow enough that a second request comes while the first is out.
+fn slow_server() -> crate::test_server::Server {
+    serve(|path, _| {
+        std::thread::sleep(Duration::from_millis(150));
+        Some((200, format!(r#"{{"Code":1000,"Path":"{path}"}}"#)))
+    })
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_same_read_asked_at_once_reaches_proton_once() {
+    let server = slow_server();
+    let (client, _) = holding_a_session(&server.base);
+    let requests = client.record_requests();
+    let (first, second, third) = tokio::join!(
+        client.get::<Value>("/mail/v4/conversations/a"),
+        client.get::<Value>("/mail/v4/conversations/a"),
+        client.get::<Value>("/mail/v4/conversations/a"),
+    );
+    assert_eq!(*server.seen.lock(), ["/mail/v4/conversations/a"], "a read already out went again");
+    for answer in [&first, &second, &third] {
+        assert_eq!(answer.as_ref().ok().and_then(|body| body.get("Path")), Some(&json!("/mail/v4/conversations/a")));
+    }
+    let summary = requests.summary();
+    assert_eq!((summary.total, summary.repeats.len()), (1, 0), "{summary:?}");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn different_reads_and_later_reads_each_reach_proton() {
+    let server = slow_server();
+    let (client, _) = holding_a_session(&server.base);
+    let (first, second) = tokio::join!(client.get::<Value>("/a"), client.get::<Value>("/b"));
+    assert!(first.is_ok() && second.is_ok());
+    assert!(client.get::<Value>("/a").await.is_ok());
+    let mut seen = server.seen.lock().clone();
+    seen.sort();
+    assert_eq!(seen, ["/a", "/a", "/b"], "a later read took an answer kept from before");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_read_after_a_change_does_not_take_the_answer_from_before_it() {
+    let server = slow_server();
+    let (client, _) = holding_a_session(&server.base);
+    // The change leaves while the first read is still out, and the second read while both are.
+    let change = async {
+        tokio::time::sleep(Duration::from_millis(30)).await;
+        client.put::<Value>("/mail/v4/conversations/read", json!({"IDs": ["a"]})).await
+    };
+    let after = async {
+        tokio::time::sleep(Duration::from_millis(60)).await;
+        client.get::<Value>("/mail/v4/conversations").await
+    };
+    let (before, changed, after) = tokio::join!(client.get::<Value>("/mail/v4/conversations"), change, after);
+    assert!(before.is_ok() && changed.is_ok() && after.is_ok());
+    let reads = server.seen.lock().iter().filter(|path| *path == "/mail/v4/conversations").count();
+    assert_eq!(reads, 2, "the read after a change was answered from before it: {:?}", server.seen.lock());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_same_file_asked_at_once_is_fetched_once() {
+    let server = slow_server();
+    let (client, _) = holding_a_session(&server.base);
+    let path = "/core/v4/images/logo?Domain=example.com";
+    let (first, second) = tokio::join!(client.fetch(path), client.fetch(path));
+    assert_eq!(server.seen.lock().len(), 1, "a picture already on its way was fetched again");
+    let (first, second) = (first.unwrap().0, second.unwrap().0);
+    assert!(!first.is_empty() && first == second);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_failure_reaches_everyone_who_asked_and_the_next_read_goes_again() {
+    let server = serve(|_, index| {
+        std::thread::sleep(Duration::from_millis(150));
+        Some(if index == 0 { (500, r#"{"Code":2500}"#) } else { (200, FINE) })
+    });
+    let (client, _) = holding_a_session(&server.base);
+    let (first, second) = tokio::join!(client.get::<Value>("/a"), client.get::<Value>("/a"));
+    assert!(matches!(first, Err(Error::Api { status: 500, .. })), "{first:?}");
+    assert!(matches!(second, Err(Error::Api { status: 500, .. })), "{second:?}");
+    assert!(client.get::<Value>("/a").await.is_ok(), "a failure was kept past its moment");
+    assert_eq!(server.seen.lock().len(), 2);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_read_from_an_ended_session_answers_nothing_asked_after_it() {
+    let server = slow_server();
+    let (client, _) = holding_a_session(&server.base);
+    let after = async {
+        tokio::time::sleep(Duration::from_millis(30)).await;
+        client.drop_session();
+        client.set_session(Some(Session {
+            uid: "other".into(),
+            access_token: "other-access".into(),
+            refresh_token: "other-refresh".into(),
+            password_mode: 1,
+        }));
+        client.get::<Value>("/core/v4/users").await
+    };
+    let (before, after) = tokio::join!(client.get::<Value>("/core/v4/users"), after);
+    assert!(before.is_ok() && after.is_ok());
+    assert_eq!(server.seen.lock().len(), 2, "another session's read answered this one");
+}

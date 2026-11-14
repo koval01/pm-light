@@ -15,8 +15,8 @@ const MOST_LINES: usize = 500;
 const STILL_LONG: &[(&str, usize)] = &[
     ("app/src/view.rs", 1386),
     ("app/src/composer.rs", 982),
-    ("core/src/client.rs", 686),
     ("core/src/html.rs", 634),
+    ("core/src/client.rs", 624),
     ("core/src/search.rs", 578),
     ("core/src/model.rs", 572),
     ("app/src/settings/mail_pages.rs", 560),

@@ -69,6 +69,9 @@ What holds them down:
 - **A mail opens from what is at hand.** It goes on screen first, whole and already fitted. Its logo and the check of
   its pictures follow. The mails on either side are read ahead, and everything is kept sealed on disk: the mail, its
   files, its pictures and what Proton said about them.
+- **A read goes once.** Opening a mail, reading ahead and drawing it can ask for the same conversation in the same
+  moment. The first read goes and the others wait for its answer (`client/together.rs`); any change, and a change of
+  session, makes later reads go on their own. The long run counts a read repeated within a second.
 - **The window's frames.** Two surfaces are taken in turn and only what changed is drawn: `softbuffer` made a new one
   for every frame and repainted the window whole. See `vendor/softbuffer/PATCHED.md`.
 - **Memory is returned every 10 s**, from the program's heap and the system's. Steadiness comes first.

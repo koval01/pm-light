@@ -36,7 +36,8 @@ pub struct HumanVerification {
     pub web_url: String,
 }
 
-#[derive(Debug, thiserror::Error)]
+/// Clone, so that one answer, or one failure, can go to everyone who asked the same at once (`client/together.rs`).
+#[derive(Clone, Debug, thiserror::Error)]
 pub enum Error {
     #[error("{message}")]
     Api { status: u16, code: i64, message: String },

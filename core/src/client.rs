@@ -22,8 +22,12 @@ use std::{
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 mod answers;
+mod kept;
+mod together;
 pub use answers::first_batch_failure;
 use answers::{check, refuses_session, retry_delay};
+use kept::KeptAnswer;
+use together::Together;
 
 /// The host Proton's own apps use.
 pub const PROTON_API: &str = "https://mail-api.proton.me";
@@ -38,23 +42,6 @@ const CODE_HUMAN_VERIFICATION: i64 = 9001;
 const DEFAULT_RETRY_SECONDS: f64 = 10.0;
 const MAX_RETRY_SECONDS: f64 = 30.0;
 const REFRESH_PATH: &str = "/auth/v4/refresh";
-/// Settings change rarely and are read on every visit to a tab: a kept answer is shown at once,
-/// and past this age it is asked for again behind the scenes.
-const KEPT_ANSWER_FRESH: Duration = Duration::from_secs(60);
-const KEPT_ANSWER_OLDEST: Duration = Duration::from_secs(3600);
-const KEPT_PATHS: [&str; 9] = [
-    "/core/v4/settings",
-    "/mail/v4/settings",
-    "/payments/",
-    "/auth/v4/sessions",
-    "/core/v4/domains",
-    "/core/v4/forwarding",
-    "/mail/v4/filters",
-    "/mail/v4/incomingdefaults",
-    "/mail/v4/forwardings",
-];
-/// Everyday work on mail changes no setting.
-const NOT_SETTINGS: [&str; 3] = ["/mail/v4/messages", "/mail/v4/conversations", "/mail/v4/attachments"];
 const KEEP_ALIVE: Duration = Duration::from_secs(25);
 const KEEP_ALIVE_WAIT: Duration = Duration::from_secs(10);
 /// A refusal is asked again before anything is deleted, so that a slip on Proton's side costs a
@@ -127,44 +114,16 @@ pub struct Client {
     verification: Mutex<Option<Verification>>,
     refreshing: tokio::sync::Mutex<()>,
     kept: Arc<Mutex<HashMap<String, KeptAnswer>>>,
+    /// Reads out now, which the same read asked again joins.
+    reads: Together<Value>,
+    /// Files and pictures out now, the same way.
+    fetches: Together<(Vec<u8>, HeaderMap)>,
     listener: Mutex<Option<SessionListener>>,
     refresh_forbidden: AtomicBool,
     /// A check borrowing the session asks only: anything but a read is refused here, before it leaves.
     changes_forbidden: AtomicBool,
     requests: std::sync::OnceLock<Arc<RequestLog>>,
     leaving: AtomicBool,
-}
-
-struct KeptAnswer {
-    body: Kept,
-    at: Instant,
-}
-
-/// A 403 to a setting means the plan does not have it, which changes as rarely as the setting
-/// itself, so it is kept the same way instead of being asked again on every page that shows it.
-#[derive(Clone)]
-enum Kept {
-    Answer(Value),
-    NotInPlan { code: i64, message: String },
-}
-
-impl Kept {
-    fn of(answer: &Result<Value>) -> Option<Self> {
-        match answer {
-            Ok(body) => Some(Self::Answer(body.clone())),
-            Err(Error::Api { status: 403, code, message }) => {
-                Some(Self::NotInPlan { code: *code, message: message.clone() })
-            }
-            Err(_) => None,
-        }
-    }
-
-    fn answer(self) -> Result<Value> {
-        match self {
-            Self::Answer(body) => Ok(body),
-            Self::NotInPlan { code, message } => Err(Error::Api { status: 403, code, message }),
-        }
-    }
 }
 
 #[derive(Default)]
@@ -240,6 +199,8 @@ impl Client {
             verification: Mutex::new(None),
             refreshing: tokio::sync::Mutex::new(()),
             kept: Arc::default(),
+            reads: Together::default(),
+            fetches: Together::default(),
             listener: Mutex::new(None),
             refresh_forbidden: AtomicBool::new(false),
             changes_forbidden: AtomicBool::new(false),
@@ -339,6 +300,13 @@ impl Client {
         self.session.lock().clone()
     }
 
+    /// Nothing asked before this moment answers anything asked after it.
+    fn forget_answers(&self) {
+        self.kept.lock().clear();
+        self.reads.forget();
+        self.fetches.forget();
+    }
+
     fn tell(&self, change: SessionChange<'_>) {
         if let Some(listener) = self.listener.lock().as_ref() {
             listener(change);
@@ -347,7 +315,7 @@ impl Client {
 
     pub fn set_session(&self, session: Option<Session>) {
         if session.is_none() {
-            self.kept.lock().clear();
+            self.forget_answers();
         }
         (*self.session.lock()).clone_from(&session);
         match session {
@@ -357,7 +325,7 @@ impl Client {
     }
 
     pub fn end_session(&self, ending: Ending) {
-        self.kept.lock().clear();
+        self.forget_answers();
         *self.session.lock() = None;
         self.tell(SessionChange::Ended(ending));
     }
@@ -370,7 +338,7 @@ impl Client {
 
     /// Lets go of the session in this process only. It stays valid on the server and in the store.
     pub fn drop_session(&self) {
-        self.kept.lock().clear();
+        self.forget_answers();
         *self.session.lock() = None;
     }
 
@@ -416,6 +384,10 @@ impl Client {
         no_auth: bool,
         attach: &(dyn Fn(reqwest::RequestBuilder) -> reqwest::RequestBuilder + Send + Sync),
     ) -> Result<Response> {
+        // A read already out may have been answered before this change: the next read goes on its own.
+        if method != Method::GET {
+            self.reads.forget();
+        }
         let refused = self.changes_forbidden() && method != Method::GET;
         if let Some(requests) = self.requests.get() {
             requests.record(method.as_str(), path, refused);
@@ -468,7 +440,7 @@ impl Client {
     }
 
     async fn call(&self, method: Method, path: &str, options: Options) -> Result<Value> {
-        if method != Method::GET && !NOT_SETTINGS.iter().any(|mail| path.starts_with(mail)) {
+        if method != Method::GET && kept::changes_settings(path) {
             self.kept.lock().clear();
         }
         let body = options.body;
@@ -496,54 +468,15 @@ impl Client {
         serde_json::from_value(body).map_err(|e| Error::other(format!("unexpected reply: {e}")))
     }
 
-    fn kept_answer(&self, path: &str) -> Option<Kept> {
-        let mut kept = self.kept.lock();
-        let answer = kept.get_mut(path)?;
-        if answer.at.elapsed() > KEPT_ANSWER_OLDEST {
-            kept.remove(path);
-            return None;
-        }
-        let body = answer.body.clone();
-        if answer.at.elapsed() > KEPT_ANSWER_FRESH {
-            answer.at = Instant::now();
-            drop(kept);
-            self.renew_quietly(path);
-        }
-        Some(body)
-    }
-
-    /// Nobody waits on this, so anything but a clean answer just leaves the kept one in place.
-    fn renew_quietly(&self, path: &str) {
-        let Ok(transport) = self.transport() else { return };
-        let request = transport
-            .http
-            .client()
-            .get(format!("{}{path}", transport.base))
-            .headers(self.headers_for(false))
-            .header("accept", API_ACCEPT);
-        let (kept, path) = (self.kept.clone(), path.to_string());
-        tokio::spawn(async move {
-            let Ok(response) = request.send().await else { return };
-            if !response.status().is_success() {
-                return;
-            }
-            let Ok(body) = response.json::<Value>().await else { return };
-            // Emptied meanwhile means a change or a sign-out: this answer may be from before it.
-            let mut kept = kept.lock();
-            if let Some(answer) = kept.get_mut(&path) {
-                answer.body = Kept::Answer(body);
-            }
-        });
-    }
-
+    /// A read. One asked while the same is out waits for its answer instead of asking again.
     pub async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T> {
-        let keep = KEPT_PATHS.iter().any(|kept| path.starts_with(kept));
+        let keep = kept::is_kept(path);
         if keep && let Some(kept) = self.kept_answer(path) {
             return Self::parse(kept.answer()?);
         }
-        let answer = self.call(Method::GET, path, Options::default()).await;
-        if keep && let Some(body) = Kept::of(&answer) {
-            self.kept.lock().insert(path.to_string(), KeptAnswer { body, at: Instant::now() });
+        let answer = self.reads.ask(path, || self.call(Method::GET, path, Options::default())).await;
+        if keep {
+            self.keep(path, &answer);
         }
         Self::parse(answer?)
     }
@@ -580,7 +513,12 @@ impl Client {
     }
 
     /// A raw body with the headers that came with it, such as an attachment or an image.
-    pub async fn fetch(&self, path: &str) -> Result<(Vec<u8>, reqwest::header::HeaderMap)> {
+    /// A file or a picture, shared like a read with anyone asking for it at the same time.
+    pub async fn fetch(&self, path: &str) -> Result<(Vec<u8>, HeaderMap)> {
+        self.fetches.ask(path, || self.fetch_alone(path)).await
+    }
+
+    async fn fetch_alone(&self, path: &str) -> Result<(Vec<u8>, HeaderMap)> {
         let attach = |request: reqwest::RequestBuilder| request;
         let response = self.send_with(Method::GET, path, "*/*", false, &attach).await?;
         let status = response.status();
