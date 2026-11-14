@@ -65,28 +65,7 @@ jobs:
           LIVE_SESSION: ${{ secrets.LIVE_SESSION }}
           PML_JOURNAL_ECHO: "1"
         run: |
-          if [ "$RUNNER_OS" = macOS ]; then
-            # A keychain item answers only the program that made it, and the app's question for the login keychain's
-            # password, which no one here knows, held up the check. So the session goes into a keychain of the run's
-            # own, with a password made for it, and its partition list lets the unsigned app read it. The machine is
-            # thrown away after the run.
-            keychain="$RUNNER_TEMP/live.keychain-db"
-            password=$(openssl rand -hex 24)
-            security create-keychain -p "$password" "$keychain"
-            security set-keychain-settings "$keychain"
-            security unlock-keychain -p "$password" "$keychain"
-            # shellcheck disable=SC2046 # the list of keychains is split on purpose
-            security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
-            security default-keychain -d user -s "$keychain"
-            security add-generic-password -U -A -s org.koval-dev.proton-mail-light -a session -w "$LIVE_SESSION" "$keychain"
-            cdhash=$(codesign -dvvv target/debug/proton-mail-light 2>&1 | sed -n 's/^CDHash=//p' | head -n 1)
-            security set-generic-password-partition-list -S "apple-tool:,apple:,unsigned:${cdhash:+,cdhash:$cdhash}" \
-              -s org.koval-dev.proton-mail-light -a session -k "$password" "$keychain" > /dev/null
-            unset password
-            echo "the session is in a keychain of the run's own"
-          else
-            cargo run --locked -q -p proton-mail-light --example seed_session
-          fi
+          scripts/seed-session.sh
           unset LIVE_SESSION
           app=target/debug/proton-mail-light
           note="$PWD/target/debug/account"
@@ -130,7 +109,7 @@ jobs:
           dbus-run-session -- bash -c '
             set -e
             printf "\n" | gnome-keyring-daemon --unlock --components=secrets >/dev/null
-            cargo run --locked -q -p proton-mail-light --example seed_session
+            scripts/seed-session.sh
             unset LIVE_SESSION
             note="$PWD/target/debug/account"
             # A screen of its own, with no access control, so that the photographer can reach it as the app does.

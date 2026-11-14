@@ -1,0 +1,160 @@
+# The long run: the app opens the test account and is driven at random for an hour, by its own actions and, on
+# Linux, by real clicks and keys at random places of its window (app/src/soak.rs, scripts/random-clicks.sh). Then:
+#
+# - memory that keeps growing, a flood of requests, and the same request asked again within a second fail the run
+#   (scripts/soak-report.py);
+# - on Linux every connection of the app and of its webviews' processes is traced and its owner looked up: directly
+#   only Proton, Quad9 and Gravatar when turned on, through Tor only Tor's relays, and no lookup on port 53 at all
+#   (scripts/connections.py).
+#
+# Nothing of the account changes: a check refuses every request but a read, and refuses what would wait on a person.
+# Started by hand, and once a week. The logs and the report hold numbers, owners and paths without ids only.
+name: Long run
+
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: How long each system is driven
+        default: "60"
+  schedule:
+    - cron: "7 1 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: long-run
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  MINUTES: ${{ inputs.minutes || '60' }}
+
+jobs:
+  linux:
+    name: Linux, ${{ matrix.way }}, every connection traced
+    environment: live-account
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        way: [direct, tor]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Linux libraries and tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
+            libxdo-dev libxkbcommon-dev libxkbcommon-x11-0 libfontconfig1-dev libdbus-1-dev xvfb \
+            gnome-keyring dbus-x11 strace xdotool
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          cache-on-failure: true
+      - name: Build
+        run: cargo build --locked -p proton-mail-light --bins --examples
+      - name: Drive it
+        env:
+          LIVE_SESSION: ${{ secrets.LIVE_SESSION }}
+          WAY: ${{ matrix.way }}
+        run: |
+          # shellcheck disable=SC2016 # expanded by the inner shell, inside its own D-Bus session
+          dbus-run-session -- bash -c '
+            set -e
+            printf "\n" | gnome-keyring-daemon --unlock --components=secrets >/dev/null
+            scripts/seed-session.sh
+            unset LIVE_SESSION
+            note="$PWD/target/debug/account"
+            Xvfb :99 -screen 0 1440x900x24 -nolisten tcp > /dev/null 2>&1 &
+            export DISPLAY=:99
+            sleep 1
+            tor=""
+            [ "$WAY" = tor ] && tor="--soak-tor"
+            seed=$(date +%s)
+            echo "seed $seed"
+            # Every connection, of the app and of every process it starts, with no data: -s 0.
+            strace -f -qq -s 0 -e trace=connect,sendto,sendmsg -o target/debug/connections.trace \
+              target/debug/proton-mail-light "--check-account=$note" "--soak-minutes=$MINUTES" "--soak-seed=$seed" $tor \
+              > target/debug/account.log 2>&1 &
+            app=$!
+            for _ in $(seq 1 600); do [ -f "$note.txt" ] && break; sleep 1; done
+            if [ -f "$note.txt" ] && ! grep -qx "failed" "$note.txt"; then
+              scripts/random-clicks.sh "$MINUTES" "$seed" &
+              for _ in $(seq 1 $(((MINUTES + 15) * 60))); do
+                [ -f "$note.done" ] && break
+                kill -0 "$app" 2>/dev/null || { echo "::error::the app ended before the run did"; break; }
+                sleep 1
+              done
+            fi
+            grep -E "long run|refused|panic|WARN|ERROR" target/debug/account.log | cut -c1-200 | tail -n 60 || true
+            kill "$app" 2>/dev/null || true
+            wait "$app" 2>/dev/null || true
+            test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }'
+      - name: Memory and requests
+        if: ${{ !cancelled() }}
+        run: python3 -I scripts/soak-report.py target/debug/account.soak
+      - name: Every connection
+        if: ${{ !cancelled() }}
+        env:
+          WAY: ${{ matrix.way }}
+        run: python3 -I scripts/connections.py target/debug/connections.trace --way "$WAY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: long-run-linux-${{ matrix.way }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: target/debug/account.soak
+
+  others:
+    name: ${{ matrix.os }}, the app's own actions
+    environment: live-account
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          cache-on-failure: true
+      - name: Build
+        run: cargo build --locked -p proton-mail-light --bins --examples
+      - name: Drive it
+        shell: bash
+        env:
+          LIVE_SESSION: ${{ secrets.LIVE_SESSION }}
+        run: |
+          scripts/seed-session.sh
+          unset LIVE_SESSION
+          note="$PWD/target/debug/account"
+          seed=$(date +%s)
+          echo "seed $seed"
+          target/debug/proton-mail-light "--check-account=$note" "--soak-minutes=$MINUTES" "--soak-seed=$seed" \
+            > target/debug/account.log 2>&1 &
+          app=$!
+          for _ in $(seq 1 $(((MINUTES + 25) * 60))); do
+            [ -f "$note.done" ] && break
+            kill -0 "$app" 2>/dev/null || { echo "::error::the app ended before the run did"; break; }
+            sleep 1
+          done
+          grep -E "long run|refused|panic|WARN|ERROR" target/debug/account.log | cut -c1-200 | tail -n 60 || true
+          kill "$app" 2>/dev/null || true
+          test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }
+      - name: Memory and requests
+        if: ${{ !cancelled() }}
+        run: python3 -I scripts/soak-report.py target/debug/account.soak
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: long-run-${{ runner.os }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: target/debug/account.soak
