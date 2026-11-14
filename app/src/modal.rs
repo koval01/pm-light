@@ -30,12 +30,34 @@ pub fn after_show<C: ComponentHandle + 'static>(component: &C, then: impl FnOnce
 pub use platform::native as native_window;
 
 pub fn present(parent: &Window, overlay: &Window) {
+    #[cfg(not(target_os = "macos"))]
+    centre(parent, overlay);
     overlay.with_winit_window(|window| {
         window.set_enabled_buttons(WindowButtons::CLOSE);
         #[cfg(not(target_os = "macos"))]
-        window.set_theme(crate::look::title_bar_theme());
+        {
+            window.set_theme(crate::look::title_bar_theme());
+            // A window of its own shows a blank page in its title bar, unless given the app's.
+            window.set_window_icon(crate::look::window_icon());
+        }
     });
     platform::present(parent, overlay);
+}
+
+/// Over the middle of the window that asked. Left to the system, Windows put it wherever it put the last new window,
+/// and a letter as tall as the main window then hung past the bottom of the screen. macOS hangs a sheet from its parent.
+#[cfg(not(target_os = "macos"))]
+fn centre(parent: &Window, overlay: &Window) {
+    use slint::winit_030::winit::dpi::PhysicalPosition;
+    let Some(Ok(place)) = parent.with_winit_window(slint::winit_030::winit::window::Window::outer_position) else { return };
+    let Some(room) = parent.with_winit_window(slint::winit_030::winit::window::Window::outer_size) else { return };
+    let Some(size) = overlay.with_winit_window(slint::winit_030::winit::window::Window::outer_size) else { return };
+    let along = |start: i32, outer: u32, inner: u32| {
+        let spare = i64::from(outer) - i64::from(inner);
+        i32::try_from(i64::from(start) + spare.max(0) / 2).unwrap_or(start)
+    };
+    let at = PhysicalPosition::new(along(place.x, room.width, size.width), along(place.y, room.height, size.height));
+    overlay.with_winit_window(|window| window.set_outer_position(at));
 }
 
 /// The size wanted, kept within the main window, which a sheet should not hang out of.

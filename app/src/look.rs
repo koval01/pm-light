@@ -76,15 +76,17 @@ fn tell_the_system(choice: u8) {
 /// the icon is set before the window exists, as `app.slint` sets it: the taskbar showed Windows' blank program.
 #[cfg(target_os = "windows")]
 pub fn taskbar_icon(app: &App) {
-    use slint::winit_030::{
-        WinitWindowAccessor,
-        winit::{platform::windows::WindowExtWindows, window::Icon},
-    };
-    let Ok(picture) = image::load_from_memory(include_bytes!("../icons/128x128.png")) else { return };
-    let picture = picture.to_rgba8();
-    let (width, height) = picture.dimensions();
-    let Ok(icon) = Icon::from_rgba(picture.into_raw(), width, height) else { return };
+    use slint::winit_030::{WinitWindowAccessor, winit::platform::windows::WindowExtWindows};
+    let Some(icon) = window_icon() else { return };
     app.window().with_winit_window(|window| window.set_taskbar_icon(Some(icon)));
+}
+
+/// The app's envelope for a window's title bar. macOS draws none there.
+#[cfg(not(target_os = "macos"))]
+pub fn window_icon() -> Option<slint::winit_030::winit::window::Icon> {
+    let picture = image::load_from_memory(include_bytes!("../icons/128x128.png")).ok()?.to_rgba8();
+    let (width, height) = picture.dimensions();
+    slint::winit_030::winit::window::Icon::from_rgba(picture.into_raw(), width, height).ok()
 }
 
 #[cfg(not(target_os = "windows"))]

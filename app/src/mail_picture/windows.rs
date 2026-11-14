@@ -54,8 +54,12 @@ pub fn capture(view: &WebView, width: f64, height: f64, then: impl FnOnce(Option
 
 /// Copies `bytes` into memory the clipboard can own, under `format`. True once the clipboard has it.
 ///
-/// Safety: the clipboard is open, on this thread.
+/// # Safety
+///
+/// The clipboard is open, on this thread.
 unsafe fn place(format: u32, bytes: &[u8]) -> bool {
+    // Safety: the memory is the size of `bytes`, locked before it is written and unlocked after; the clipboard owns it
+    // once taken, and it is freed here only when it was not.
     unsafe {
         let memory = GlobalAlloc(GMEM_MOVEABLE, bytes.len());
         if memory.is_null() {
