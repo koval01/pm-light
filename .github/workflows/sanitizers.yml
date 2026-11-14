@@ -147,13 +147,14 @@ jobs:
       # which references may do what: under the older Stacked Borrows, servo_arc, under lol_html's selectors, breaks a
       # rule on a zero-sized retag (docs/SECURITY.md). Decoding real pictures (file_kind, image_metadata, scan) and
       # cleaning large HTML ran a runner out after forty minutes at Miri's pace, a thousand times slower than a build:
-      # those run under AddressSanitizer above and in the fuzzers instead. So does the flood of ten thousand parts, half a
-      # second in a build and not done after fifty minutes under Miri; every other test here takes under 0.03 s in a
-      # build.
+      # those run under AddressSanitizer above and in the fuzzers instead. So do the flood of ten thousand parts, half a
+      # second in a build and not done after fifty minutes under Miri, and the seal's decompression bomb, which fills
+      # memory up to its limit and brought the runner down. Every other test here takes under 0.03 s in a build.
       - name: Tests
         env:
           MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-tree-borrows
           MODULES: ${{ matrix.modules }}
         run: |
           read -ra modules <<< "$MODULES"
-          cargo +nightly miri test --locked -p proton-core --lib -- "${modules[@]}" --skip mime::tests::a_flood_of_parts_is_cut_off
+          cargo +nightly miri test --locked -p proton-core --lib -- "${modules[@]}" \
+            --skip mime::tests::a_flood_of_parts_is_cut_off --skip seal::tests::a_decompression_bomb_stops_at_the_limit
