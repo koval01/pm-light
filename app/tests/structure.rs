@@ -164,3 +164,41 @@ fn every_webview_takes_its_place_from_one_function() {
     }
     assert!(elsewhere.is_empty(), "a webview's place is made outside webviews::area: {elsewhere:?}");
 }
+
+/// Fields go in the order they are written. On X11 a window takes its children along, and wry then destroys its own
+/// once more, which GTK ends the program over: in anything holding both, the webview comes before the window.
+#[test]
+fn a_webview_is_let_go_before_its_window() {
+    let mut wrong = Vec::new();
+    for (name, text) in sources().expect("the sources") {
+        if is_test_file(&name) {
+            continue;
+        }
+        let mut fields: Option<(usize, Option<usize>, Option<usize>)> = None;
+        for (number, line) in text.lines().enumerate() {
+            let line = line.trim();
+            if line.starts_with("struct ") || line.starts_with("pub struct ") || line.starts_with("pub(crate) struct ")
+            {
+                fields = line.ends_with('{').then_some((number + 1, None, None));
+                continue;
+            }
+            let Some((start, view, window)) = fields.as_mut() else { continue };
+            if line == "}" {
+                if let (Some(view), Some(window)) = (*view, *window)
+                    && window < view
+                {
+                    wrong.push(format!("{name}:{start}"));
+                }
+                fields = None;
+            } else if let Some((_, kind)) = line.split_once(':') {
+                let kind = kind.trim().trim_end_matches(',');
+                if kind.contains("WebView") {
+                    view.get_or_insert(number);
+                } else if kind.ends_with("Window") || kind.ends_with("Window>") {
+                    window.get_or_insert(number);
+                }
+            }
+        }
+    }
+    assert!(wrong.is_empty(), "a window is let go before its webview: {wrong:?}");
+}

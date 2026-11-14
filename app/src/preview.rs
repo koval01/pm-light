@@ -45,9 +45,10 @@ thread_local! {
     static TURN: Cell<u64> = const { Cell::new(0) };
 }
 
+/// The webview goes before its window, or X11 ends the program: see `a_webview_is_let_go_before_its_window`.
 struct Open {
-    window: PreviewWindow,
     view: Option<WebView>,
+    window: PreviewWindow,
     file: Attachment,
     data: Option<Arc<Vec<u8>>>,
 }
@@ -321,7 +322,7 @@ fn open_window(app: &App, file: &Attachment) -> Option<u64> {
         }
         window.invoke_begin();
     });
-    OPEN.set(Some(Open { window, view: None, file: file.clone(), data: None }));
+    OPEN.set(Some(Open { view: None, window, file: file.clone(), data: None }));
     TURN.set(TURN.get() + 1);
     Some(TURN.get())
 }

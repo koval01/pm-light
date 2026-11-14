@@ -291,6 +291,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     view::remember_scale(&app);
     stalls::start();
     slint::run_event_loop_until_quit()?;
+    let_webviews_go();
     guard::relaunch_if_asked();
     Ok(())
+}
+
+/// Every webview goes before the window it sits in, which leaves at the end of `main`, while the webviews kept by
+/// each module would go only with the thread. On X11 a window takes its children along, and wry then destroys its own
+/// once more, which GTK ends the program over.
+fn let_webviews_go() {
+    composer::abandon();
+    preview::close();
+    verify::close();
+    mail_view::destroy();
+    print_view::go_away();
+    mail_picture::go_away();
 }

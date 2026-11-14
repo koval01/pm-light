@@ -221,7 +221,7 @@ fn area(height: f64) -> Rect {
     crate::webviews::area("the mail picture", at.x, at.y, WIDTH, height)
 }
 
-fn go_away() {
+pub fn go_away() {
     VIEW.with_borrow_mut(|view| drop(view.take()));
 }
 

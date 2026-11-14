@@ -42,7 +42,7 @@ pub fn own_page(url: &str) -> bool {
     url.starts_with("about:") || url.starts_with("data:")
 }
 
-fn go_away() {
+pub fn go_away() {
     WATCH.with(Timer::stop);
     VIEW.with_borrow_mut(|view| drop(view.take()));
 }

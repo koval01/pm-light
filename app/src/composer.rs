@@ -78,9 +78,10 @@ struct Draft {
     changed: bool,
 }
 
+/// The webview goes before its window, or X11 ends the program: see `a_webview_is_let_go_before_its_window`.
 struct Open {
-    window: ComposeWindow,
     view: WebView,
+    window: ComposeWindow,
     autosave: Timer,
 }
 
@@ -846,7 +847,7 @@ fn open_page(service: &Arc<Service>, window: ComposeWindow, body: &str, begins_a
     } else {
         let _ = view.focus();
     }
-    OPEN.set(Some(Open { window, view, autosave }));
+    OPEN.set(Some(Open { view, window, autosave }));
     show_files();
 }
 
