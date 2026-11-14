@@ -117,9 +117,18 @@ jobs:
         run: scripts/attacks.sh
 
   miri:
-    name: Core's pure code under Miri
+    name: Core's pure code under Miri, ${{ matrix.part }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      # Two halves side by side: one ran a runner past ninety minutes.
+      matrix:
+        include:
+          - part: reading mail
+            modules: "calendar:: eml:: keymap:: mailto:: mapping:: mime:: pattern::"
+          - part: searching and sealing
+            modules: "ranking:: safety:: search:: seal:: sieve:: text:: vcard::"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -138,11 +147,13 @@ jobs:
       # which references may do what: under the older Stacked Borrows, servo_arc, under lol_html's selectors, breaks a
       # rule on a zero-sized retag (docs/SECURITY.md). Decoding real pictures (file_kind, image_metadata, scan) and
       # cleaning large HTML ran a runner out after forty minutes at Miri's pace, a thousand times slower than a build:
-      # those run under AddressSanitizer above and in the fuzzers instead.
+      # those run under AddressSanitizer above and in the fuzzers instead. So does the flood of ten thousand parts, half a
+      # second in a build and not done after fifty minutes under Miri; every other test here takes under 0.03 s in a
+      # build.
       - name: Tests
         env:
           MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-tree-borrows
+          MODULES: ${{ matrix.modules }}
         run: |
-          cargo +nightly miri test --locked -p proton-core --lib -- \
-            mime:: search:: seal:: text:: safety:: sieve:: mailto:: vcard:: eml:: calendar:: pattern:: keymap:: \
-            ranking:: mapping::
+          read -ra modules <<< "$MODULES"
+          cargo +nightly miri test --locked -p proton-core --lib -- "${modules[@]}" --skip mime::tests::a_flood_of_parts_is_cut_off
