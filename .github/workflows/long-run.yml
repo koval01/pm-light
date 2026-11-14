@@ -89,7 +89,7 @@ jobs:
                 sleep 1
               done
             fi
-            grep -E "long run|refused|panic|WARN|ERROR" target/debug/account.log | cut -c1-200 | tail -n 60 || true
+            scripts/check-log.sh target/debug/account.log
             kill "$app" 2>/dev/null || true
             wait "$app" 2>/dev/null || true
             test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }'
@@ -107,7 +107,9 @@ jobs:
           name: long-run-linux-${{ matrix.way }}
           if-no-files-found: warn
           retention-days: 14
-          path: target/debug/account.soak
+          path: |
+            target/debug/account.soak
+            target/debug/account.log
 
   others:
     name: ${{ matrix.os }}, the app's own actions
@@ -145,7 +147,7 @@ jobs:
             kill -0 "$app" 2>/dev/null || { echo "::error::the app ended before the run did"; break; }
             sleep 1
           done
-          grep -E "long run|refused|panic|WARN|ERROR" target/debug/account.log | cut -c1-200 | tail -n 60 || true
+          scripts/check-log.sh target/debug/account.log
           kill "$app" 2>/dev/null || true
           test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }
       - name: Memory and requests
@@ -157,4 +159,6 @@ jobs:
           name: long-run-${{ runner.os }}
           if-no-files-found: warn
           retention-days: 14
-          path: target/debug/account.soak
+          path: |
+            target/debug/account.soak
+            target/debug/account.log

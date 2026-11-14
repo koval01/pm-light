@@ -143,6 +143,14 @@ Russian and German. The app and `scripts/photograph-tour.sh` take turns through 
 `--import` fills the inbox with made-up letters through Proton's import call (`core/src/import.rs`), so the check
 always has mail to open: a thread, a reply, a long letter, attachments, an inline picture, Cyrillic, remote images.
 
+`.github/workflows/long-run.yml` drives the app for an hour on every system, by hand and weekly: the app at random by
+a seed (`soak.rs`), and on Linux real clicks and keys at random places of its window as well. It fails on memory that
+keeps growing, on a flood of requests and on requests repeated within a second (`scripts/soak-report.py`), and on
+Linux traces every connection of the app and its webviews' processes, directly and through Tor
+(`scripts/connections.py`). In every check, this one, the account check and its tour, the core refuses every request
+but a read, and the app refuses what would wait on a person or leave the window (`checks.rs`): nothing of the account
+changes, whatever is clicked.
+
 ## Test builds
 
 A build pointed at a local server opens a real window, and someone may try to sign in to it. It must say `TEST BUILD` on

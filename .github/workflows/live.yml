@@ -91,7 +91,8 @@ jobs:
           if [ "$RUNNER_OS" = Windows ]; then
             echo "Edge started by: $(edge_parents | tr '\r\n' '  ')"
           fi
-          grep -E "account check|mail picture|screen tour|session|link|earlier page|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+          scripts/check-log.sh target/debug/account.log 200
+          grep -E "The error was|Details:" target/debug/account.log | cut -c1-200 || true
           kill %1 2>/dev/null || true
           test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
           cat "$note.txt"
@@ -122,7 +123,8 @@ jobs:
               scripts/photograph-tour.sh "$note" target/debug/screens
             fi
             scripts/memory-rounds.sh "$note.memory"
-            grep -E "account check|mail picture|screen tour|session|link|earlier page|WARN|ERROR|The error was|Details:" target/debug/account.log | cut -c1-200 || true
+            scripts/check-log.sh target/debug/account.log 200
+            grep -E "The error was|Details:" target/debug/account.log | cut -c1-200 || true
             kill %1 2>/dev/null || true
             test -f "$note.txt" || { echo "No report of the account check"; exit 1; }
             cat "$note.txt"
