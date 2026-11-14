@@ -12,7 +12,7 @@ use proton_core::{
 };
 use slint::{ComponentHandle, Timer};
 use std::{cell::RefCell, path::PathBuf, sync::Arc, time::Duration};
-use wry::{PageLoadEvent, Rect, WebView, dpi::LogicalPosition};
+use wry::{PageLoadEvent, Rect, dpi::LogicalPosition};
 
 pub mod check;
 #[cfg(target_os = "macos")]
@@ -65,7 +65,7 @@ pub struct Picture {
 }
 
 thread_local! {
-    static VIEW: RefCell<Option<WebView>> = const { RefCell::new(None) };
+    static VIEW: RefCell<Option<crate::webviews::Held>> = const { RefCell::new(None) };
     /// How far the picture has come, for the journal and for a check that stops on the way.
     static STAGE: std::cell::Cell<&'static str> = const { std::cell::Cell::new("not begun") };
 }
@@ -222,7 +222,7 @@ fn area(height: f64) -> Rect {
 }
 
 pub fn go_away() {
-    crate::webviews::let_go("the mail picture", VIEW.take());
+    drop(VIEW.take());
 }
 
 /// Told once: the picture is the mail, readable by whoever gets it.
@@ -309,7 +309,7 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
     match built {
         Ok(view) => {
             crate::webviews::scripts_settled(&view);
-            VIEW.set(Some(view));
+            VIEW.set(Some(crate::webviews::Held::new("the mail picture", view)));
             reached("page made");
         }
         Err(error) => {

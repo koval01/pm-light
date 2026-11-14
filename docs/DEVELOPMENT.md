@@ -236,10 +236,12 @@ screen, and it never touches the real Keychain entries.
   them and hands its events on every 16 ms. wry needs its `x11` feature for a webview in the window, or refuses every
   one. WebKitGTK's switch for page scripts also stops the app's calls into the page: `webviews::PageScriptsOff`.
   A hidden WebKitGTK page is never laid out, so the mail picture's page is shown past the window's edge.
-- **A window that goes before its webview on X11.** X11 takes a window's children along with it, and wry then destroys
-  its own child window once more: GTK ends the program over that, with a `BadWindow` on `DestroyWindow`. Fields go in
-  the order they are written, so a webview is written before its window (`app/tests/structure.rs` holds that), and
-  `main` lets every webview go before the main window when the app quits.
+- **A webview going on X11.** wry destroys its X11 window before the GTK widgets in it. The server takes their windows
+  along, and GTK, destroying them again in its loop, gets a `BadWindow` on `DestroyWindow` and ends the program: a
+  race, lost now and then. `webviews::Held` closes the GTK window and runs GTK's loop first, while the X11 window still
+  exists, and every webview kept is one. A webview also goes before the window it sits in, which takes its children
+  along the same way: fields go in the order they are written, and `main` lets every webview go before the main window.
+  `app/tests/structure.rs` holds both. `GDK_SYNCHRONIZE=1` hides the race: check without it.
 - **A webview with no size on X11.** wry makes an X window of the size a webview is given, and X11 refuses one with no
   width or height: GTK then ends the program, with a `BadValue` on `CreateWindow` and no panic to contain. A layout
   not yet measured gives just that. Every webview takes its place from `webviews::area`, a pixel at least, which says

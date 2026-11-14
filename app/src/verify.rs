@@ -6,7 +6,7 @@ use crate::{App, Auth};
 use slint::ComponentHandle;
 use std::cell::RefCell;
 use url::Url;
-use wry::{PageLoadEvent, ProxyConfig, ProxyEndpoint, Rect, WebView, WebViewBuilder};
+use wry::{PageLoadEvent, ProxyConfig, ProxyEndpoint, Rect, WebViewBuilder};
 
 const PAGE_HOST: &str = "verify.proton.me";
 const OUTCOME_SCHEME: &str = "proton-mail-light-verify";
@@ -86,7 +86,7 @@ fn is_proton(url: &Url) -> bool {
 }
 
 thread_local! {
-    static VIEW: RefCell<Option<WebView>> = const { RefCell::new(None) };
+    static VIEW: RefCell<Option<crate::webviews::Held>> = const { RefCell::new(None) };
 }
 
 fn bounds(app: &App) -> Rect {
@@ -147,7 +147,7 @@ pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + Clone + Send + 'st
             .build_as_child(&app.window().window_handle())
     });
     built.is_ok_and(|view| {
-        VIEW.set(Some(view));
+        VIEW.set(Some(crate::webviews::Held::new("the verification page", view)));
         true
     })
 }
@@ -161,7 +161,7 @@ pub fn place(app: &App) {
 }
 
 pub fn close() {
-    crate::webviews::let_go("the verification page", VIEW.take());
+    drop(VIEW.take());
     if let Some(tor) = crate::tor_link::tor() {
         tor.close_page_door();
     }

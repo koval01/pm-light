@@ -18,7 +18,7 @@ use std::{
     time::Duration,
 };
 use wry::{
-    Rect, WebView,
+    Rect,
     http::{Request, Response, StatusCode, header},
 };
 
@@ -47,7 +47,7 @@ thread_local! {
 
 /// The webview goes before its window, or X11 ends the program: see `a_webview_is_let_go_before_its_window`.
 struct Open {
-    view: Option<WebView>,
+    view: Option<crate::webviews::Held>,
     window: PreviewWindow,
     file: Attachment,
     data: Option<Arc<Vec<u8>>>,
@@ -151,7 +151,7 @@ fn bounds(window: &PreviewWindow) -> Rect {
     )
 }
 
-fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<WebView> {
+fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<crate::webviews::Held> {
     let panel = window.global::<crate::Theme>().get_panel();
     let start = if matches!(shown, Shown::Pdf) { FILE_PATH } else { PAGE_PATH };
     let served = Arc::new(served);
@@ -174,7 +174,7 @@ fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<WebView
             crate::webviews::scripts_settled(&view);
             let _ = view.zoom(look::zoom());
             mail_view::round_lower_corners(&view, CORNER);
-            Some(view)
+            Some(crate::webviews::Held::new("a preview", view))
         }
         Err(error) => {
             log::error!("no webview for a preview: {}", crate::webviews::failure(&error));
@@ -261,7 +261,7 @@ fn save() {
 
 pub fn close() {
     let Some(mut open) = OPEN.take() else { return };
-    crate::webviews::let_go("a preview", open.view.take());
+    drop(open.view.take());
     if let Some(app) = actions::main_window() {
         modal::dismiss(app.window(), open.window.window());
     }

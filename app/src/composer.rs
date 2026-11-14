@@ -19,7 +19,7 @@ use rand::RngCore;
 use rfd::FileDialog;
 use slint::{ComponentHandle, ModelRc, Timer, TimerMode, VecModel};
 use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc, time::Duration};
-use wry::{DragDropEvent, Rect, WebView, http::Request};
+use wry::{DragDropEvent, Rect, http::Request};
 
 const AUTOSAVE: Duration = Duration::from_millis(2500);
 const WIDTH: f32 = 720.0;
@@ -80,7 +80,7 @@ struct Draft {
 
 /// The webview goes before its window, or X11 ends the program: see `a_webview_is_let_go_before_its_window`.
 struct Open {
-    view: WebView,
+    view: crate::webviews::Held,
     window: ComposeWindow,
     autosave: Timer,
 }
@@ -842,7 +842,7 @@ fn open_page(service: &Arc<Service>, window: ComposeWindow, body: &str, begins_a
     } else {
         let _ = view.focus();
     }
-    OPEN.set(Some(Open { view, window, autosave }));
+    OPEN.set(Some(Open { view: crate::webviews::Held::new("the editor", view), window, autosave }));
     show_files();
 }
 
@@ -866,7 +866,7 @@ pub fn abandon() {
 /// The page goes first, and then the window it sat in.
 fn put_down(open: Option<Open>) {
     let Some(Open { view, window, .. }) = open else { return };
-    crate::webviews::let_go("the editor", Some(view));
+    drop(view);
     if let Some(app) = actions::main_window() {
         modal::dismiss(app.window(), window.window());
     }

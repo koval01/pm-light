@@ -202,3 +202,24 @@ fn a_webview_is_let_go_before_its_window() {
     }
     assert!(wrong.is_empty(), "a window is let go before its webview: {wrong:?}");
 }
+
+/// A webview kept is a `webviews::Held`, which on Linux takes its GTK widgets down before wry destroys their X11
+/// window. A bare one kept anywhere else would go the other way, and GTK would end the program.
+#[test]
+fn every_webview_kept_is_held() {
+    let mut bare = Vec::new();
+    for (name, text) in sources().expect("the sources") {
+        if is_test_file(&name) || name == "app/src/webviews.rs" {
+            continue;
+        }
+        for (number, line) in text.lines().enumerate() {
+            let line = line.trim();
+            let kept = ["<WebView>", "<wry::WebView>"].iter().any(|kind| line.contains(kind))
+                || [": WebView,", ": wry::WebView,"].iter().any(|kind| line.ends_with(kind));
+            if kept {
+                bare.push(format!("{name}:{}", number + 1));
+            }
+        }
+    }
+    assert!(bare.is_empty(), "a webview is kept bare, not as webviews::Held: {bare:?}");
+}

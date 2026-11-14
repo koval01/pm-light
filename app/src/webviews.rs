@@ -89,13 +89,48 @@ const LARGEST: f64 = 16_384.0;
 /// Webviews whose last place had no room, so that the journal says so once and not on every frame of a move.
 static SHRUNK: Mutex<Vec<&'static str>> = Mutex::new(Vec::new());
 
-/// Lets a webview go, and says so in the journal. On Linux its X11 window goes with it, and an X11 error ends the
-/// program without a word of its own: these two lines tell where it was.
-pub fn let_go(what: &'static str, view: Option<wry::WebView>) {
-    let Some(view) = view else { return };
-    log::debug!("the webview for {what} goes");
-    drop(view);
-    log::debug!("the webview for {what} is gone");
+/// A webview the app keeps, which says in the journal when it goes. On Linux it takes its GTK widgets down first.
+/// wry destroys their X11 window before them, so the server takes theirs along, and GTK, destroying those again in its
+/// loop, gets a `BadWindow` on `DestroyWindow` and ends the program. Every webview kept is one of these
+/// (`app/tests/structure.rs`), so that none goes the other way.
+pub struct Held {
+    view: wry::WebView,
+    what: &'static str,
+}
+
+impl Held {
+    /// `what` is a fixed word for the journal.
+    pub const fn new(what: &'static str, view: wry::WebView) -> Self {
+        Self { view, what }
+    }
+}
+
+impl std::ops::Deref for Held {
+    type Target = wry::WebView;
+
+    fn deref(&self) -> &wry::WebView {
+        &self.view
+    }
+}
+
+impl Drop for Held {
+    fn drop(&mut self) {
+        log::debug!("the webview for {} goes", self.what);
+        #[cfg(target_os = "linux")]
+        take_down_widgets(&self.view);
+    }
+}
+
+/// Closes the GTK window wry put the page in, and runs GTK's loop until it is gone, while its X11 parent still exists.
+#[cfg(target_os = "linux")]
+fn take_down_widgets(view: &wry::WebView) {
+    use gtk::prelude::{Cast as _, GtkWindowExt as _, WidgetExt as _};
+    use wry::WebViewExtUnix as _;
+    let Some(window) = view.webview().toplevel().and_then(|top| top.downcast::<gtk::Window>().ok()) else { return };
+    window.close();
+    while gtk::events_pending() {
+        gtk::main_iteration_do(false);
+    }
 }
 
 /// Notes whether `what` has room now, and answers whether it has just lost it.

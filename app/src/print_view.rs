@@ -6,7 +6,7 @@ use crate::{App, mail_view};
 use proton_core::print::PrintDocument;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{cell::RefCell, time::Duration};
-use wry::{PageLoadEvent, WebView};
+use wry::PageLoadEvent;
 
 const POLICY: &str = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:";
 /// As in the reader: a mail's `:host` lands on an inner element, and nothing of it reaches the marks.
@@ -21,7 +21,7 @@ const CHECK_PANEL: Duration = Duration::from_millis(500);
 const PANEL_MAY_TAKE: Duration = Duration::from_secs(600);
 
 thread_local! {
-    static VIEW: RefCell<Option<WebView>> = const { RefCell::new(None) };
+    static VIEW: RefCell<Option<crate::webviews::Held>> = const { RefCell::new(None) };
     static WATCH: Timer = Timer::default();
 }
 
@@ -44,7 +44,7 @@ pub fn own_page(url: &str) -> bool {
 
 pub fn go_away() {
     WATCH.with(Timer::stop);
-    crate::webviews::let_go("printing", VIEW.take());
+    drop(VIEW.take());
 }
 
 #[cfg(target_os = "macos")]
@@ -136,7 +136,7 @@ pub fn print(app: &App, prepared: PrintDocument) {
     match built {
         Ok(view) => {
             crate::webviews::scripts_settled(&view);
-            VIEW.set(Some(view));
+            VIEW.set(Some(crate::webviews::Held::new("printing", view)));
         }
         Err(_) => log::warn!("no webview to print with"),
     }

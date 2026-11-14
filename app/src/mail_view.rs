@@ -2,7 +2,7 @@
 //! nothing, follows no link, and exists only while such a mail is open.
 
 use crate::App;
-use crate::webviews::PageScriptsOff as _;
+use crate::webviews::{Held, PageScriptsOff as _};
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -27,7 +27,7 @@ static SERVED: crate::webviews::OnePage = crate::webviews::OnePage::new("mailpag
 const LONGEST_WAIT: Duration = Duration::from_millis(1200);
 
 thread_local! {
-    static VIEW: RefCell<Option<WebView>> = const { RefCell::new(None) };
+    static VIEW: RefCell<Option<Held>> = const { RefCell::new(None) };
     /// The page goes on screen when it is done, so nobody watches it being drawn.
     static WAITING: Cell<bool> = const { Cell::new(false) };
     static PATIENCE: Timer = Timer::default();
@@ -302,7 +302,7 @@ pub fn show(app: &App, html: &str) {
                 SHOWN.set(!WAITING.get());
                 round_the_corner(&created, app);
                 let _ = created.zoom(crate::look::zoom());
-                *view = Some(created);
+                *view = Some(Held::new("a mail", created));
             }
             Err(error) => {
                 log::error!("no webview for mail: {}", crate::webviews::failure(&error));
@@ -509,7 +509,7 @@ pub fn close() {
 /// Nothing of a mail may outlive the session.
 pub fn destroy() {
     WAITING.set(false);
-    crate::webviews::let_go("a mail", VIEW.take());
+    drop(VIEW.take());
 }
 
 /// Starts WebKit before it is needed, so that the first mail opens like any other.
