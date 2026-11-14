@@ -90,6 +90,7 @@ jobs:
               done
             fi
             scripts/check-log.sh target/debug/account.log
+            echo "trace: $(wc -l < target/debug/connections.trace 2>/dev/null || echo no) lines, $(grep -c "connect(" target/debug/connections.trace 2>/dev/null || echo 0) connects"
             kill "$app" 2>/dev/null || true
             wait "$app" 2>/dev/null || true
             test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }'
@@ -107,9 +108,11 @@ jobs:
           name: long-run-linux-${{ matrix.way }}
           if-no-files-found: warn
           retention-days: 14
+          # The trace holds addresses, ports and the paths of local sockets, with no data (strace -s 0).
           path: |
             target/debug/account.soak
             target/debug/account.log
+            target/debug/connections.trace
 
   others:
     name: ${{ matrix.os }}, the app's own actions
