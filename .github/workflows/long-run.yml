@@ -87,13 +87,15 @@ jobs:
               scripts/random-clicks.sh "$MINUTES" "$seed" &
               for _ in $(seq 1 $(((MINUTES + 15) * 60))); do
                 [ -f "$note.done" ] && break
-                kill -0 "$app" 2>/dev/null || { echo "::error::the app ended before the run did"; break; }
+                ps -p "$app" > /dev/null || { echo "::error::the app ended before the run did"; break; }
                 sleep 1
               done
             fi
             scripts/check-log.sh target/debug/account.log
             echo "trace: $(wc -l < target/debug/connections.trace 2>/dev/null || echo no) lines, $(grep -c "connect(" target/debug/connections.trace 2>/dev/null || echo 0) connects"
-            kill "$app" 2>/dev/null || true
+            # The app runs as this user, and strace, which started it, as root.
+            pkill -f target/debug/proton-mail-light || true
+            sudo kill "$app" 2>/dev/null || true
             wait "$app" 2>/dev/null || true
             test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }'
       - name: Memory and requests
