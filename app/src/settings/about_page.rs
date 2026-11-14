@@ -44,7 +44,9 @@ pub fn components() -> impl Iterator<Item = Component<'static>> {
 pub fn matching<'a>(wanted: &str, all: impl Iterator<Item = Component<'a>>) -> Vec<Component<'a>> {
     let wanted = wanted.trim().to_lowercase();
     all.filter(|component| {
-        wanted.is_empty() || component.name.to_lowercase().contains(&wanted) || component.license.to_lowercase().contains(&wanted)
+        wanted.is_empty()
+            || component.name.to_lowercase().contains(&wanted)
+            || component.license.to_lowercase().contains(&wanted)
     })
     .collect()
 }
@@ -79,15 +81,22 @@ pub fn page(ctx: &Ctx) {
             note(COPYRIGHT),
             ghost("repository", REPOSITORY, true),
         ]),
-        section("license", &ctx.say("about.licenseTitle"), "", vec![
-            note(&ctx.say("about.license")),
-            ghost("about-license", &ctx.say("about.readLicense"), true),
-        ]),
-        section("components", &ctx.say("about.componentsTitle"), "", vec![
-            note(&ctx.say_with("about.components", &[("count", &count)])),
-            rows::SettingsRow { detail: ctx.say("about.search").into(), ..rows::field(SEARCH, "", "") },
-            ghost("about-notices", &ctx.say("about.readNotices"), true),
-        ]),
+        section(
+            "license",
+            &ctx.say("about.licenseTitle"),
+            "",
+            vec![note(&ctx.say("about.license")), ghost("about-license", &ctx.say("about.readLicense"), true)],
+        ),
+        section(
+            "components",
+            &ctx.say("about.componentsTitle"),
+            "",
+            vec![
+                note(&ctx.say_with("about.components", &[("count", &count)])),
+                rows::SettingsRow { detail: ctx.say("about.search").into(), ..rows::field(SEARCH, "", "") },
+                ghost("about-notices", &ctx.say("about.readNotices"), true),
+            ],
+        ),
         section(LIST, "", "", list_rows(ctx)),
     ]);
 }

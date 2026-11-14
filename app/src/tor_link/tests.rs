@@ -12,7 +12,12 @@ fn words() -> Words {
 }
 
 fn status(state: TorState, percent: u8, circuit: &[&str]) -> TorStatus {
-    TorStatus { state, percent, circuit: circuit.iter().map(|country| (*country).to_string()).collect(), hops: Vec::new() }
+    TorStatus {
+        state,
+        percent,
+        circuit: circuit.iter().map(|country| (*country).to_string()).collect(),
+        hops: Vec::new(),
+    }
 }
 
 #[test]

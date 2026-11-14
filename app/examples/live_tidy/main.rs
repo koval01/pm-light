@@ -16,7 +16,13 @@ use proton_core::{
     compose::{ComposeMode, ComposeState},
     model::{FilterDraft, ListOptions},
 };
+use std::io::Write as _;
 use std::sync::Arc;
+
+/// A line of the report, to the terminal that runs this; a closed one is no reason to stop.
+fn say(text: &str) {
+    let _ = writeln!(std::io::stdout().lock(), "{text}");
+}
 
 /// Where Proton's own mail comes from.
 const PROTON_DOMAINS: [&str; 4] = ["proton.me", "protonmail.com", "protonmail.ch", "pm.me"];
@@ -57,27 +63,35 @@ async fn run() -> Result<(), String> {
     let saved = Entry::new("org.koval-dev.proton-mail-light", "session")
         .and_then(|entry| entry.get_password())
         .map_err(|e| format!("keychain: {e}"))?;
-    let service = Service::new(PROTON_API, Arc::new(Borrowed(Some(saved))), Box::new(|_| {})).map_err(|e| e.to_string())?;
+    let service =
+        Service::new(PROTON_API, Arc::new(Borrowed(Some(saved))), Box::new(|_| {})).map_err(|e| e.to_string())?;
     service.forbid_token_refresh();
     if service.restore().await.map_err(|e| e.to_string())? != AuthStep::Ready {
         return Err("the saved session is not usable without a refresh".into());
     }
 
     service.view_open("inbox").await;
-    let rows = service.list("inbox", &ListOptions { limit: Some(150), ..Default::default() }).await.map_err(|e| e.to_string())?;
-    let strangers: Vec<String> = rows.iter().filter(|row| !from_proton(&row.from.email)).map(|row| row.id.clone()).collect();
-    println!("inbox: {} mails, {} not from Proton", rows.len(), strangers.len());
+    let rows = service
+        .list("inbox", &ListOptions { limit: Some(150), ..Default::default() })
+        .await
+        .map_err(|e| e.to_string())?;
+    let strangers: Vec<String> =
+        rows.iter().filter(|row| !from_proton(&row.from.email)).map(|row| row.id.clone()).collect();
+    say(&format!("inbox: {} mails, {} not from Proton", rows.len(), strangers.len()));
     if !strangers.is_empty() && std::env::args().any(|argument| argument == "--delete") {
         service.view_move(Some(strangers.clone()), "trash").await.map_err(|e| e.to_string())?;
         service.view_open("trash").await;
         service.view_delete(Some(strangers.clone())).await.map_err(|e| e.to_string())?;
-        println!("deleted for good: {}", strangers.len());
+        say(&format!("deleted for good: {}", strangers.len()));
     }
 
     if std::env::args().any(|argument| argument == "--sample-draft") {
-        let drafts = service.list("drafts", &ListOptions { limit: Some(50), ..Default::default() }).await.map_err(|e| e.to_string())?;
+        let drafts = service
+            .list("drafts", &ListOptions { limit: Some(50), ..Default::default() })
+            .await
+            .map_err(|e| e.to_string())?;
         if drafts.iter().any(|draft| draft.subject == SAMPLE_SUBJECT) {
-            println!("the sample draft is there already");
+            say("the sample draft is there already");
         } else {
             let draft = ComposeState {
                 mode: ComposeMode::New,
@@ -95,18 +109,22 @@ async fn run() -> Result<(), String> {
                 plain: false,
             };
             service.save_draft(&draft).await.map_err(|e| e.to_string())?;
-            println!("a sample draft saved, with no recipient");
+            say("a sample draft saved, with no recipient");
         }
     }
 
     if std::env::args().any(|argument| argument == "--import") {
-        let inbox = service.list("inbox", &ListOptions { limit: Some(150), ..Default::default() }).await.map_err(|e| e.to_string())?;
+        let inbox = service
+            .list("inbox", &ListOptions { limit: Some(150), ..Default::default() })
+            .await
+            .map_err(|e| e.to_string())?;
         if inbox.iter().any(|row| row.subject == "Autumn sale: up to 40% off") {
-            println!("the set of test mail is in the inbox already");
+            say("the set of test mail is in the inbox already");
         } else {
-            let mails: Vec<(String, bool)> = corpus::all().into_iter().map(|mail| (mail.literal, mail.unread)).collect();
+            let mails: Vec<(String, bool)> =
+                corpus::all().into_iter().map(|mail| (mail.literal, mail.unread)).collect();
             let ids = service.import_mail(&mails).await.map_err(|e| e.to_string())?;
-            println!("imported {} test mails into the inbox", ids.len());
+            say(&format!("imported {} test mails into the inbox", ids.len()));
         }
     }
 
@@ -115,20 +133,20 @@ async fn run() -> Result<(), String> {
     let draft = FilterDraft { id: kept, enabled: Some(true), name: FILTER_NAME.to_string(), sieve: sieve() };
     let issues = service.save_filter(&draft).await.map_err(|e| e.to_string())?;
     if issues.is_empty() {
-        println!("filter saved: mail from anyone but Proton goes to spam");
+        say("filter saved: mail from anyone but Proton goes to spam");
     } else {
-        println!("Proton refused the filter: {}", issues.join("; "));
+        say(&format!("Proton refused the filter: {}", issues.join("; ")));
     }
     Ok(())
 }
 
 fn main() {
     let Ok(runtime) = tokio::runtime::Builder::new_multi_thread().enable_all().build() else {
-        println!("stopped: no runtime");
+        say("stopped: no runtime");
         return;
     };
     if let Err(error) = runtime.block_on(run()) {
-        println!("stopped: {error}");
+        say(&format!("stopped: {error}"));
     }
 }
 
@@ -139,8 +157,13 @@ mod tests {
     #[test]
     fn proton_is_known_by_the_domain_alone() {
         assert!(from_proton("no-reply@proton.me") && from_proton("x@PM.ME"));
-        assert!(from_proton("welcome@welcome.proton.me") && from_proton("a@notify.protonmail.ch"), "subdomains are Proton's too");
-        assert!(!from_proton("someone@koval-dev.org") && !from_proton("x@proton.me.evil.example") && !from_proton("noat"));
+        assert!(
+            from_proton("welcome@welcome.proton.me") && from_proton("a@notify.protonmail.ch"),
+            "subdomains are Proton's too"
+        );
+        assert!(
+            !from_proton("someone@koval-dev.org") && !from_proton("x@proton.me.evil.example") && !from_proton("noat")
+        );
     }
 
     #[test]

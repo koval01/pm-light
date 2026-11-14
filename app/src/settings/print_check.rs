@@ -111,7 +111,9 @@ pub fn heard(ctx: &Ctx, id: &str) {
         SCAN => scan(ctx),
         CHECK => {
             let (service, codes) = (ctx.service.clone(), seal::pasted_codes(&ctx.text(CODES)));
-            ctx.load(async move { service.check_sheets(codes, Vec::new()).await }, |ctx, report| show_report(ctx, &report));
+            ctx.load(async move { service.check_sheets(codes, Vec::new()).await }, |ctx, report| {
+                show_report(ctx, &report);
+            });
         }
         _ => {}
     }

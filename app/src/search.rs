@@ -109,7 +109,8 @@ fn form_of(window: &SearchBuilder) -> Form {
 
 fn pick_date(window: &SearchBuilder, heading: String, from: bool) {
     let value = if from { window.get_after() } else { window.get_before() };
-    let request = moment_picker::Request { heading, value: value.to_string(), with_time: false, earliest: None, check: None };
+    let request =
+        moment_picker::Request { heading, value: value.to_string(), with_time: false, earliest: None, check: None };
     let weak = window.as_weak();
     moment_picker::open(window, &request, move |field| {
         let Some(window) = weak.upgrade() else { return };

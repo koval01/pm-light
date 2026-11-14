@@ -229,7 +229,10 @@ fn read_part(code: &str) -> Option<Part<'_>> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Assembly {
-    Incomplete { have: usize, need: usize },
+    Incomplete {
+        have: usize,
+        need: usize,
+    },
     /// The signature holds, and what came with it does not match what it signed.
     Damaged,
     Complete(Box<SealedMail>),
@@ -285,7 +288,6 @@ fn text_from_codes(codes: &[String], wanted: &str) -> std::result::Result<String
     };
     let text = inflate(&packed).and_then(|bytes| String::from_utf8(bytes).ok());
     text.ok_or(Assembly::Damaged)
-
 }
 
 /// Builds the mail from a statement whose signature held, and the codes read with it.

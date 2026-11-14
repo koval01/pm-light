@@ -6,7 +6,9 @@ fn the_sample_is_one_mail_with_its_heading_and_body() {
     let made = sample_document(&PrintOptions::default(), &labels);
     assert_eq!(made.parts.len(), 1);
     let html = made.parts.first().map(|part| part.html.as_str()).unwrap_or_default();
-    assert!(html.contains("A sample mail") && html.contains("Sample Sender") && html.contains("The end of the sample."));
+    assert!(
+        html.contains("A sample mail") && html.contains("Sample Sender") && html.contains("The end of the sample.")
+    );
     assert!(html.contains(SQUARE), "its picture travels inside it");
 }
 

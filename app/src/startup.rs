@@ -13,7 +13,11 @@ pub fn started_hidden() -> bool {
 
 /// On macOS the thing to start is the bundle around the program.
 fn bundle_of(program: &Path) -> PathBuf {
-    program.ancestors().find(|path| path.extension().is_some_and(|extension| extension == "app")).unwrap_or(program).to_path_buf()
+    program
+        .ancestors()
+        .find(|path| path.extension().is_some_and(|extension| extension == "app"))
+        .unwrap_or(program)
+        .to_path_buf()
 }
 
 fn launcher() -> Option<AutoLaunch> {
@@ -35,17 +39,4 @@ pub fn set(on: bool) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_program_in_a_bundle_starts_as_the_bundle() {
-        let program = Path::new("/Applications/Proton Mail Light.app/Contents/MacOS/proton-mail-light");
-        assert_eq!(bundle_of(program), Path::new("/Applications/Proton Mail Light.app"));
-    }
-
-    #[test]
-    fn a_lone_program_starts_as_itself() {
-        assert_eq!(bundle_of(Path::new("/opt/proton-mail-light")), Path::new("/opt/proton-mail-light"));
-    }
-}
+mod tests;

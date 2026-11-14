@@ -59,7 +59,8 @@ mod windows {
         policy.Anonymous.Flags = NO_REMOTE_IMAGES | NO_LOW_LABEL_IMAGES | PREFER_SYSTEM32_IMAGES;
         let size = size_of::<PROCESS_MITIGATION_IMAGE_LOAD_POLICY>();
         // Safety: the buffer is the policy's own structure, of its own size, alive for the call.
-        let set = unsafe { SetProcessMitigationPolicy(ProcessImageLoadPolicy, (&raw const policy).cast::<c_void>(), size) };
+        let set =
+            unsafe { SetProcessMitigationPolicy(ProcessImageLoadPolicy, (&raw const policy).cast::<c_void>(), size) };
         if set == 0 {
             missing.push("the library loading policy was not taken");
         }

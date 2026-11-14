@@ -1,6 +1,9 @@
 //! The account, what pays for it, its sessions and sign-in log.
 
-use super::{Value, PLAN_TYPE_BASE, PaymentMethod, Invoice, InvoiceState, Billing, BillingPlan, Account, Plan, AccountSession, AuthLogEntry, Referrals, Referred, ReferredState, SmtpToken, Organization, Member, MemberState};
+use super::{
+    Account, AccountSession, AuthLogEntry, Billing, BillingPlan, Invoice, InvoiceState, Member, MemberState,
+    Organization, PLAN_TYPE_BASE, PaymentMethod, Plan, Referrals, Referred, ReferredState, SmtpToken, Value,
+};
 
 const MEMBER_ROLE_ADMIN: u64 = 2;
 
@@ -49,12 +52,7 @@ pub(super) fn to_invoice(row: &Value) -> Invoice {
     }
 }
 
-pub fn to_billing(
-    user: &Value,
-    subscription: Option<&Value>,
-    methods: &[Value],
-    invoices: &[Value],
-) -> Billing {
+pub fn to_billing(user: &Value, subscription: Option<&Value>, methods: &[Value], invoices: &[Value]) -> Billing {
     let text = |v: &Value, name: &str| v.get(name).and_then(Value::as_str).unwrap_or_default().to_string();
     let number = |v: &Value, name: &str| v.get(name).and_then(Value::as_i64).unwrap_or(0);
     let plan = subscription.zip(base_plan(subscription)).map(|(s, p)| BillingPlan {

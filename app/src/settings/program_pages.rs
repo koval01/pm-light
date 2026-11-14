@@ -56,11 +56,14 @@ fn draw_referrals(ctx: &Ctx, referrals: &Referrals) {
     let mut top = vec![note(&ctx.say("referral.about"))];
     if referrals.most > 0 {
         let currency = &referrals.currency;
-        top.push(note(&ctx.say_with("referral.reward", &[
-            ("you", &money(referrals.for_you, currency)),
-            ("friend", &money(referrals.for_friend, currency)),
-            ("most", &money(referrals.most, currency)),
-        ])));
+        top.push(note(&ctx.say_with(
+            "referral.reward",
+            &[
+                ("you", &money(referrals.for_you, currency)),
+                ("friend", &money(referrals.for_friend, currency)),
+                ("most", &money(referrals.most, currency)),
+            ],
+        )));
     }
     if referrals.link.is_empty() {
         top.push(note(&ctx.say("referral.unavailable")));
@@ -69,7 +72,10 @@ fn draw_referrals(ctx: &Ctx, referrals: &Referrals) {
         link.button = ctx.say("referral.copy").into();
         top.push(link);
     }
-    let earned = ctx.say_with("referral.earnedValue", &[("months", &referrals.reward_months.to_string()), ("limit", &referrals.reward_limit.to_string())]);
+    let earned = ctx.say_with(
+        "referral.earnedValue",
+        &[("months", &referrals.reward_months.to_string()), ("limit", &referrals.reward_limit.to_string())],
+    );
     top.push(fact(&ctx.say("referral.earned"), &earned));
     top.push(fact(&ctx.say("referral.left"), &referrals.emails_left.to_string()));
     let mut people: Vec<SettingsRow> = referrals
@@ -102,8 +108,21 @@ fn app_row(ctx: &Ctx, id: &str, title: &str, detail: &str) -> SettingsRow {
 
 pub fn apps(ctx: &Ctx) {
     ctx.show(vec![
-        section("", &ctx.say("apps.mobile"), "", vec![app_row(ctx, "open-android", "apps.android", ""), app_row(ctx, "open-ios", "apps.ios", "")]),
-        section("", &ctx.say("apps.computer"), "", vec![app_row(ctx, "open-desktop", "apps.desktop", ""), app_row(ctx, "open-bridge", "apps.bridge", "apps.bridgeAbout")]),
+        section(
+            "",
+            &ctx.say("apps.mobile"),
+            "",
+            vec![app_row(ctx, "open-android", "apps.android", ""), app_row(ctx, "open-ios", "apps.ios", "")],
+        ),
+        section(
+            "",
+            &ctx.say("apps.computer"),
+            "",
+            vec![
+                app_row(ctx, "open-desktop", "apps.desktop", ""),
+                app_row(ctx, "open-bridge", "apps.bridge", "apps.bridgeAbout"),
+            ],
+        ),
     ]);
 }
 
@@ -112,8 +131,17 @@ pub fn backup(ctx: &Ctx) {
 }
 
 fn token_row(ctx: &Ctx, token: &SmtpToken) -> SettingsRow {
-    let address = ctx.service.addresses().into_iter().find(|address| address.id == token.address_id).map_or_else(String::new, |address| address.email);
-    let used = if token.last_used == 0 { ctx.say("smtp.neverUsed") } else { ctx.say_with("smtp.used", &[("when", &rows::moment(token.last_used))]) };
+    let address = ctx
+        .service
+        .addresses()
+        .into_iter()
+        .find(|address| address.id == token.address_id)
+        .map_or_else(String::new, |address| address.email);
+    let used = if token.last_used == 0 {
+        ctx.say("smtp.neverUsed")
+    } else {
+        ctx.say_with("smtp.used", &[("when", &rows::moment(token.last_used))])
+    };
     let mut row = entry(&format!("token:{}", token.id), &token.name, &format!("{address} · {used}"));
     row.button = ctx.say("smtp.delete").into();
     row
@@ -137,7 +165,12 @@ fn new_token_rows(ctx: &Ctx, name: &str, code: &str) -> Vec<SettingsRow> {
 }
 
 fn draw_imap(ctx: &Ctx, tokens: Vec<SmtpToken>, has_domain: bool) {
-    let bridge = section("", &ctx.say("smtp.bridgeTitle"), "", vec![note(&ctx.say("smtp.bridgeAbout")), button("open-bridge", &ctx.say("apps.bridge"), true)]);
+    let bridge = section(
+        "",
+        &ctx.say("smtp.bridgeTitle"),
+        "",
+        vec![note(&ctx.say("smtp.bridgeAbout")), button("open-bridge", &ctx.say("apps.bridge"), true)],
+    );
     let mut lines = vec![note(&ctx.say("smtp.about"))];
     if let Some((name, code)) = with(|state| state.new_token.clone()) {
         lines.extend(new_token_rows(ctx, &name, &code));
@@ -176,10 +209,13 @@ fn create_token(ctx: &Ctx) {
     let addresses = ctx.service.addresses();
     let Some(address) = addresses.get(with(|state| state.address)).cloned() else { return };
     let service = ctx.service.clone();
-    ctx.load(async move { service.create_smtp_token(&address.id, &name).await.map(|code| (address.email, code)) }, |ctx, made: (String, String)| {
-        with(|state| state.new_token = Some(made));
-        imap(ctx);
-    });
+    ctx.load(
+        async move { service.create_smtp_token(&address.id, &name).await.map(|code| (address.email, code)) },
+        |ctx, made: (String, String)| {
+            with(|state| state.new_token = Some(made));
+            imap(ctx);
+        },
+    );
 }
 
 fn choose_address(ctx: &Ctx) {
@@ -193,7 +229,8 @@ fn choose_address(ctx: &Ctx) {
 }
 
 fn delete_token(ctx: &Ctx, id: &str) {
-    let name = with(|state| state.tokens.iter().find(|token| token.id == id).map(|token| token.name.clone())).unwrap_or_default();
+    let name = with(|state| state.tokens.iter().find(|token| token.id == id).map(|token| token.name.clone()))
+        .unwrap_or_default();
     let title = ctx.say_with("smtp.deleteTitle", &[("name", &name)]);
     if actions::confirmed(&title, &ctx.say("smtp.deleteText"), &ctx.say("smtp.delete"), &ctx.say("common.cancel")) {
         let (service, id) = (ctx.service.clone(), id.to_string());
@@ -202,7 +239,10 @@ fn delete_token(ctx: &Ctx, id: &str) {
 }
 
 fn member_row(ctx: &Ctx, member: &Member) -> SettingsRow {
-    let space = ctx.say_with("org.of", &[("used", &rows::size(ctx, member.used_space)), ("max", &rows::size(ctx, member.max_space))]);
+    let space = ctx.say_with(
+        "org.of",
+        &[("used", &rows::size(ctx, member.used_space)), ("max", &rows::size(ctx, member.max_space))],
+    );
     let mut row = entry("", &member.name, &space);
     row.value = ctx.say(if member.admin { "org.admin" } else { "org.member" }).into();
     match member.state {
@@ -223,8 +263,12 @@ fn member_row(ctx: &Ctx, member: &Member) -> SettingsRow {
 pub fn organization(ctx: &Ctx) {
     let service = ctx.service.clone();
     ctx.load(async move { service.organization().await }, |ctx, organization: Organization| {
-        let of = |(used, max): (u64, u64)| ctx.say_with("org.of", &[("used", &used.to_string()), ("max", &max.to_string())]);
-        let manage = plain(vec![note(&ctx.say("org.manageHint")), ghost("manage:multi-user-support", &ctx.say("tabs.openInProton"), true)]);
+        let of =
+            |(used, max): (u64, u64)| ctx.say_with("org.of", &[("used", &used.to_string()), ("max", &max.to_string())]);
+        let manage = plain(vec![
+            note(&ctx.say("org.manageHint")),
+            ghost("manage:multi-user-support", &ctx.say("tabs.openInProton"), true),
+        ]);
         if organization.people.len() < 2 && organization.members.1 < 2 {
             ctx.show(vec![plain(vec![note(&ctx.say("org.none"))]), manage]);
             return;

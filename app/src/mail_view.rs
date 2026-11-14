@@ -1,8 +1,8 @@
 //! The one place a web engine is used: drawing the body of an HTML mail. It runs no scripts, loads
 //! nothing, follows no link, and exists only while such a mail is open.
 
-use crate::webviews::PageScriptsOff as _;
 use crate::App;
+use crate::webviews::PageScriptsOff as _;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
@@ -17,7 +17,9 @@ use wry::{
 /// a phone. Scripts in the mail itself stay off.
 fn fit_script() -> String {
     let base = crate::look::mail_text();
-    format!("(()=>{{const r=document.documentElement,b=document.body;b.style.zoom={base};const need=r.scrollWidth,have=r.clientWidth;if(need>have)b.style.zoom=Math.max({base}*have/need,0.5);const filled=[...b.querySelectorAll('*')].slice(0,60).find(e=>{{const c=getComputedStyle(e).backgroundColor;return c!=='rgba(0, 0, 0, 0)'&&c!=='transparent'&&e.getBoundingClientRect().width>=have*.6}});r.style.background=filled?getComputedStyle(filled).backgroundColor:''}})()")
+    format!(
+        "(()=>{{const r=document.documentElement,b=document.body;b.style.zoom={base};const need=r.scrollWidth,have=r.clientWidth;if(need>have)b.style.zoom=Math.max({base}*have/need,0.5);const filled=[...b.querySelectorAll('*')].slice(0,60).find(e=>{{const c=getComputedStyle(e).backgroundColor;return c!=='rgba(0, 0, 0, 0)'&&c!=='transparent'&&e.getBoundingClientRect().width>=have*.6}});r.style.background=filled?getComputedStyle(filled).backgroundColor:''}})()"
+    )
 }
 
 pub const POLICY: &str = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:";
@@ -134,7 +136,11 @@ fn snapshot(view: &WebView, then: fn(Option<slint::SharedPixelBuffer<slint::Rgba
 /// An `NSImage` as pixels: through PNG, which every image of AppKit can become.
 #[cfg(target_os = "macos")]
 fn pixels_of(image: &objc2::runtime::AnyObject) -> Option<slint::SharedPixelBuffer<slint::Rgba8Pixel>> {
-    use objc2::{msg_send, rc::Retained, runtime::{AnyClass, AnyObject}};
+    use objc2::{
+        msg_send,
+        rc::Retained,
+        runtime::{AnyClass, AnyObject},
+    };
     use objc2_foundation::{NSData, NSDictionary};
 
     // `NSBitmapImageFileTypePNG`.
@@ -277,21 +283,23 @@ pub fn show(app: &App, html: &str) {
             let _ = existing.load_url(&address);
             return;
         }
-        let built = crate::webviews::page(|builder| when_the_page_dies(keep_to_drawing(builder))
-            .page_scripts_off()
-            .with_background_color(behind_the_page(app))
-            .with_navigation_handler(|url| own_page(&url))
-            .with_on_page_load_handler(|event, _| {
-                if matches!(event, PageLoadEvent::Finished) {
-                    let _ = slint::invoke_from_event_loop(fit_then_reveal);
-                }
-            })
-            .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, Some(POLICY)))
-            .with_url(&address)
-            .with_incognito(true)
-            .with_visible(!WAITING.get() && COVERS.get() == 0)
-            .with_bounds(bounds(app))
-            .build_as_child(&app.window().window_handle()));
+        let built = crate::webviews::page(|builder| {
+            when_the_page_dies(keep_to_drawing(builder))
+                .page_scripts_off()
+                .with_background_color(behind_the_page(app))
+                .with_navigation_handler(|url| own_page(&url))
+                .with_on_page_load_handler(|event, _| {
+                    if matches!(event, PageLoadEvent::Finished) {
+                        let _ = slint::invoke_from_event_loop(fit_then_reveal);
+                    }
+                })
+                .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, Some(POLICY)))
+                .with_url(&address)
+                .with_incognito(true)
+                .with_visible(!WAITING.get() && COVERS.get() == 0)
+                .with_bounds(bounds(app))
+                .build_as_child(&app.window().window_handle())
+        });
         match built {
             Ok(created) => {
                 crate::webviews::scripts_settled(&created);
@@ -334,7 +342,8 @@ pub fn without_peer_connections(builder: WebViewBuilder<'_>) -> WebViewBuilder<'
 }
 
 #[cfg(target_os = "macos")]
-const PEER_CONNECTIONS: [&str; 3] = ["PeerConnectionEnabled", "WebRTCPlatformTCPSocketsEnabled", "WebRTCPlatformUDPSocketsEnabled"];
+const PEER_CONNECTIONS: [&str; 3] =
+    ["PeerConnectionEnabled", "WebRTCPlatformTCPSocketsEnabled", "WebRTCPlatformUDPSocketsEnabled"];
 
 /// WebKitGTK has WebRTC off unless asked; WebView2 gets it from its environment's arguments, in `verify.rs`.
 #[cfg(not(target_os = "macos"))]
@@ -367,7 +376,8 @@ fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBu
         let settable: Bool = msg_send![&*preferences, respondsToSelector: sel!(_setEnabled:forFeature:)];
         // Private calls may answer nothing in another version of WebKit: that is a feature left as it is, never a
         // panic, which a result that cannot be nothing would be.
-        let features: Option<Retained<NSArray<AnyObject>>> = if listed.as_bool() && settable.as_bool() { msg_send![kind, _features] } else { None };
+        let features: Option<Retained<NSArray<AnyObject>>> =
+            if listed.as_bool() && settable.as_bool() { msg_send![kind, _features] } else { None };
         for feature in features.iter().flat_map(|features| features.iter()) {
             let key: Option<Retained<NSString>> = msg_send![&*feature, key];
             if let Some(key) = key.filter(|key| off.contains(&key.to_string().as_str())) {

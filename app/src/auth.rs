@@ -2,7 +2,9 @@
 //! happens when a session ends. Rules from `docs/DEVELOPMENT.md` hold here: a failed sign-in is never tried
 //! again by itself, and the words Proton answered with go to the person, never to a log.
 
-use crate::{App, Auth, actions, composer, guard, incoming, keyboard, preview, session, settings, sync, tray, verify, view};
+use crate::{
+    App, Auth, actions, composer, guard, incoming, keyboard, preview, session, settings, sync, tray, verify, view,
+};
 use proton_core::{
     AuthStep, Service,
     client::Ending,
@@ -90,7 +92,11 @@ fn show_error(app: &App, error: &Error) {
 }
 
 /// Runs one step, and takes the next from its answer. A failure stays on the screen it came from.
-fn act(service: &Arc<Service>, app: &App, step: impl Future<Output = proton_core::error::Result<AuthStep>> + Send + 'static) {
+fn act(
+    service: &Arc<Service>,
+    app: &App,
+    step: impl Future<Output = proton_core::error::Result<AuthStep>> + Send + 'static,
+) {
     let auth = app.global::<Auth>();
     auth.set_busy(true);
     auth.set_error(0);
@@ -260,7 +266,8 @@ pub fn refresh_folders(service: &Arc<Service>, app: &Weak<App>) {
 /// The folder open now stays the one lit, and `then` runs once the sidebar has been redrawn.
 pub fn refresh_folders_after(service: &Arc<Service>, app: &Weak<App>, then: impl FnOnce(&App) + Send + 'static) {
     let (service, weak) = (service.clone(), app.clone());
-    let active = crate::actions::main_window().map_or_else(|| FIRST_FOLDER.to_string(), |app| app.get_folder_id().to_string());
+    let active =
+        crate::actions::main_window().map_or_else(|| FIRST_FOLDER.to_string(), |app| app.get_folder_id().to_string());
     tokio::spawn(async move {
         if let (Ok(folders), Ok(counts)) = (service.folders().await, service.counts().await) {
             view::folder_rows(&weak, &folders, &counts, &active);
@@ -418,38 +425,4 @@ fn connect_verification(service: &Arc<Service>, app: &App) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_code_is_digits_and_no_more_of_them_than_it_needs() {
-        assert_eq!(digits_of("12 34a5678"), "123456");
-        assert_eq!(digits_of("abc"), "");
-    }
-
-    #[test]
-    fn some_failures_say_nothing() {
-        assert_eq!(error_of(&Error::Cancelled).0, 0);
-        assert_eq!(error_of(&Error::SessionEnded).0, 0);
-        assert_eq!(error_of(&Error::TooManyAttempts { seconds: 5 }).0, 0);
-    }
-
-    #[test]
-    fn proton_s_own_words_are_shown_with_their_code() {
-        let error = Error::Api { status: 422, code: 8002, message: "Incorrect login".to_string() };
-        assert_eq!(error_of(&error), (ERROR_SAID, "Incorrect login (code 8002, HTTP 422)".to_string()));
-    }
-
-    #[test]
-    fn a_silent_server_gets_words_from_the_app() {
-        let error = Error::Api { status: 503, code: 0, message: String::new() };
-        assert_eq!(error_of(&error).0, ERROR_UNAVAILABLE);
-    }
-
-    #[test]
-    fn connection_failures_are_told_apart() {
-        assert_eq!(error_of(&Error::Network("x".to_string())).0, ERROR_NETWORK);
-        assert_eq!(error_of(&Error::Untrusted).0, ERROR_UNTRUSTED);
-        assert_eq!(error_of(&Error::WrongPassword).0, ERROR_WRONG_PASSWORD);
-    }
-}
+mod tests;

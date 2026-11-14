@@ -22,8 +22,13 @@ const SENDER_ADD: &str = "sender-add";
 const SENDER_SEARCH: &str = "sender-search";
 const SIEVE_LINES: i32 = 12;
 const SHOWN_LIMIT: usize = 200;
-const FIELDS: [(&str, &str); 3] = [("from", "settings.filterFrom"), ("to", "settings.filterTo"), ("subject", "settings.filterSubject")];
-const LISTS: [(SenderList, &str); 3] = [(SenderList::Spam, "senders.spam"), (SenderList::Blocked, "senders.blocked"), (SenderList::Allowed, "senders.allowed")];
+const FIELDS: [(&str, &str); 3] =
+    [("from", "settings.filterFrom"), ("to", "settings.filterTo"), ("subject", "settings.filterSubject")];
+const LISTS: [(SenderList, &str); 3] = [
+    (SenderList::Spam, "senders.spam"),
+    (SenderList::Blocked, "senders.blocked"),
+    (SenderList::Allowed, "senders.allowed"),
+];
 const TARGETS: [&str; 3] = ["archive", "trash", "spam"];
 /// Shown in the Sieve form until the person writes their own.
 const STARTER: (&str, &str) = ("from", "someone@example.com");
@@ -87,7 +92,10 @@ fn simple_form(ctx: &Ctx, state: &State) -> Vec<SettingsRow> {
 }
 
 fn sieve_form(ctx: &Ctx, state: &State) -> Vec<SettingsRow> {
-    vec![field(NAME, &ctx.say("settings.filterName"), &state.name), SettingsRow { mono: true, code: code_lines(&state.sieve), ..area(SIEVE, "Sieve", &state.sieve, SIEVE_LINES) }]
+    vec![
+        field(NAME, &ctx.say("settings.filterName"), &state.name),
+        SettingsRow { mono: true, code: code_lines(&state.sieve), ..area(SIEVE, "Sieve", &state.sieve, SIEVE_LINES) },
+    ]
 }
 
 fn ready(state: &State, name: &str, value: &str, sieve: &str) -> bool {
@@ -99,7 +107,8 @@ fn ready(state: &State, name: &str, value: &str, sieve: &str) -> bool {
 }
 
 fn filter_rows(ctx: &Ctx, state: &State) -> Vec<SettingsRow> {
-    let mut lines: Vec<SettingsRow> = state.filters.iter().map(|known| filter(&format!("filter:{}", known.id), &known.name, known.enabled)).collect();
+    let mut lines: Vec<SettingsRow> =
+        state.filters.iter().map(|known| filter(&format!("filter:{}", known.id), &known.name, known.enabled)).collect();
     if lines.is_empty() {
         lines.push(note(&ctx.say("settings.filterNone")));
     }
@@ -123,7 +132,12 @@ fn filter_rows(ctx: &Ctx, state: &State) -> Vec<SettingsRow> {
 fn sender_rows(ctx: &Ctx, state: &State) -> Vec<SettingsRow> {
     let wanted = ctx.text(SENDER_SEARCH).trim().to_lowercase();
     let list = state.shown.checked_sub(1).and_then(|position| LISTS.get(position)).map(|(list, _)| *list);
-    let visible: Vec<&SenderRule> = state.rules.iter().filter(|rule| list.is_none_or(|list| rule.list == list)).filter(|rule| rule.sender.to_lowercase().contains(&wanted)).collect();
+    let visible: Vec<&SenderRule> = state
+        .rules
+        .iter()
+        .filter(|rule| list.is_none_or(|list| rule.list == list))
+        .filter(|rule| rule.sender.to_lowercase().contains(&wanted))
+        .collect();
     let mut lines: Vec<SettingsRow> = visible
         .iter()
         .take(SHOWN_LIMIT)
@@ -155,14 +169,19 @@ fn draw(ctx: &Ctx) {
         all.extend(names.iter().cloned());
         ctx.show(vec![
             section(FILTERS, &ctx.say("settings.filters"), "", filter_rows(ctx, state)),
-            section("senders", &ctx.say("senders.title"), "", vec![
-                note(&ctx.say("senders.about")),
-                SettingsRow { detail: ctx.say("senders.placeholder").into(), ..field(SENDER, "", "") },
-                segmented("sender-list", &ctx.say("senders.list"), names, state.add_to),
-                button(SENDER_ADD, &ctx.say("senders.add"), false),
-                segmented("sender-show", &ctx.say("senders.show"), all, state.shown),
-                SettingsRow { detail: ctx.say("senders.search").into(), ..field(SENDER_SEARCH, "", "") },
-            ]),
+            section(
+                "senders",
+                &ctx.say("senders.title"),
+                "",
+                vec![
+                    note(&ctx.say("senders.about")),
+                    SettingsRow { detail: ctx.say("senders.placeholder").into(), ..field(SENDER, "", "") },
+                    segmented("sender-list", &ctx.say("senders.list"), names, state.add_to),
+                    button(SENDER_ADD, &ctx.say("senders.add"), false),
+                    segmented("sender-show", &ctx.say("senders.show"), all, state.shown),
+                    SettingsRow { detail: ctx.say("senders.search").into(), ..field(SENDER_SEARCH, "", "") },
+                ],
+            ),
             section(SENDERS, "", "", sender_rows(ctx, state)),
         ]);
     });
@@ -175,7 +194,13 @@ pub fn filters(ctx: &Ctx) {
         let folders = service.folders().await.unwrap_or_default();
         Ok((filters, folders, service.sender_rules().await.unwrap_or_default()))
     };
-    let starter = ctx.service.build_sieve(&SimpleFilter { field: STARTER.0.to_string(), value: STARTER.1.to_string(), target: Some("archive".to_string()), mark_read: false, star: false });
+    let starter = ctx.service.build_sieve(&SimpleFilter {
+        field: STARTER.0.to_string(),
+        value: STARTER.1.to_string(),
+        target: Some("archive".to_string()),
+        mark_read: false,
+        star: false,
+    });
     ctx.load(task, move |ctx, (filters, folders, rules): (Vec<MailFilter>, Vec<Folder>, Vec<SenderRule>)| {
         with(|state| {
             state.filters = filters;
@@ -232,9 +257,20 @@ fn save(ctx: &Ctx) {
             state.sieve.clone()
         } else {
             let field = FIELDS.get(state.field).map_or("from", |(name, _)| name).to_string();
-            ctx.service.build_sieve(&SimpleFilter { field, value: state.value.clone(), target: target_of(state), mark_read: state.mark_read, star: state.star })
+            ctx.service.build_sieve(&SimpleFilter {
+                field,
+                value: state.value.clone(),
+                target: target_of(state),
+                mark_read: state.mark_read,
+                star: state.star,
+            })
         };
-        FilterDraft { id: state.editing.as_ref().map(|filter| filter.id.clone()), enabled: state.editing.as_ref().map(|filter| filter.enabled), name: state.name.trim().to_string(), sieve }
+        FilterDraft {
+            id: state.editing.as_ref().map(|filter| filter.id.clone()),
+            enabled: state.editing.as_ref().map(|filter| filter.enabled),
+            name: state.name.trim().to_string(),
+            sieve,
+        }
     });
     let service = ctx.service.clone();
     ctx.load(async move { service.save_filter(&draft).await }, saved);
@@ -276,7 +312,11 @@ pub fn heard(ctx: &Ctx, id: &str, part: i32, value: i32) {
         "filter-mode" => form_changed(ctx, |state| state.sieve_form = value == 1),
         "filter-read" => form_changed(ctx, |state| state.mark_read = value == 1),
         "filter-star" => form_changed(ctx, |state| state.star = value == 1),
-        "filter-field" => pick(ctx, &FIELDS.iter().map(|(_, key)| ctx.say(key)).collect::<Vec<_>>(), |state, chosen| state.field = chosen),
+        "filter-field" => {
+            pick(ctx, &FIELDS.iter().map(|(_, key)| ctx.say(key)).collect::<Vec<_>>(), |state, chosen| {
+                state.field = chosen;
+            });
+        }
         "filter-target" => {
             let names = with(|state| target_names(ctx, state));
             pick(ctx, &names, |state, chosen| state.target = chosen);

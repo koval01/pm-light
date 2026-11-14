@@ -11,7 +11,11 @@ use std::{
 
 /// What can reach the network or the outside world, and the only files that may use it.
 const WAYS_OUT: &[(&str, &[&str], &str)] = &[
-    ("reqwest::Client::builder", &["core/src/client.rs", "core/src/dns.rs"], "Proton's API and Quad9: through Tor when it is chosen"),
+    (
+        "reqwest::Client::builder",
+        &["core/src/client.rs", "core/src/dns.rs"],
+        "Proton's API and Quad9: through Tor when it is chosen",
+    ),
     ("reqwest::get", &[], "a request with no chosen way"),
     ("reqwest::blocking", &[], "a request with no chosen way"),
     ("TcpStream::connect", &[], "a connection that bypasses the HTTP clients"),
@@ -21,7 +25,11 @@ const WAYS_OUT: &[(&str, &[&str], &str)] = &[
     ("lookup_host", &[], "the system's resolver"),
     ("getaddrinfo", &[], "the system's resolver"),
     ("open::that", &["app/src/view.rs"], "a link to the browser, which asks first under Tor"),
-    (".with_url(", &["app/src/mail_view.rs", "app/src/composer.rs", "app/src/preview.rs", "app/src/verify.rs"], "webviews: the app's own protocols, and Proton's page through Tor"),
+    (
+        ".with_url(",
+        &["app/src/mail_view.rs", "app/src/composer.rs", "app/src/preview.rs", "app/src/verify.rs"],
+        "webviews: the app's own protocols, and Proton's page through Tor",
+    ),
     ("load_url(", &["app/src/mail_view.rs"], "the mail page, over the app's own protocol"),
     ("with_proxy_config", &["app/src/verify.rs"], "Proton's page through Tor"),
     ("hyper::Client", &[], "an HTTP client of its own"),
@@ -93,7 +101,8 @@ fn every_way_out_is_where_it_is_known_to_be() {
     for folder in ["core/src", "app/src"] {
         for path in files(&root.join(folder)) {
             if let Some(code) = shipped(&path) {
-                let relative = path.strip_prefix(root).expect("inside the project").to_string_lossy().replace('\\', "/");
+                let relative =
+                    path.strip_prefix(root).expect("inside the project").to_string_lossy().replace('\\', "/");
                 sources.push((relative, code));
             }
         }

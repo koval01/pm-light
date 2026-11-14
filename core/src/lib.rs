@@ -1,5 +1,6 @@
 //! Everything behind the interface: the network, sign-in, keys and mail. It knows nothing about
 //! windows, so all of it can be tested without one.
+#![cfg_attr(not(test), forbid(unsafe_code))]
 
 pub mod calendar;
 pub mod client;
@@ -16,18 +17,18 @@ pub mod image_metadata;
 pub mod import;
 pub mod journal;
 pub mod keymap;
+pub mod mail_store;
 pub mod mailto;
 pub mod mapping;
 pub mod mime;
-mod pattern;
 pub mod model;
+mod pattern;
 pub mod print;
 pub mod ranking;
 pub mod safety;
-pub mod mail_store;
 pub mod scan;
-pub mod search;
 pub mod seal;
+pub mod search;
 pub mod send;
 pub mod service;
 pub mod sieve;
@@ -41,7 +42,7 @@ pub mod vault;
 pub mod vcard;
 pub mod view;
 
-pub use client::{Client, Ending, Session, PROTON_API};
+pub use client::{Client, Ending, PROTON_API, Session};
 
 /// Where the code lives, and where a build's commit can be read.
 pub const REPOSITORY: &str = "https://github.com/koval01/pm-light";

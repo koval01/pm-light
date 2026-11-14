@@ -97,7 +97,9 @@ fn pdf_with_pages(boxes: &[&str]) -> Vec<u8> {
     for offset in offsets {
         pdf.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
     }
-    pdf.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{table}\n%%EOF\n", objects.len() + 1).as_bytes());
+    pdf.extend_from_slice(
+        format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{table}\n%%EOF\n", objects.len() + 1).as_bytes(),
+    );
     pdf
 }
 
@@ -134,9 +136,26 @@ fn drawn_size(pdf: &[u8]) -> Option<(u32, u32)> {
 #[test]
 fn hostile_pdfs_give_a_bounded_picture_or_none() {
     let most = (TALLEST * SCALE).round();
-    let bounded = |size: Option<(u32, u32)>| size.is_none_or(|(wide, high)| f64::from(wide) <= most && f64::from(high) <= most && wide > 0 && high > 0);
-    for media in ["0 0 0 0", "0 0 0 100", "0 0 200 0", "0 0 -200 -100", "200 100 0 0", "0 0 0.4 0.4", "0 0 1 1", "0 0 99999 99999",
-        "0 0 1 999999", "0 0 999999 1", "0 0 abc def", "0 0", "", "1e308 1e308 -1e308 -1e308", "0 0 nan nan"] {
+    let bounded = |size: Option<(u32, u32)>| {
+        size.is_none_or(|(wide, high)| f64::from(wide) <= most && f64::from(high) <= most && wide > 0 && high > 0)
+    };
+    for media in [
+        "0 0 0 0",
+        "0 0 0 100",
+        "0 0 200 0",
+        "0 0 -200 -100",
+        "200 100 0 0",
+        "0 0 0.4 0.4",
+        "0 0 1 1",
+        "0 0 99999 99999",
+        "0 0 1 999999",
+        "0 0 999999 1",
+        "0 0 abc def",
+        "0 0",
+        "",
+        "1e308 1e308 -1e308 -1e308",
+        "0 0 nan nan",
+    ] {
         assert!(bounded(drawn_size(&pdf_with_pages(&[media]))), "media box [{media}]");
     }
     let whole = square_pdf();
@@ -241,7 +260,11 @@ fn cairo_pixels_that_do_not_fit_their_sizes_are_refused() {
 
 #[test]
 fn a_picture_drops_papers_margins_after_printings_own() {
-    let prepared = PrintDocument { style: ".print-part{padding:0 18mm 0 22mm}".to_string(), fit: String::new(), parts: Vec::new() };
+    let prepared = PrintDocument {
+        style: ".print-part{padding:0 18mm 0 22mm}".to_string(),
+        fit: String::new(),
+        parts: Vec::new(),
+    };
     let style = for_a_picture(prepared).style;
     let (printed, picture) = (style.find("18mm").unwrap_or(usize::MAX), style.find("24px").unwrap_or(0));
     assert!(printed < picture, "the later rule wins: {style}");
@@ -257,7 +280,9 @@ fn a_full_document_is_cut_where_the_picture_ends() {
 
 #[test]
 fn sizes_that_make_no_sense_keep_every_row() {
-    for (wide, across, high) in [(0, WIDTH, 10.0), (1440, 0.0, 10.0), (1440, f64::NAN, 10.0), (1440, WIDTH, f64::INFINITY)] {
+    for (wide, across, high) in
+        [(0, WIDTH, 10.0), (1440, 0.0, 10.0), (1440, f64::NAN, 10.0), (1440, WIDTH, f64::INFINITY)]
+    {
         assert_eq!(kept_rows(300, wide, across, high), 300);
     }
 }

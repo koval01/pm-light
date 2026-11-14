@@ -5,8 +5,8 @@
 //! for a boundary.
 
 use crate::model::{Attachment, Message};
-use std::fmt::Write;
 use base64::{Engine, engine::general_purpose::STANDARD};
+use std::fmt::Write;
 
 const BOUNDARY: &str = "=_proton-mail-light";
 const LINE: usize = 76;
@@ -74,7 +74,9 @@ fn file_part(file: &Attachment, data: &[u8]) -> String {
         encoded_name(&file.name),
     );
     let id = file.content_id.as_deref().map(|id| id.trim_matches(['<', '>']));
-    if let Some(id) = id.filter(|id| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_graphic() && byte != b'<' && byte != b'>')) {
+    if let Some(id) =
+        id.filter(|id| !id.is_empty() && id.bytes().all(|byte| byte.is_ascii_graphic() && byte != b'<' && byte != b'>'))
+    {
         let _ = write!(part, "Content-ID: <{id}>\r\n");
     }
     part.push_str("\r\n");

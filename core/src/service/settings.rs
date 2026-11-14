@@ -1,6 +1,9 @@
 //! Addresses, signatures, mail settings and filters.
 
-use super::{api, AutoReply, Error, escape, FILTER_ENABLED, FilterDraft, Habits, html, json, MailFilter, MailSettings, Method, number, OwnAddress, Result, Service, text, to_text, UserChoices, Value};
+use super::{
+    AutoReply, Error, FILTER_ENABLED, FilterDraft, Habits, MailFilter, MailSettings, Method, OwnAddress, Result,
+    Service, UserChoices, Value, api, escape, html, json, number, text, to_text,
+};
 
 impl Service {
     pub fn addresses(&self) -> Vec<OwnAddress> {
@@ -82,7 +85,8 @@ impl Service {
     }
 
     pub async fn set_mail_choice(&self, key: &str, position: usize) -> Result<()> {
-        let (path, body) = api::choice_change(key, position).ok_or_else(|| Error::other(format!("Unknown setting {key}")))?;
+        let (path, body) =
+            api::choice_change(key, position).ok_or_else(|| Error::other(format!("Unknown setting {key}")))?;
         self.client.act_with(Method::PUT, &path, body).await?;
         self.read_habits().await;
         Ok(())
@@ -94,7 +98,10 @@ impl Service {
     }
 
     pub async fn set_user_flag(&self, key: &str, on: bool) -> Result<()> {
-        let (_, path, field) = api::USER_FLAGS.iter().find(|(name, ..)| *name == key).ok_or_else(|| Error::other(format!("Unknown setting {key}")))?;
+        let (_, path, field) = api::USER_FLAGS
+            .iter()
+            .find(|(name, ..)| *name == key)
+            .ok_or_else(|| Error::other(format!("Unknown setting {key}")))?;
         self.client.act_with(Method::PUT, &format!("/core/v4/settings/{path}"), json!({*field: u8::from(on)})).await
     }
 

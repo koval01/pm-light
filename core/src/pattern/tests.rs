@@ -27,7 +27,10 @@ fn written(folder: &Path, needle: &str) -> usize {
         let path = entry.path();
         if path.is_dir() {
             found += written(&path, needle);
-        } else if path.extension().is_some_and(|end| end == "rs") && !path.ends_with("pattern.rs") && !path.ends_with("pattern/tests.rs") {
+        } else if path.extension().is_some_and(|end| end == "rs")
+            && !path.ends_with("pattern.rs")
+            && !path.ends_with("pattern/tests.rs")
+        {
             found += fs::read_to_string(&path).unwrap_or_default().matches(needle).count();
         }
     }

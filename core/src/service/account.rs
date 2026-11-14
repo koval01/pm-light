@@ -1,6 +1,9 @@
 //! The account, its subscription, sessions and sign-in log.
 
-use super::{Account, AccountSession, api, AUTH_LOG_ENTRIES, AuthLogEntry, Billing, Error, json, Method, number, Result, Service, Storage, TimeSetting, TimeSettings, Value};
+use super::{
+    AUTH_LOG_ENTRIES, Account, AccountSession, AuthLogEntry, Billing, Error, Method, Result, Service, Storage,
+    TimeSetting, TimeSettings, Value, api, json, number,
+};
 
 impl Service {
     pub async fn storage(&self) -> Result<Storage> {

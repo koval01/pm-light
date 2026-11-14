@@ -129,7 +129,8 @@ fn problems_in(document: &Html, styles: bool) -> Vec<String> {
             found.push(format!("tag {tag}"));
         }
         if tag == "style" {
-            let text: String = node.children().filter_map(|child| child.value().as_text()).map(|text| text.to_string()).collect();
+            let text: String =
+                node.children().filter_map(|child| child.value().as_text()).map(|text| text.to_string()).collect();
             if !styles {
                 found.push("style in the editor".to_string());
             }

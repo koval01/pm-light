@@ -1,6 +1,9 @@
 //! The app password: sealing the saved session, and what stands in the way of guessing it.
 
-use super::{AuthStep, Error, Instant, Latency, LockState, now_seconds, on_worker, Result, Service, Value, vault, WRONG_PASSWORD_PAUSE, Zeroizing};
+use super::{
+    AuthStep, Error, Instant, Latency, LockState, Result, Service, Value, WRONG_PASSWORD_PAUSE, Zeroizing, now_seconds,
+    on_worker, vault,
+};
 
 impl Service {
     pub fn app_lock_enabled(&self) -> bool {
@@ -25,7 +28,10 @@ impl Service {
         Ok(())
     }
 
-    pub(super) async fn check_password(&self, password: &str) -> Result<(vault::VaultKey, Zeroizing<Vec<u8>>, Vec<u8>)> {
+    pub(super) async fn check_password(
+        &self,
+        password: &str,
+    ) -> Result<(vault::VaultKey, Zeroizing<Vec<u8>>, Vec<u8>)> {
         let saved = self.store.load().ok_or(Error::WrongPassword)?;
         let envelope: vault::Envelope = serde_json::from_str(&saved).map_err(|_| Error::WrongPassword)?;
         let salt = vault::salt_of(&envelope)?;
@@ -137,7 +143,12 @@ impl Service {
             best
         }
         let dns = self.client.dns().ok();
-        let quad9_ping = || async { match &dns { Some(dns) => dns.ping().await, None => Err(Error::Network("no way chosen".to_string())) } };
+        let quad9_ping = || async {
+            match &dns {
+                Some(dns) => dns.ping().await,
+                None => Err(Error::Network("no way chosen".to_string())),
+            }
+        };
         let (proton, quad9) = futures::join!(fastest(|| self.ping()), fastest(quad9_ping));
         Latency { proton, quad9 }
     }

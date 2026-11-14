@@ -236,14 +236,8 @@ fn auto_reply_round_trip() {
 
 #[test]
 fn a_dated_reply_keeps_its_dates() {
-    let reply = AutoReply {
-        enabled: true,
-        permanent: false,
-        start: 10,
-        end: 20,
-        subject: "S".into(),
-        text: "M".into(),
-    };
+    let reply =
+        AutoReply { enabled: true, permanent: false, start: 10, end: 20, subject: "S".into(), text: "M".into() };
     let sent = from_auto_reply(&reply, "UTC");
     assert_eq!((sent["StartTime"].as_u64(), sent["EndTime"].as_u64()), (Some(10), Some(20)));
     assert_eq!(sent["Repeat"], 0);
@@ -355,22 +349,26 @@ fn a_domain_is_good_only_where_proton_says_so() {
     let domain = to_domain(&json!({"DomainName": "b.c", "VerifyState": 2, "MxState": 3, "SpfState": 3,
         "DKIM": {"State": 4}, "DmarcState": 4}));
     assert!(domain.verified && domain.mx && domain.spf && domain.dkim && domain.dmarc);
-    let backup = to_domain(&json!({"MxState": 4, "VerifyState": 1, "SpfState": 2, "DKIM": {"State": 3}, "DmarcState": 1}));
+    let backup =
+        to_domain(&json!({"MxState": 4, "VerifyState": 1, "SpfState": 2, "DKIM": {"State": 3}, "DmarcState": 1}));
     assert!(backup.mx && !backup.verified && !backup.spf && !backup.dkim && !backup.dmarc);
     assert!(!to_domain(&json!({})).mx);
 }
 
 #[test]
 fn recovery_reads_what_is_set() {
-    let settings = json!({"Email": {"Value": "a@b.c", "Reset": 1}, "Phone": {"Value": "+1", "Reset": 0}, "DeviceRecovery": 1});
+    let settings =
+        json!({"Email": {"Value": "a@b.c", "Reset": 1}, "Phone": {"Value": "+1", "Reset": 0}, "DeviceRecovery": 1});
     let recovery = to_recovery(&json!({"MnemonicStatus": 3}), &settings);
     assert_eq!((recovery.email.as_str(), recovery.email_reset), ("a@b.c", true));
     assert_eq!((recovery.phone.as_str(), recovery.phone_reset), ("+1", false));
     assert_eq!(recovery.phrase, RecoveryPhrase::Set);
     assert!(recovery.device_backup);
     let phrase = |n: u64| to_recovery(&json!({"MnemonicStatus": n}), &Value::Null).phrase;
-    assert_eq!((phrase(0), phrase(1), phrase(2), phrase(4)),
-        (RecoveryPhrase::Off, RecoveryPhrase::Missing, RecoveryPhrase::Outdated, RecoveryPhrase::Missing));
+    assert_eq!(
+        (phrase(0), phrase(1), phrase(2), phrase(4)),
+        (RecoveryPhrase::Off, RecoveryPhrase::Missing, RecoveryPhrase::Outdated, RecoveryPhrase::Missing)
+    );
 }
 
 #[test]
@@ -411,7 +409,8 @@ fn an_account_without_invitations_gives_empty_answers() {
 
 #[test]
 fn a_token_never_used_says_so_with_zero() {
-    let reply = serde_json::json!({"SmtpTokens": [{"SmtpTokenID": "1", "Name": "Printer", "AddressID": "a", "CreateTime": 7}]});
+    let reply =
+        serde_json::json!({"SmtpTokens": [{"SmtpTokenID": "1", "Name": "Printer", "AddressID": "a", "CreateTime": 7}]});
     let tokens = to_smtp_tokens(&reply);
     assert_eq!((tokens[0].created_at, tokens[0].last_used), (7000, 0));
 }
@@ -434,14 +433,20 @@ fn a_setting_goes_out_only_with_a_value_of_its_table() {
 
 #[test]
 fn a_setting_that_is_not_set_goes_out_as_null() {
-    assert_eq!(choice_change("spamAction", 0), Some(("/mail/v4/settings/spam-action".to_string(), serde_json::json!({"SpamAction": null}))));
+    assert_eq!(
+        choice_change("spamAction", 0),
+        Some(("/mail/v4/settings/spam-action".to_string(), serde_json::json!({"SpamAction": null})))
+    );
 }
 
 #[test]
 fn a_draft_type_is_sent_and_read_by_different_names() {
     let found = read_choices(&serde_json::json!({"DraftMIMEType": "text/plain"}));
     assert_eq!(found.get("draftType"), Some(&1));
-    assert_eq!(choice_change("draftType", 1).map(|(_, body)| body), Some(serde_json::json!({"MIMEType": "text/plain"})));
+    assert_eq!(
+        choice_change("draftType", 1).map(|(_, body)| body),
+        Some(serde_json::json!({"MIMEType": "text/plain"}))
+    );
 }
 
 #[test]
@@ -456,7 +461,8 @@ fn a_missing_answer_means_unset_for_what_may_be_unset() {
 
 #[test]
 fn subscriptions_are_read_as_bits() {
-    let found = to_user_choices(&serde_json::json!({"News": 5, "Telemetry": 1, "BreachAlerts": {"Eligible": 1, "Value": 0}}));
+    let found =
+        to_user_choices(&serde_json::json!({"News": 5, "Telemetry": 1, "BreachAlerts": {"Eligible": 1, "Value": 0}}));
     assert_eq!(found.news, 5);
     assert!(found.telemetry && found.breach_alerts_offered && !found.breach_alerts);
 }
@@ -570,8 +576,10 @@ fn one_sender_several_times_is_one_name() {
 #[test]
 fn a_conversation_with_no_word_on_the_folder_goes_by_its_own_figures() {
     let row = conversation_row(
-        &serde_json::from_value(serde_json::json!({"ID": "c", "Time": 7, "NumMessages": 1, "NumUnread": 1, "NumAttachments": 2}))
-            .unwrap(),
+        &serde_json::from_value(
+            serde_json::json!({"ID": "c", "Time": 7, "NumMessages": 1, "NumUnread": 1, "NumAttachments": 2}),
+        )
+        .unwrap(),
         "inbox",
     );
     assert_eq!((row.date, row.unread, row.attachment_count), (7000, true, 2));
@@ -580,13 +588,15 @@ fn a_conversation_with_no_word_on_the_folder_goes_by_its_own_figures() {
 
 #[test]
 fn a_read_conversation_opens_at_its_newest_mail() {
-    let thread = [in_a_thread("a", 1, false, &["0"]), in_a_thread("b", 2, false, &["0"]), in_a_thread("c", 3, false, &["0"])];
+    let thread =
+        [in_a_thread("a", 1, false, &["0"]), in_a_thread("b", 2, false, &["0"]), in_a_thread("c", 3, false, &["0"])];
     assert_eq!(message_to_open(&thread, "inbox").as_deref(), Some("c"));
 }
 
 #[test]
 fn an_unread_conversation_opens_where_reading_stopped() {
-    let thread = [in_a_thread("a", 1, false, &["0"]), in_a_thread("b", 2, true, &["0"]), in_a_thread("c", 3, true, &["0"])];
+    let thread =
+        [in_a_thread("a", 1, false, &["0"]), in_a_thread("b", 2, true, &["0"]), in_a_thread("c", 3, true, &["0"])];
     assert_eq!(message_to_open(&thread, "inbox").as_deref(), Some("b"));
     let new = [in_a_thread("a", 1, true, &["0"]), in_a_thread("b", 2, true, &["0"])];
     assert_eq!(message_to_open(&new, "inbox").as_deref(), Some("a"));
@@ -627,7 +637,8 @@ fn view_mode_is_only_conversations_when_said_so() {
 /// folder the row stands in counts.
 #[test]
 fn the_time_proton_deletes_a_mail_is_read() {
-    let message: ApiMessageMeta = serde_json::from_value(serde_json::json!({"ID": "m", "ExpirationTime": 1_765_000_000})).unwrap();
+    let message: ApiMessageMeta =
+        serde_json::from_value(serde_json::json!({"ID": "m", "ExpirationTime": 1_765_000_000})).unwrap();
     assert_eq!(to_meta(&message, Some("trash")).expires, 1_765_000_000);
     let kept: ApiMessageMeta = serde_json::from_value(serde_json::json!({"ID": "m"})).unwrap();
     assert_eq!(to_meta(&kept, None).expires, 0);

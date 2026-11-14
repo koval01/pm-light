@@ -2,7 +2,9 @@
 
 use super::{
     Ctx,
-    rows::{SettingsRow, area, button, card, choice, entry, fact, field, ghost, note, plain, section, segmented, switch},
+    rows::{
+        SettingsRow, area, button, card, choice, entry, fact, field, ghost, note, plain, section, segmented, switch,
+    },
 };
 use crate::{SettingsSection, actions, auth, moment_picker, tray};
 use parking_lot::Mutex;
@@ -80,7 +82,11 @@ fn pick(ctx: &Ctx, choices: &Choices, key: &str, label: &str, options: &[&str]) 
 }
 
 fn listed(ctx: &Ctx, choices: &Choices, key: &str, label: &str, names: &[String]) -> SettingsRow {
-    let name = choices.get(key).and_then(|position| names.get(*position)).cloned().unwrap_or_else(|| ctx.say("mail.asDefault"));
+    let name = choices
+        .get(key)
+        .and_then(|position| names.get(*position))
+        .cloned()
+        .unwrap_or_else(|| ctx.say("mail.asDefault"));
     choice(&format!("list:{key}"), &ctx.say(label), &name)
 }
 
@@ -99,29 +105,56 @@ async fn both(service: Arc<Service>) -> Result<(MailSettings, Choices), Error> {
 pub fn messages(ctx: &Ctx) {
     ctx.load(both(ctx.service.clone()), |ctx, (settings, choices): (MailSettings, Choices)| {
         ctx.show(vec![
-            section("", &ctx.say("mail.layout"), "", vec![
-                pick(ctx, &choices, "viewMode", "mail.viewMode", &["mail.conversations", "mail.singleMessages"]),
-                pick(ctx, &choices, "pageSize", "mail.pageSize", &["mail.page50", "mail.page100", "mail.page200"]),
-                flag(ctx, &choices, "stickyLabels", "mail.stickyLabels", "mail.stickyLabelsHint"),
-                flag(ctx, &choices, "almostAllMail", "mail.almostAllMail", "mail.almostAllMailHint"),
-                flag(ctx, &choices, "folderColor", "mail.folderColor", ""),
-                flag(ctx, &choices, "inheritFolderColor", "mail.inheritFolderColor", ""),
-            ]),
-            section("", &ctx.say("settings.reading"), "", vec![
-                mail_switch(ctx, &settings, "nextMessageOnMove", "settings.nextOnMove", ""),
-                mail_switch(ctx, &settings, "autoDeleteOld", "settings.autoDelete", "settings.autoDeleteHint"),
-                pick(ctx, &choices, "showMoved", "mail.showMoved", &["mail.movedNone", "mail.movedDrafts", "mail.movedSent", "mail.movedBoth"]),
-            ]),
-            section("", &ctx.say("settings.writing"), "", vec![
-                mail_switch(ctx, &settings, "autoSaveContacts", "settings.autoSaveContacts", ""),
-                undo_row(ctx, &settings),
-                pick(ctx, &choices, "draftType", "mail.draftType", &["mail.draftRich", "mail.draftPlain"]),
-                pick(ctx, &choices, "direction", "mail.direction", &["mail.leftToRight", "mail.rightToLeft"]),
-                pick(ctx, &choices, "composerMode", "mail.composerMode", &["mail.composerPopup", "mail.composerMaximized"]),
-                listed(ctx, &choices, "fontFace", "mail.fontFace", &font_faces()),
-                listed(ctx, &choices, "fontSize", "mail.fontSize", &font_sizes()),
-                footer_row(ctx),
-            ]),
+            section(
+                "",
+                &ctx.say("mail.layout"),
+                "",
+                vec![
+                    pick(ctx, &choices, "viewMode", "mail.viewMode", &["mail.conversations", "mail.singleMessages"]),
+                    pick(ctx, &choices, "pageSize", "mail.pageSize", &["mail.page50", "mail.page100", "mail.page200"]),
+                    flag(ctx, &choices, "stickyLabels", "mail.stickyLabels", "mail.stickyLabelsHint"),
+                    flag(ctx, &choices, "almostAllMail", "mail.almostAllMail", "mail.almostAllMailHint"),
+                    flag(ctx, &choices, "folderColor", "mail.folderColor", ""),
+                    flag(ctx, &choices, "inheritFolderColor", "mail.inheritFolderColor", ""),
+                ],
+            ),
+            section(
+                "",
+                &ctx.say("settings.reading"),
+                "",
+                vec![
+                    mail_switch(ctx, &settings, "nextMessageOnMove", "settings.nextOnMove", ""),
+                    mail_switch(ctx, &settings, "autoDeleteOld", "settings.autoDelete", "settings.autoDeleteHint"),
+                    pick(
+                        ctx,
+                        &choices,
+                        "showMoved",
+                        "mail.showMoved",
+                        &["mail.movedNone", "mail.movedDrafts", "mail.movedSent", "mail.movedBoth"],
+                    ),
+                ],
+            ),
+            section(
+                "",
+                &ctx.say("settings.writing"),
+                "",
+                vec![
+                    mail_switch(ctx, &settings, "autoSaveContacts", "settings.autoSaveContacts", ""),
+                    undo_row(ctx, &settings),
+                    pick(ctx, &choices, "draftType", "mail.draftType", &["mail.draftRich", "mail.draftPlain"]),
+                    pick(ctx, &choices, "direction", "mail.direction", &["mail.leftToRight", "mail.rightToLeft"]),
+                    pick(
+                        ctx,
+                        &choices,
+                        "composerMode",
+                        "mail.composerMode",
+                        &["mail.composerPopup", "mail.composerMaximized"],
+                    ),
+                    listed(ctx, &choices, "fontFace", "mail.fontFace", &font_faces()),
+                    listed(ctx, &choices, "fontSize", "mail.fontSize", &font_sizes()),
+                    footer_row(ctx),
+                ],
+            ),
         ]);
     });
 }
@@ -129,30 +162,51 @@ pub fn messages(ctx: &Ctx) {
 pub fn privacy(ctx: &Ctx) {
     ctx.load(both(ctx.service.clone()), |ctx, (settings, choices): (MailSettings, Choices)| {
         ctx.show(vec![
-            section("", &ctx.say("mail.images"), "", vec![
-                mail_switch(ctx, &settings, "hideRemoteImages", "settings.hideRemote", "settings.hideRemoteHint"),
-                flag(ctx, &choices, "hideEmbedded", "mail.hideEmbedded", "mail.hideEmbeddedHint"),
-                flag(ctx, &choices, "hideSenderImages", "mail.hideSenderImages", "mail.hideSenderImagesHint"),
-                flag(ctx, &choices, "removeMetadata", "mail.removeMetadata", "mail.removeMetadataHint"),
-            ]),
-            section("", &ctx.say("mail.safety"), "", vec![
-                mail_switch(ctx, &settings, "confirmLinks", "settings.confirmLinks", "settings.confirmLinksHint"),
-                flag(ctx, &choices, "blockConfirmation", "mail.blockQuietly", "mail.blockQuietlyHint"),
-                pick(ctx, &choices, "spamAction", "mail.spamAction", &["mail.spamAsk", "mail.spamOnly", "mail.spamUnsubscribe"]),
-            ]),
+            section(
+                "",
+                &ctx.say("mail.images"),
+                "",
+                vec![
+                    mail_switch(ctx, &settings, "hideRemoteImages", "settings.hideRemote", "settings.hideRemoteHint"),
+                    flag(ctx, &choices, "hideEmbedded", "mail.hideEmbedded", "mail.hideEmbeddedHint"),
+                    flag(ctx, &choices, "hideSenderImages", "mail.hideSenderImages", "mail.hideSenderImagesHint"),
+                    flag(ctx, &choices, "removeMetadata", "mail.removeMetadata", "mail.removeMetadataHint"),
+                ],
+            ),
+            section(
+                "",
+                &ctx.say("mail.safety"),
+                "",
+                vec![
+                    mail_switch(ctx, &settings, "confirmLinks", "settings.confirmLinks", "settings.confirmLinksHint"),
+                    flag(ctx, &choices, "blockConfirmation", "mail.blockQuietly", "mail.blockQuietlyHint"),
+                    pick(
+                        ctx,
+                        &choices,
+                        "spamAction",
+                        "mail.spamAction",
+                        &["mail.spamAsk", "mail.spamOnly", "mail.spamUnsubscribe"],
+                    ),
+                ],
+            ),
         ]);
     });
 }
 
 /// How mail is signed and checked. It closes the keys page, which stays read-only.
 pub fn pgp_section(ctx: &Ctx, choices: &Choices) -> SettingsSection {
-    section("", &ctx.say("mail.pgp"), "", vec![
-        flag(ctx, choices, "sign", "mail.sign", "mail.signHint"),
-        flag(ctx, choices, "attachPublicKey", "mail.attachPublicKey", "mail.attachPublicKeyHint"),
-        pick(ctx, choices, "pgpScheme", "mail.pgpScheme", &["mail.pgpMime", "mail.pgpInline"]),
-        flag(ctx, choices, "promptPin", "mail.promptPin", "mail.promptPinHint"),
-        note(&ctx.say("mail.savedOnlyKeys")),
-    ])
+    section(
+        "",
+        &ctx.say("mail.pgp"),
+        "",
+        vec![
+            flag(ctx, choices, "sign", "mail.sign", "mail.signHint"),
+            flag(ctx, choices, "attachPublicKey", "mail.attachPublicKey", "mail.attachPublicKeyHint"),
+            pick(ctx, choices, "pgpScheme", "mail.pgpScheme", &["mail.pgpMime", "mail.pgpInline"]),
+            flag(ctx, choices, "promptPin", "mail.promptPin", "mail.promptPinHint"),
+            note(&ctx.say("mail.savedOnlyKeys")),
+        ],
+    )
 }
 
 fn reload_list(ctx: &Ctx) {
@@ -220,7 +274,8 @@ pub fn identity(ctx: &Ctx) {
 pub fn address_typed(ctx: &Ctx, id: &str) {
     let Some((_, address)) = id.split_once(':') else { return };
     let changed = ctx.service.addresses().iter().find(|known| known.id == address).is_some_and(|known| {
-        ctx.text(&format!("name:{address}")) != known.display_name || ctx.text(&format!("signature:{address}")) != known.signature_text
+        ctx.text(&format!("name:{address}")) != known.display_name
+            || ctx.text(&format!("signature:{address}")) != known.signature_text
     });
     ctx.enable(&format!("save:{address}"), changed);
 }
@@ -230,14 +285,20 @@ fn folder_rows(ctx: &Ctx, folders: &[Folder], kind: &str) -> Vec<SettingsRow> {
     let mut lines = Vec::new();
     if matches!(&editing, Some(Editing::New(new)) if *new == kind) {
         lines.push(field(NEW_NAME, &ctx.say("nav.name"), ""));
-        lines.push(SettingsRow { second: ctx.say("common.cancel").into(), ..button(NEW_SAVE, &ctx.say("common.create"), false) });
+        lines.push(SettingsRow {
+            second: ctx.say("common.cancel").into(),
+            ..button(NEW_SAVE, &ctx.say("common.create"), false)
+        });
     }
     for folder in folders.iter().filter(|folder| folder.kind == kind) {
         if let Some(Editing::Rename { id, name, .. }) = &editing
             && *id == folder.id
         {
             lines.push(field(NEW_NAME, &ctx.say("nav.rename"), name));
-            lines.push(SettingsRow { second: ctx.say("common.cancel").into(), ..button(NEW_SAVE, &ctx.say("common.save"), true) });
+            lines.push(SettingsRow {
+                second: ctx.say("common.cancel").into(),
+                ..button(NEW_SAVE, &ctx.say("common.save"), true)
+            });
             continue;
         }
         let mut row = entry(&format!("folder:{}", folder.id), &folder.name, "");
@@ -252,7 +313,12 @@ pub fn folders(ctx: &Ctx) {
     let service = ctx.service.clone();
     ctx.load(async move { service.folders().await }, |ctx, folders: Vec<Folder>| {
         ctx.show(vec![
-            section("add-folder", &ctx.say("nav.folders"), &ctx.say("nav.addFolder"), folder_rows(ctx, &folders, "folder")),
+            section(
+                "add-folder",
+                &ctx.say("nav.folders"),
+                &ctx.say("nav.addFolder"),
+                folder_rows(ctx, &folders, "folder"),
+            ),
             section("add-label", &ctx.say("nav.labels"), &ctx.say("nav.addLabel"), folder_rows(ctx, &folders, "label")),
         ]);
     });
@@ -271,7 +337,9 @@ fn save_folder(ctx: &Ctx) {
     let service = ctx.service.clone();
     match editing {
         Some(Editing::New(kind)) => ctx.act(async move { service.create_label(&name, kind).await }, folders_changed),
-        Some(Editing::Rename { id, color, .. }) => ctx.act(async move { service.rename_label(&id, &name, &color).await }, folders_changed),
+        Some(Editing::Rename { id, color, .. }) => {
+            ctx.act(async move { service.rename_label(&id, &name, &color).await }, folders_changed);
+        }
         None => {}
     }
 }
@@ -283,7 +351,11 @@ fn folder_event(ctx: &Ctx, id: &str, part: i32) {
         let finding = id;
         ctx.load(async move { service.folders().await }, move |ctx, known: Vec<Folder>| {
             if let Some(folder) = known.iter().find(|folder| folder.id == finding) {
-                *EDITING.lock() = Some(Editing::Rename { id: finding, color: folder.color.clone().unwrap_or_default(), name: folder.name.clone() });
+                *EDITING.lock() = Some(Editing::Rename {
+                    id: finding,
+                    color: folder.color.clone().unwrap_or_default(),
+                    name: folder.name.clone(),
+                });
             }
             folders(ctx);
         });
@@ -374,7 +446,10 @@ pub fn forwarding(ctx: &Ctx) {
         }
         ctx.show(vec![
             section("", &ctx.say("forwarding.title"), "", lines),
-            plain(vec![note(&ctx.say("forwarding.addHint")), ghost("manage:auto-reply", &ctx.say("tabs.openInProton"), true)]),
+            plain(vec![
+                note(&ctx.say("forwarding.addHint")),
+                ghost("manage:auto-reply", &ctx.say("tabs.openInProton"), true),
+            ]),
             section("reply", &ctx.say("settings.autoReply"), "", reply_rows(ctx, &reply)),
         ]);
     });
@@ -402,7 +477,9 @@ fn save_reply(ctx: &Ctx) {
     *REPLY.lock() = Some(reply.clone());
     let service = ctx.service.clone();
     let zone = iana_time_zone::get_timezone().unwrap_or_default();
-    ctx.act(async move { service.update_auto_reply(&reply, &zone).await }, |ctx| ctx.tell(&ctx.say("settings.autoReplySaved")));
+    ctx.act(async move { service.update_auto_reply(&reply, &zone).await }, |ctx| {
+        ctx.tell(&ctx.say("settings.autoReplySaved"));
+    });
 }
 
 fn forward_event(ctx: &Ctx, id: &str, part: i32) {
@@ -414,7 +491,12 @@ fn forward_event(ctx: &Ctx, id: &str, part: i32) {
     }
     let title = ctx.say("forwarding.delete");
     let address = ctx.row_title(&format!("forward:{id}"));
-    if actions::confirmed(&title, &ctx.say_with("forwarding.deleteText", &[("address", &address)]), &title, &ctx.say("common.cancel")) {
+    if actions::confirmed(
+        &title,
+        &ctx.say_with("forwarding.deleteText", &[("address", &address)]),
+        &title,
+        &ctx.say("common.cancel"),
+    ) {
         ctx.act(async move { service.delete_forwarding(&id).await }, forwarding);
     }
 }
@@ -430,7 +512,8 @@ pub fn heard(ctx: &Ctx, id: &str, part: i32, value: i32) {
             ctx.act(async move { service.update_mail_setting(&key, on).await }, super::redraw);
         }
         "undo" => {
-            let seconds = usize::try_from(value).ok().and_then(|position| UNDO_SECONDS.get(position)).copied().unwrap_or(0);
+            let seconds =
+                usize::try_from(value).ok().and_then(|position| UNDO_SECONDS.get(position)).copied().unwrap_or(0);
             ctx.act(async move { service.update_delay_send(seconds).await }, super::redraw);
         }
         "add-folder" | "add-label" => {

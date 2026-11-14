@@ -1,8 +1,8 @@
 //! Reads a decrypted PGP/MIME body: the first text and HTML parts, and every file.
 
-use base64::{engine::general_purpose::STANDARD, Engine};
-use encoding_rs::Encoding;
 use crate::pattern::{BytesPattern, Pattern, group};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use encoding_rs::Encoding;
 use regex::Regex;
 use regex::bytes::Regex as BytesRegex;
 use serde::{Deserialize, Serialize};
@@ -59,7 +59,9 @@ fn parse_headers(block: &[u8]) -> HashMap<String, String> {
 }
 
 fn split_header_body(raw: &[u8]) -> (&[u8], &[u8]) {
-    BLANK_LINE.find(raw).map_or((raw, &[]), |blank| (raw.get(..blank.start()).unwrap_or_default(), raw.get(blank.end()..).unwrap_or_default()))
+    BLANK_LINE.find(raw).map_or((raw, &[]), |blank| {
+        (raw.get(..blank.start()).unwrap_or_default(), raw.get(blank.end()..).unwrap_or_default())
+    })
 }
 
 fn header_param(value: &str, name: &str) -> Option<String> {
@@ -84,13 +86,15 @@ fn decode_quoted_printable(text: &[u8]) -> Vec<u8> {
         match (text.get(i + 1), text.get(i + 2)) {
             (Some(b'\r'), Some(b'\n')) => i += 3,
             (Some(b'\n'), _) => i += 2,
-            (Some(&high), Some(&low)) => if let (Some(high), Some(low)) = (hex_value(high), hex_value(low)) {
-                out.push(high << 4 | low);
-                i += 3;
-            } else {
-                out.push(b'=');
-                i += 1;
-            },
+            (Some(&high), Some(&low)) => {
+                if let (Some(high), Some(low)) = (hex_value(high), hex_value(low)) {
+                    out.push(high << 4 | low);
+                    i += 3;
+                } else {
+                    out.push(b'=');
+                    i += 1;
+                }
+            }
             _ => {
                 out.push(b'=');
                 i += 1;
@@ -204,9 +208,7 @@ fn collect_leaves(raw: &[u8], out: &mut MimeResult, depth: usize) {
 
     let disposition = headers.get("content-disposition").map_or("", String::as_str);
     let name = file_name(disposition, content_type);
-    let content_id = headers
-        .get("content-id")
-        .map(|id| id.trim_start_matches('<').trim_end_matches('>').to_string());
+    let content_id = headers.get("content-id").map(|id| id.trim_start_matches('<').trim_end_matches('>').to_string());
     let data = decode_transfer(body, headers.get("content-transfer-encoding").map(String::as_str));
     let lower = disposition.to_lowercase();
     let is_file = lower.starts_with("attachment") || name.is_some() || content_id.is_some();

@@ -264,9 +264,9 @@ impl View {
             return Vec::new();
         }
         let (from, count) = open.map_or((0, AHEAD_OF_A_FOLDER), |id| {
-                let at = self.rows.iter().position(|row| row.id == id);
-                (at.map_or(self.rows.len(), |at| at + 1), AHEAD_OF_A_MESSAGE)
-            });
+            let at = self.rows.iter().position(|row| row.id == id);
+            (at.map_or(self.rows.len(), |at| at + 1), AHEAD_OF_A_MESSAGE)
+        });
         self.rows.iter().skip(from).take(count).map(|row| row.id.clone()).collect()
     }
 

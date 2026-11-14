@@ -42,10 +42,9 @@ fn removes_frames_and_plugins() {
 
 #[test]
 fn keeps_the_formatting_mail_is_made_of() {
-    let html = protect(
-        r#"<table width="600" cellpadding="4"><tr><td bgcolor="red" style="color:blue">x</td></tr></table>"#,
-    )
-    .html;
+    let html =
+        protect(r#"<table width="600" cellpadding="4"><tr><td bgcolor="red" style="color:blue">x</td></tr></table>"#)
+            .html;
     for word in ["<table", "width=\"600\"", "bgcolor", "color:blue"] {
         assert!(html.contains(word), "{word} missing from {html}");
     }
@@ -124,7 +123,8 @@ fn css_strings_cannot_name_a_remote_image_without_slashes() {
 
 #[test]
 fn nothing_of_a_mail_reaches_the_app_s_own_document_but_its_content() {
-    let html = for_editor(r#"<style>body{display:none}</style><p id="x" name="y" class="toast" style="color:red">a</p>"#);
+    let html =
+        for_editor(r#"<style>body{display:none}</style><p id="x" name="y" class="toast" style="color:red">a</p>"#);
     assert_eq!(html, r#"<p style="color:red">a</p>"#);
 }
 
@@ -214,7 +214,8 @@ fn a_cleaned_mail_has_no_remote_address_left_to_fetch() {
 
 #[test]
 fn css_cannot_load_a_tracking_image() {
-    for css in ["background:url(https://a.io/p.gif)", "background: url( 'http://a.io/p' )", "background:url(//a.io/p)"] {
+    for css in ["background:url(https://a.io/p.gif)", "background: url( 'http://a.io/p' )", "background:url(//a.io/p)"]
+    {
         assert!(!clean_css(css).contains("a.io"), "{css}");
     }
     assert!(clean_css("background:url(data:image/png;base64,AA)").contains("data:image/png"));
@@ -266,7 +267,8 @@ fn broken_css_cannot_escape_or_panic() {
 
 #[test]
 fn image_maps_cannot_navigate_the_window() {
-    let html = protect(r##"<map name="m"><area shape="rect" href="https://evil.example"></map><img usemap="#m">"##).html;
+    let html =
+        protect(r##"<map name="m"><area shape="rect" href="https://evil.example"></map><img usemap="#m">"##).html;
     assert!(!html.contains("evil") && !html.contains("area") && !html.contains("usemap"));
 }
 

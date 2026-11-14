@@ -16,7 +16,9 @@ fn the_headers_a_list_needs_stay_outside() {
 #[test]
 fn the_parts_are_pgp_mime() {
     let wrapped = pgp_mime(LITERAL, "ARMOR", "b0");
-    assert!(wrapped.contains("Content-Type: multipart/encrypted; boundary=\"b0\"; protocol=\"application/pgp-encrypted\""));
+    assert!(
+        wrapped.contains("Content-Type: multipart/encrypted; boundary=\"b0\"; protocol=\"application/pgp-encrypted\"")
+    );
     assert!(wrapped.contains("--b0\r\nContent-Description: PGP/MIME version identification\r\nContent-Type: application/pgp-encrypted\r\n\r\nVersion: 1\r\n"));
     assert!(wrapped.contains("filename=encrypted.asc\r\nContent-Type: application/octet-stream; name=encrypted.asc\r\n\r\nARMOR\r\n--b0--\r\n"));
 }

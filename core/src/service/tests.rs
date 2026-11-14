@@ -25,9 +25,8 @@ fn query_values_are_encoded() {
 #[test]
 fn progress_steps_serialise_for_the_interface() {
     assert_eq!(serde_json::to_value(AuthStep::Totp).unwrap()["step"], "totp");
-    let verify = AuthStep::Verify {
-        challenge: HumanVerification { token: "t".into(), methods: vec![], web_url: "u".into() },
-    };
+    let verify =
+        AuthStep::Verify { challenge: HumanVerification { token: "t".into(), methods: vec![], web_url: "u".into() } };
     let value = serde_json::to_value(verify).unwrap();
     assert_eq!(value["step"], "verify");
     assert_eq!(value["challenge"]["webUrl"], "u");
@@ -406,7 +405,9 @@ fn sender_rules_read_every_page() {
             .collect::<Vec<_>>()
             .join(",");
         let full: &'static str = Box::leak(format!(r#"{{"Code":1000,"IncomingDefaults":[{full}]}}"#).into_boxed_str());
-        Some(if path.contains("Page=0") { (200, full) } else {
+        Some(if path.contains("Page=0") {
+            (200, full)
+        } else {
             (200, r#"{"Code":1000,"IncomingDefaults":[{"ID":"x","Location":0,"Domain":"b.c"}]}"#)
         })
     });
@@ -521,11 +522,14 @@ fn with_stages(service: &Service) -> Arc<Mutex<Vec<Stage>>> {
 #[test]
 fn a_start_names_each_stage_as_it_reaches_it() {
     let server = serve(|path, _| {
-        Some((200, if path == "/core/v4/users" {
-            r#"{"Code":1000,"User":{"Keys":[]}}"#
-        } else {
-            r#"{"Code":1000,"Addresses":[]}"#
-        }))
+        Some((
+            200,
+            if path == "/core/v4/users" {
+                r#"{"Code":1000,"User":{"Keys":[]}}"#
+            } else {
+                r#"{"Code":1000,"Addresses":[]}"#
+            },
+        ))
     });
     let (service, _, _) = restarted_at(&server.base);
     let stages = with_stages(&service);
@@ -712,7 +716,8 @@ fn a_folder_comes_back_at_once_and_is_then_asked_again() {
         working.view_open("sent").await;
         working.view_open("archive").await;
     });
-    let back = updates.lock().iter().rev().find(|update| update.folder == "archive" && update.refreshing).cloned().unwrap();
+    let back =
+        updates.lock().iter().rev().find(|update| update.folder == "archive" && update.refreshing).cloned().unwrap();
     assert_eq!(back.rows.as_ref().map(Vec::len), Some(2), "the rows came before the answer");
     assert!(back.updated_at.is_some());
     let lists = server.seen.lock().iter().filter(|path| path.starts_with("/mail/v4/messages?")).count();
@@ -851,13 +856,22 @@ fn files_inside_a_message_come_back_from_disk_with_it() {
     service.use_mail_dir(Some(dir.clone()), None);
     let mut message = (*a_kept_message("packed")).clone();
     message.attachments.push(crate::model::Attachment { id: "mime-0".to_string(), ..a_kept_attachment() });
-    let file = crate::mime::MimeAttachment { name: "a.pdf".into(), mime: "application/pdf".into(), content_id: None, inline: false, data: vec![1, 2, 3] };
+    let file = crate::mime::MimeAttachment {
+        name: "a.pdf".into(),
+        mime: "application/pdf".into(),
+        content_id: None,
+        inline: false,
+        data: vec![1, 2, 3],
+    };
     let store = service.store().unwrap();
     store.put("mail", "packed", &message);
     store.put("mime-files", "packed", &vec![file.clone()]);
     let opened = working.block_on(service.message("packed")).unwrap();
     assert_eq!(opened.attachments.len(), message.attachments.len());
-    assert_eq!(service.mime_files.lock().iter().find(|(id, _)| id == "packed").map(|(_, files)| files[0].clone()), Some(file));
+    assert_eq!(
+        service.mime_files.lock().iter().find(|(id, _)| id == "packed").map(|(_, files)| files[0].clone()),
+        Some(file)
+    );
     assert!(server.seen.lock().is_empty());
     crate::mail_store::erase(&dir);
 }
@@ -930,7 +944,9 @@ fn a_folder_opens_from_the_disk_before_proton_answers() {
 
 #[test]
 fn a_logo_is_asked_for_by_domain_once_and_never_for_nonsense() {
-    let server = serve(|path, _| Some(if path.contains("images/logo") { (404, "{}") } else { (200, r#"{"Code":1000,"MailSettings":{}}"#) }));
+    let server = serve(|path, _| {
+        Some(if path.contains("images/logo") { (404, "{}") } else { (200, r#"{"Code":1000,"MailSettings":{}}"#) })
+    });
     let (service, _) = mailbox_at(&server.base);
     let working = runtime();
     assert_eq!(working.block_on(service.sender_logo("a@PayPal.de", false)), None);
@@ -976,7 +992,8 @@ fn the_largest_session_fits_the_windows_credential_store() {
 /// picture, when it has none.
 #[test]
 fn a_gravatar_address_is_the_hash_of_the_address() {
-    let expected = "https://www.gravatar.com/avatar/973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b?s=128&d=404";
+    let expected =
+        "https://www.gravatar.com/avatar/973dfe463ec85785f5f95af5ba3906eedb2d931c24e69824a89ea65dba4e813b?s=128&d=404";
     assert_eq!(super::images::gravatar_url("test@example.com").as_deref(), Some(expected));
     assert_eq!(super::images::gravatar_url("  Test@Example.COM ").as_deref(), Some(expected));
     for nothing in ["", "no-at-sign", "@example.com", "test@", "te st@example.com"] {

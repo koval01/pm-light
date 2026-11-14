@@ -26,6 +26,15 @@ unimplemented = "deny"
 string_slice = "deny"
 indexing_slicing = "deny"
 exit = "deny"
+# A lint is set aside only with `#[expect]` and a reason, which fails once the reason is gone.
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+# Everything the app says goes to the journal, which keeps out what is personal.
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+# One layout for modules: `name.rs` beside `name/`.
+mod_module_files = "deny"
 # Every unsafe block says why it is sound, in a `// Safety:` comment right above it.
 undocumented_unsafe_blocks = "deny"
 unnecessary_safety_comment = "deny"

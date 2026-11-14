@@ -16,6 +16,7 @@ mod settings;
 mod sign_in;
 mod view;
 
+use crate::mail_store::{self, MailStore, StoreKey};
 use crate::{
     client::{Client, Ending, Session, SessionChange},
     compose::{self, ComposeLabels, ComposeMode, ComposeState, SendOptions},
@@ -24,14 +25,18 @@ use crate::{
     error::{Error, HumanVerification, Link, Result},
     html, mapping as api,
     mime::{MimeAttachment, parse_mime},
-    model::{Storage, TimeSettings, TimeSetting, Account, Billing, AccountSession, AuthLogEntry, MessageChanges, ContactEmail, Attachment, Message, Latency, Folder, Counts, MailChange, ListOptions, MessageMeta, MailProtection, Referrals, SmtpToken, Organization, Outgoing, SavedDraft, OwnAddress, MailSettings, Habits, UserChoices, AutoReply, MailFilter, FilterDraft},
+    model::{
+        Account, AccountSession, Attachment, AuthLogEntry, AutoReply, Billing, ContactEmail, Counts, FilterDraft,
+        Folder, Habits, Latency, ListOptions, MailChange, MailFilter, MailProtection, MailSettings, Message,
+        MessageChanges, MessageMeta, Organization, Outgoing, OwnAddress, Referrals, SavedDraft, SmtpToken, Storage,
+        TimeSetting, TimeSettings, UserChoices,
+    },
     safety,
     send::{self, PasswordProtection, PublicKeyRow, Recipient, Uploaded},
     sieve::{self, SimpleFilter},
     text::{escape, to_text},
     vault, vcard,
 };
-use crate::mail_store::{self, MailStore, StoreKey};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures::{StreamExt, TryStreamExt, future::join_all, stream};
 use parking_lot::{Mutex, RwLock};
@@ -133,14 +138,18 @@ pub type StageListener = Box<dyn Fn(Stage) + Send + Sync>;
 #[serde(tag = "step", rename_all = "lowercase")]
 pub enum AuthStep {
     Credentials,
-    Verify { challenge: HumanVerification },
+    Verify {
+        challenge: HumanVerification,
+    },
     Totp,
     Mailbox,
     Ready,
     /// A saved session waits behind the app password.
     Locked,
     /// A saved session waits for Proton. Nothing has been lost, and Rust keeps trying.
-    Waiting { link: Link },
+    Waiting {
+        link: Link,
+    },
 }
 
 #[derive(Clone)]

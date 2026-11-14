@@ -36,7 +36,9 @@ fn a_name_is_enough_for_an_icon() {
 
 #[test]
 fn a_picture_is_served_as_what_it_is() {
-    for (format, mime) in [(ImageFormat::Png, "image/png"), (ImageFormat::Jpeg, "image/jpeg"), (ImageFormat::WebP, "image/webp")] {
+    for (format, mime) in
+        [(ImageFormat::Png, "image/png"), (ImageFormat::Jpeg, "image/jpeg"), (ImageFormat::WebP, "image/webp")]
+    {
         let found = examine("a.dat", "", &encoded(format, 4, 4));
         assert_eq!(found.shown, Some(Shown::Picture(mime)));
     }

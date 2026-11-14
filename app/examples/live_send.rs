@@ -7,7 +7,16 @@ use proton_core::{
     AuthStep, PROTON_API, Service, SessionStore,
     model::{ListOptions, Outgoing, OutgoingFile},
 };
-use std::{sync::Arc, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::io::Write as _;
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+/// A line of the report, to the terminal that runs this; a closed one is no reason to stop.
+fn say(text: &str) {
+    let _ = writeln!(std::io::stdout().lock(), "{text}");
+}
 
 const WAIT_ROUNDS: u32 = 30;
 const WAIT_STEP: Duration = Duration::from_secs(6);
@@ -78,14 +87,14 @@ async fn run() -> Result<(), String> {
         size: data.len() as u64,
         staged_id,
     }];
-    println!("plain mail with a file: sent {}", !send(&service, &mail, &allowed).await?.is_empty());
+    say(&format!("plain mail with a file: sent {}", !send(&service, &mail, &allowed).await?.is_empty()));
 
     let protected_subject = format!("Proton Mail Light protected test {stamp}");
     let mut protected = outgoing(&protected_subject, &allowed);
     protected.password = Some(format!("proton-mail-light-{stamp}"));
     protected.password_hint = Some("test".into());
     protected.expires_in = Some(24 * 3600);
-    println!("password, 24h expiry: sent {}", !send(&service, &protected, &allowed).await?.is_empty());
+    say(&format!("password, 24h expiry: sent {}", !send(&service, &protected, &allowed).await?.is_empty()));
 
     for round in 1..=WAIT_ROUNDS {
         tokio_sleep(WAIT_STEP).await;
@@ -97,16 +106,21 @@ async fn run() -> Result<(), String> {
             arrived = arrived.or_else(|| list.into_iter().find(|m| m.subject.contains(&subject)));
         }
         let Some(meta) = arrived else { continue };
-        println!("came back through Gmail after about {}s", u64::from(round) * WAIT_STEP.as_secs());
+        say(&format!("came back through Gmail after about {}s", u64::from(round) * WAIT_STEP.as_secs()));
         let m = service.message(&meta.id).await.map_err(|e| e.to_string())?;
-        println!("returned: text intact {}, signature {:?}, files {}", m.body.contains('😀'), m.signature, m.attachments.len());
+        say(&format!(
+            "returned: text intact {}, signature {:?}, files {}",
+            m.body.contains('😀'),
+            m.signature,
+            m.attachments.len()
+        ));
         if let Some(file) = m.attachments.first() {
             let opened = service.attachment(&meta.id, file, &m.address_id).await.map_err(|e| e.to_string())?;
-            println!("returned file identical: {}", opened == data);
+            say(&format!("returned file identical: {}", opened == data));
         }
         return Ok(());
     }
-    println!("did not come back within {}s", u64::from(WAIT_ROUNDS) * WAIT_STEP.as_secs());
+    say(&format!("did not come back within {}s", u64::from(WAIT_ROUNDS) * WAIT_STEP.as_secs()));
     Ok(())
 }
 
@@ -118,12 +132,12 @@ fn main() {
     let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
         Ok(runtime) => runtime,
         Err(error) => {
-            println!("stopped: {error}");
+            say(&format!("stopped: {error}"));
             return;
         }
     };
     match runtime.block_on(run()) {
-        Ok(()) => println!("send check finished"),
-        Err(error) => println!("stopped: {error}"),
+        Ok(()) => say("send check finished"),
+        Err(error) => say(&format!("stopped: {error}")),
     }
 }

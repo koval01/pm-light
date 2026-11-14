@@ -5,7 +5,10 @@
 
 use super::{
     Ctx,
-    rows::{self, SettingsRow, button, card, entry, fact, field, first_secret, ghost, hidden_fact, hint, note, plain, strong, switch},
+    rows::{
+        self, SettingsRow, button, card, entry, fact, field, first_secret, ghost, hidden_fact, hint, note, plain,
+        strong, switch,
+    },
 };
 use crate::SettingsSection;
 use parking_lot::Mutex;
@@ -81,11 +84,18 @@ fn asked_for(ctx: &Ctx, action: &Action) -> String {
 
 fn confirmation_card(ctx: &Ctx) -> Option<SettingsSection> {
     let action = with(|state| state.action.clone())?;
-    let mut lines = vec![strong(&ctx.say("guard.title")), note(&asked_for(ctx, &action)), first_secret(CONFIRM_PASSWORD, &ctx.say("guard.password"))];
+    let mut lines = vec![
+        strong(&ctx.say("guard.title")),
+        note(&asked_for(ctx, &action)),
+        first_secret(CONFIRM_PASSWORD, &ctx.say("guard.password")),
+    ];
     if with(|state| state.has_second_factor) {
         lines.push(rows::code(CONFIRM_CODE, &ctx.say("guard.code"), false));
     }
-    lines.push(SettingsRow { second: ctx.say("common.cancel").into(), ..button(CONFIRM, &ctx.say("guard.confirm"), false) });
+    lines.push(SettingsRow {
+        second: ctx.say("common.cancel").into(),
+        ..button(CONFIRM, &ctx.say("guard.confirm"), false)
+    });
     Some(card(lines))
 }
 
@@ -123,12 +133,23 @@ fn with_card(ctx: &Ctx, mut sections: Vec<SettingsSection>) {
     ctx.show(sections);
 }
 
-fn way_back(ctx: &Ctx, id: &str, label: &str, value: &str, reset: &str, on: bool, editing: Option<&str>) -> Vec<SettingsRow> {
+fn way_back(
+    ctx: &Ctx,
+    id: &str,
+    label: &str,
+    value: &str,
+    reset: &str,
+    on: bool,
+    editing: Option<&str>,
+) -> Vec<SettingsRow> {
     let shown = if value.is_empty() { ctx.say("security.recoveryNone") } else { value.to_string() };
     if editing == Some(id) {
         return vec![
             field(NEW_VALUE, &ctx.say(label), value),
-            SettingsRow { second: ctx.say("common.cancel").into(), ..button(&format!("save:{id}"), &ctx.say("common.save"), true) },
+            SettingsRow {
+                second: ctx.say("common.cancel").into(),
+                ..button(&format!("save:{id}"), &ctx.say("common.save"), true)
+            },
         ];
     }
     let mut row = if value.is_empty() { fact(&ctx.say(label), &shown) } else { hidden_fact(&ctx.say(label), &shown) };
@@ -147,8 +168,17 @@ pub fn recovery(ctx: &Ctx) {
     ctx.load(task, |ctx, (status, account): (RecoveryStatus, Account)| {
         with(|state| state.has_second_factor = account.two_factor != "off");
         let editing = with(|state| state.editing);
-        let mut lines = way_back(ctx, "email", "recovery.email", &status.email, "recovery.allowEmail", status.email_reset, editing);
-        lines.extend(way_back(ctx, "phone", "recovery.phone", &status.phone, "recovery.allowPhone", status.phone_reset, editing));
+        let mut lines =
+            way_back(ctx, "email", "recovery.email", &status.email, "recovery.allowEmail", status.email_reset, editing);
+        lines.extend(way_back(
+            ctx,
+            "phone",
+            "recovery.phone",
+            &status.phone,
+            "recovery.allowPhone",
+            status.phone_reset,
+            editing,
+        ));
         if !status.email.is_empty() || !status.phone.is_empty() {
             lines.push(hint(&ctx.say("privacy.hoverContacts")));
         }
@@ -159,8 +189,14 @@ pub fn recovery(ctx: &Ctx) {
             RecoveryPhrase::Set => "recovery.phraseSet",
         };
         lines.push(fact(&ctx.say("recovery.phrase"), &ctx.say(phrase)));
-        lines.push(fact(&ctx.say("recovery.device"), &ctx.say(if status.device_backup { "recovery.on" } else { "recovery.off" })));
-        let site = plain(vec![note(&ctx.say("recovery.manageHint")), ghost("manage:recovery", &ctx.say("tabs.openInProton"), true)]);
+        lines.push(fact(
+            &ctx.say("recovery.device"),
+            &ctx.say(if status.device_backup { "recovery.on" } else { "recovery.off" }),
+        ));
+        let site = plain(vec![
+            note(&ctx.say("recovery.manageHint")),
+            ghost("manage:recovery", &ctx.say("tabs.openInProton"), true),
+        ]);
         with_card(ctx, vec![plain(lines), site]);
     });
 }
@@ -182,12 +218,18 @@ fn totp_section(ctx: &Ctx, stage: &Totp) -> SettingsSection {
             key.button = ctx.say("referral.copy").into();
             lines.push(key);
             lines.push(rows::code(TOTP_CODE, &ctx.say("guard.code"), true));
-            lines.push(SettingsRow { second: ctx.say("common.cancel").into(), ..button("totp-confirm", &ctx.say("guard.confirm"), false) });
+            lines.push(SettingsRow {
+                second: ctx.say("common.cancel").into(),
+                ..button("totp-confirm", &ctx.say("guard.confirm"), false)
+            });
         }
         Totp::Codes(codes) => {
             lines.push(strong(&ctx.say("totp.codes")));
             lines.extend(codes.iter().map(|code| SettingsRow { mono: true, ..entry("", "", code) }));
-            lines.push(SettingsRow { second: ctx.say("totp.done").into(), ..button("totp-copy-codes", &ctx.say("referral.copy"), true) });
+            lines.push(SettingsRow {
+                second: ctx.say("totp.done").into(),
+                ..button("totp-copy-codes", &ctx.say("referral.copy"), true)
+            });
         }
     }
     card(lines)
@@ -240,7 +282,9 @@ async fn run(ctx: &Ctx, action: Action, confirmation: Confirmation) -> Result<Op
         Action::Sentinel(on) => service.set_sentinel(on, &confirmation).await?,
         Action::DisableTotp => service.disable_totp(&confirmation).await?,
         Action::LogMode(mode) => service.set_log_mode(mode, &confirmation).await?,
-        Action::EnableTotp(account) => return Ok(Some(Totp::Scanning(service.start_totp(&confirmation, &account).await?))),
+        Action::EnableTotp(account) => {
+            return Ok(Some(Totp::Scanning(service.start_totp(&confirmation, &account).await?)));
+        }
     }
     Ok(None)
 }
@@ -296,7 +340,9 @@ fn copy(ctx: &Ctx, text: &str) {
 
 fn enable_totp(ctx: &Ctx) {
     let service = ctx.service.clone();
-    ctx.load(async move { service.account().await }, |ctx, account: Account| ask(ctx, Action::EnableTotp(account.email)));
+    ctx.load(async move { service.account().await }, |ctx, account: Account| {
+        ask(ctx, Action::EnableTotp(account.email));
+    });
 }
 
 pub fn heard(ctx: &Ctx, id: &str, part: i32, value: i32) {

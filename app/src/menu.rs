@@ -59,7 +59,9 @@ pub fn edit(window: &slint::Window, action: &str) {
     if page_has_focus() {
         if let (Some(marker), Ok(name)) = (MainThreadMarker::new(), CString::new(*selector)) {
             // Safety: no target means the first responder, and no sender is needed by these actions.
-            let _ = unsafe { NSApplication::sharedApplication(marker).sendAction_to_from(Sel::register(&name), None, None) };
+            let _ = unsafe {
+                NSApplication::sharedApplication(marker).sendAction_to_from(Sel::register(&name), None, None)
+            };
         }
         return;
     }

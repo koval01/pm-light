@@ -41,7 +41,13 @@ fn texts(options: Vec<String>) -> ModelRc<SharedString> {
 }
 
 pub fn section(id: &str, title: &str, action: &str, rows: Vec<SettingsRow>) -> SettingsSection {
-    SettingsSection { id: id.into(), title: title.into(), action: action.into(), card: false, rows: ModelRc::from(Rc::new(VecModel::from(rows))) }
+    SettingsSection {
+        id: id.into(),
+        title: title.into(),
+        action: action.into(),
+        card: false,
+        rows: ModelRc::from(Rc::new(VecModel::from(rows))),
+    }
 }
 
 /// One of several alike, in a card of its own.
@@ -68,7 +74,10 @@ pub struct Rail {
 
 impl Rail {
     const fn bits(self) -> i32 {
-        (self.first as i32) | ((self.last as i32) << 1) | ((self.hidden_below as i32) << 2) | ((self.hidden_above as i32) << 3)
+        (self.first as i32)
+            | ((self.last as i32) << 1)
+            | ((self.hidden_below as i32) << 2)
+            | ((self.hidden_above as i32) << 3)
     }
 }
 
@@ -207,7 +216,6 @@ pub fn ghost(id: &str, text: &str, enabled: bool) -> SettingsRow {
     SettingsRow { ghost: true, ..button(id, text, enabled) }
 }
 
-#[allow(clippy::cast_precision_loss)]
 pub fn meter(used: u64, max: u64, text: &str) -> SettingsRow {
     SettingsRow { share: crate::numbers::share(used, max), value: text.into(), ..row(METER) }
 }
@@ -217,7 +225,11 @@ pub fn choice(id: &str, title: &str, value: &str) -> SettingsRow {
 }
 
 pub fn keys(title: &str, keys: &str) -> SettingsRow {
-    SettingsRow { title: title.into(), options: texts(keys.split_whitespace().map(str::to_string).collect()), ..row(KEYS) }
+    SettingsRow {
+        title: title.into(),
+        options: texts(keys.split_whitespace().map(str::to_string).collect()),
+        ..row(KEYS)
+    }
 }
 
 /// A line of the journal: 0 is plain, 1 a warning, 2 an error.
@@ -264,7 +276,6 @@ pub fn day(milliseconds: u64) -> String {
 }
 
 /// Bytes, in the units of the language.
-#[allow(clippy::cast_precision_loss)]
 pub fn size(ctx: &Ctx, bytes: u64) -> String {
     size_in(&ctx.say("units.size"), bytes)
 }
@@ -317,63 +328,4 @@ fn money_in(language: &str, cents: i64, currency: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use slint::Model;
-
-    #[test]
-    fn a_code_keeps_digits_only() {
-        assert_eq!(code_digits("12 3a4"), "1234");
-    }
-
-    #[test]
-    fn a_pasted_code_stops_at_six() {
-        assert_eq!(code_digits("12345678"), "123456");
-        assert!(is_whole_code(&code_digits("12345678")));
-    }
-
-    #[test]
-    fn a_short_code_is_not_whole() {
-        assert!(!is_whole_code("12345"));
-    }
-
-    fn pieces(lines: &ModelRc<CodeLine>) -> Vec<Vec<(String, i32)>> {
-        lines
-            .iter()
-            .map(|line| line.pieces.iter().map(|piece| (piece.text.to_string(), piece.kind)).collect())
-            .collect()
-    }
-
-    #[test]
-    fn a_script_keeps_its_lines_and_its_colours() {
-        let found = pieces(&code_lines("# note\n\nif true {"));
-        assert_eq!(found.len(), 3);
-        assert_eq!(found[0], [("#\u{a0}note".to_string(), 1)]);
-        assert_eq!(found[1], [("\u{a0}".to_string(), 0)]);
-        assert!(found[2].iter().any(|(text, kind)| text == "if" && *kind == 3));
-    }
-
-    #[test]
-    fn a_comment_over_several_lines_stays_a_comment() {
-        let found = pieces(&code_lines("/* one\ntwo */"));
-        assert_eq!(found.len(), 2);
-        assert!(found.iter().all(|line| line.iter().all(|(_, kind)| *kind == 1)));
-    }
-
-    #[test]
-    fn money_is_written_as_the_language_writes_it() {
-        assert_eq!(money_in("en", 1_234_567, "USD"), "$12,345.67");
-        assert_eq!(money_in("de", 1_234_567, "EUR"), "12.345,67\u{a0}€");
-        assert_eq!(money_in("ru", 1_234_567, "EUR"), "12\u{a0}345,67\u{a0}€");
-        assert_eq!(money_in("en", 500, "CHF"), "CHF\u{a0}5.00");
-        assert_eq!(money_in("en", -205, "EUR"), "-€2.05");
-        assert_eq!(money_in("de", 0, "EUR"), "0,00\u{a0}€");
-    }
-
-    #[test]
-    fn sizes_use_the_units_given() {
-        assert_eq!(size_in("B,KB,MB", 799), "799 B");
-        assert_eq!(size_in("o,Ko,Mo", 2048), "2.0 Ko");
-        assert_eq!(size_in("B,KB,MB", 64 * 1024), "64 KB");
-    }
-}
+mod tests;

@@ -3,21 +3,28 @@
 //! Prints nothing of the session. Run it with `cargo run -p proton-mail-light --example seed_session`.
 
 use keyring::Entry;
+use std::io::Write as _;
 use std::process::ExitCode;
+
+/// A line of the report, to the terminal that runs this; a closed one is no reason to stop.
+fn say(text: &str) {
+    let _ = writeln!(std::io::stdout().lock(), "{text}");
+}
 
 fn main() -> ExitCode {
     let Some(session) = std::env::var("LIVE_SESSION").ok().filter(|value| !value.trim().is_empty()) else {
-        println!("no session in LIVE_SESSION");
+        say("no session in LIVE_SESSION");
         return ExitCode::FAILURE;
     };
-    let stored = Entry::new("org.koval-dev.proton-mail-light", "session").and_then(|entry| entry.set_password(&session));
+    let stored =
+        Entry::new("org.koval-dev.proton-mail-light", "session").and_then(|entry| entry.set_password(&session));
     match stored {
         Ok(()) => {
-            println!("the session is in the system's store ({} bytes)", session.len());
+            say(&format!("the session is in the system's store ({} bytes)", session.len()));
             ExitCode::SUCCESS
         }
         Err(error) => {
-            println!("the session could not be stored: {}", kind(&error));
+            say(&format!("the session could not be stored: {}", kind(&error)));
             ExitCode::FAILURE
         }
     }

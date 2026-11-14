@@ -47,12 +47,11 @@ fn field_of(moment: NaiveDateTime, with_time: bool) -> String {
 }
 
 fn moment_of(value: &str) -> Option<NaiveDateTime> {
-    NaiveDateTime::parse_from_str(value, FIELD_FORMAT)
-        .ok()
-        .or_else(|| {
-            let day = NaiveDate::parse_from_str(value, DAY_FORMAT).or_else(|_| NaiveDate::parse_from_str(value, DOTTED_DAY));
-            day.ok()?.and_hms_opt(0, 0, 0)
-        })
+    NaiveDateTime::parse_from_str(value, FIELD_FORMAT).ok().or_else(|| {
+        let day =
+            NaiveDate::parse_from_str(value, DAY_FORMAT).or_else(|_| NaiveDate::parse_from_str(value, DOTTED_DAY));
+        day.ok()?.and_hms_opt(0, 0, 0)
+    })
 }
 
 fn hour_shown(hour: u32, twelve: bool) -> (String, String) {
@@ -77,9 +76,9 @@ fn cell_of(day: NaiveDate, picking: &Picking, today: NaiveDate, earliest: Option
 }
 
 fn draw() {
-    let Some((window, picking, earliest, with_time)) =
-        OPEN.with_borrow(|open| open.as_ref().map(|open| (open.window.clone_strong(), open.picking, open.earliest, open.with_time)))
-    else {
+    let Some((window, picking, earliest, with_time)) = OPEN.with_borrow(|open| {
+        open.as_ref().map(|open| (open.window.clone_strong(), open.picking, open.earliest, open.with_time))
+    }) else {
         return;
     };
     let say = window.global::<Say>();
@@ -122,7 +121,8 @@ fn close() {
 
 fn confirmed() {
     let Some((window, moment, with_time, earliest, check)) = OPEN.with_borrow(|open| {
-        open.as_ref().map(|open| (open.window.clone_strong(), open.picking.moment, open.with_time, open.earliest, open.check))
+        open.as_ref()
+            .map(|open| (open.window.clone_strong(), open.picking.moment, open.with_time, open.earliest, open.check))
     }) else {
         return;
     };
@@ -169,7 +169,8 @@ pub fn open<C: ComponentHandle + 'static>(parent: &C, request: &Request, chosen:
     window.on_step_hour(|delta| change(|picking| picking.step_hour(delta)));
     window.on_step_minute(|delta| change(|picking| picking.step_minute(delta)));
     window.on_pick(|index| {
-        let day = OPEN.with_borrow(|open| open.as_ref().and_then(|open| open.cells.get(usize::try_from(index).ok()?).copied()));
+        let day = OPEN
+            .with_borrow(|open| open.as_ref().and_then(|open| open.cells.get(usize::try_from(index).ok()?).copied()));
         if let Some(day) = day {
             change(|picking| picking.pick(day));
         }
@@ -225,30 +226,4 @@ fn step_within(picking: &mut Picking, delta: i32, earliest: Option<NaiveDate>) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn hours_read_as_the_clock_chosen() {
-        assert_eq!(hour_shown(0, false), ("00".to_string(), String::new()));
-        assert_eq!(hour_shown(17, false), ("17".to_string(), String::new()));
-        assert_eq!(hour_shown(0, true), ("12".to_string(), "AM".to_string()));
-        assert_eq!(hour_shown(12, true), ("12".to_string(), "PM".to_string()));
-        assert_eq!(hour_shown(17, true), ("05".to_string(), "PM".to_string()));
-    }
-
-    #[test]
-    fn a_field_may_hold_a_moment_or_a_day() {
-        assert_eq!(moment_of("2026-12-31T09:30").map(|at| (at.hour(), at.minute())), Some((9, 30)));
-        assert_eq!(moment_of("2026-12-31").map(|at| (at.day(), at.hour())), Some((31, 0)));
-        assert_eq!(moment_of("31.12.2026").map(|at| at.day()), Some(31));
-        assert_eq!(moment_of("soon"), None);
-    }
-
-    #[test]
-    fn what_comes_back_is_what_the_fields_read() {
-        let moment = moment_of("2026-12-31T09:30").unwrap();
-        assert_eq!(field_of(moment, true), "2026-12-31T09:30");
-        assert_eq!(field_of(moment, false), "2026-12-31");
-    }
-}
+mod tests;

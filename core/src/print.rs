@@ -4,7 +4,6 @@
 //! on every engine, and no two printers agree anyway. Sizes are therefore never taken on trust:
 //! see `MM_ON_PAPER`, and the shift a person can calibrate with the test sheet.
 
-use std::fmt::Write;
 use crate::{
     model::{Address, Message},
     seal::Seal,
@@ -14,6 +13,7 @@ use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use qrcode::{EcLevel, QrCode, render::svg};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::fmt::Write;
 use url::form_urlencoded;
 
 /// How far one CSS millimetre lands on paper. WebKit shrinks a page less than CSS asks when it
@@ -240,8 +240,13 @@ fn seal_sheet(sheet: Option<&SealSheet>, labels: &PrintLabels) -> String {
         let image = code_image(code, TEXT_CODE_MM, EcLevel::Q);
         format!(r#"<figure class="seal-cell">{image}<figcaption>{caption}</figcaption></figure>"#)
     };
-    let cells: Vec<String> =
-        sheet.seal.text_codes.iter().enumerate().map(|(index, code)| cell(code, format!("{}/{total}", index + 1))).collect();
+    let cells: Vec<String> = sheet
+        .seal
+        .text_codes
+        .iter()
+        .enumerate()
+        .map(|(index, code)| cell(code, format!("{}/{total}", index + 1)))
+        .collect();
     // Whole sheets of them: WebKit cuts a code in two where a grid runs off the end of a page.
     let more = cells.chunks(CODES_ON_A_SHEET).fold(String::new(), |mut more, sheet_of_codes| {
         // Writing to a String cannot fail.
@@ -445,15 +450,16 @@ pub fn document(items: &[PrintItem<'_>], options: &PrintOptions, labels: &PrintL
 /// One sheet with a scale along its edge: laid against a real ruler, it shows what shift to set.
 #[must_use]
 pub fn test_sheet(options: &PrintOptions, labels: &PrintLabels) -> PrintDocument {
-    let mut ticks = (2..=RULER_END_MM / RULER_STEP_MM).map(|step| step * RULER_STEP_MM).fold(String::new(), |mut ticks, at| {
-        let top = mark_top(f64::from(at), options.shift_mm);
-        let _ = write!(
-            ticks,
-            r#"<i class="mark" style="top:{top:.2}mm;width:4mm"></i><b class="tick" style="top:{:.2}mm">{at}</b>"#,
-            top - 1.6
-        );
-        ticks
-    });
+    let mut ticks =
+        (2..=RULER_END_MM / RULER_STEP_MM).map(|step| step * RULER_STEP_MM).fold(String::new(), |mut ticks, at| {
+            let top = mark_top(f64::from(at), options.shift_mm);
+            let _ = write!(
+                ticks,
+                r#"<i class="mark" style="top:{top:.2}mm;width:4mm"></i><b class="tick" style="top:{:.2}mm">{at}</b>"#,
+                top - 1.6
+            );
+            ticks
+        });
     ticks.push_str(&marks(options));
     let html = format!("<h1>{}</h1><p>{}</p>", escape(&labels.test_title), escape(&labels.test_text));
     let style = format!("{}.tick{{position:absolute;left:9mm;font:7pt system-ui,sans-serif}}", style(options));

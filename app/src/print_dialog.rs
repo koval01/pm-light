@@ -78,7 +78,12 @@ fn rows(app: &App, scopes: &[(PrintScope, String)], scope: usize) -> Vec<Setting
     let mut options = preferences::get().print;
     let mut lines = Vec::new();
     if scopes.len() > 1 {
-        lines.push(segmented("scope", &say(app, "print.what"), scopes.iter().map(|(_, label)| label.clone()).collect(), scope));
+        lines.push(segmented(
+            "scope",
+            &say(app, "print.what"),
+            scopes.iter().map(|(_, label)| label.clone()).collect(),
+            scope,
+        ));
     }
     for (key, label, hint) in SWITCHES {
         let hint = if hint.is_empty() { String::new() } else { say(app, hint) };
@@ -148,7 +153,8 @@ fn hand_over(prepared: PrintDocument) {
 
 fn prepare(service: &Arc<Service>, app: &App) {
     keep_shift();
-    let scope = OPEN.with_borrow(|open| open.as_ref().and_then(|open| open.scopes.get(open.scope).map(|(scope, _)| *scope)));
+    let scope =
+        OPEN.with_borrow(|open| open.as_ref().and_then(|open| open.scopes.get(open.scope).map(|(scope, _)| *scope)));
     let Some(scope) = scope else { return };
     let (service, options, labels) = (service.clone(), preferences::get().print, labels(app));
     set_busy(true);
@@ -176,7 +182,9 @@ fn set_busy(busy: bool) {
 fn show_problem(error: &proton_core::Error) {
     let Some(app) = actions::main_window() else { return };
     let text = match error {
-        proton_core::Error::TooManyToPrint { limit } => say(&app, "print.tooMany").replace("{limit}", &limit.to_string()),
+        proton_core::Error::TooManyToPrint { limit } => {
+            say(&app, "print.tooMany").replace("{limit}", &limit.to_string())
+        }
         proton_core::Error::TooLongToSeal => say(&app, "print.tooLongToSeal"),
         other => other.to_string(),
     };
@@ -198,7 +206,9 @@ fn heard(app: &App, id: &str, value: i32) {
             });
             return;
         }
-        "folds" => preferences::change(|preferences| preferences.print.fold_marks = FOLDS.get(position).copied().unwrap_or(FoldMarks::None)),
+        "folds" => preferences::change(|preferences| {
+            preferences.print.fold_marks = FOLDS.get(position).copied().unwrap_or(FoldMarks::None);
+        }),
         key => preferences::change(|preferences| {
             if let Some(on) = flag(&mut preferences.print, key) {
                 *on = value == 1;

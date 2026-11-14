@@ -10,7 +10,10 @@ use crate::{App, actions, guard, preferences, tor_link};
 pub fn page(ctx: &Ctx) {
     let Some(app) = ctx.app.upgrade() else { return };
     ctx.show(vec![
-        plain(vec![note(&ctx.say("connection.torAbout")), ghost("open-connection", &ctx.say("tor.toConnection"), true)]),
+        plain(vec![
+            note(&ctx.say("connection.torAbout")),
+            ghost("open-connection", &ctx.say("tor.toConnection"), true),
+        ]),
         section("tor", "", "", rows_of(ctx, &app)),
     ]);
 }
@@ -93,7 +96,14 @@ fn circuit_rows(ctx: &Ctx, route: proton_core::tor::Route) -> Vec<crate::Setting
     }
     if onion {
         let rail = Rail { hidden_above: true, hidden_below: true, ..Rail::default() };
-        lines.push(hop(&ctx.say("connection.torProtonRelays"), &ctx.say("connection.torProtonRelaysDetail"), "", "", rail, false));
+        lines.push(hop(
+            &ctx.say("connection.torProtonRelays"),
+            &ctx.say("connection.torProtonRelaysDetail"),
+            "",
+            "",
+            rail,
+            false,
+        ));
     }
     let server = route.api().trim_start_matches("https://");
     let (detail, rail) = if onion {

@@ -76,9 +76,9 @@ pub fn new_key() -> JournalKey {
 }
 
 fn now_millis() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |elapsed| {
-        u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX)
-    })
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
 }
 
 const fn hour_of(millis: u64) -> u64 {
@@ -101,8 +101,7 @@ pub fn clean_path(path: &str) -> String {
     // Proton's endpoints are short lowercase words, such as `organizations`; ids, names and
     // addresses are anything else.
     let is_word = |part: &str| part.len() <= 24 && part.bytes().all(|b| b.is_ascii_lowercase() || b == b'-');
-    let looks_like_id =
-        |part: &str| !is_word(part) && (part.len() > 12 || part.contains(['=', '@', '+', '%', '.']));
+    let looks_like_id = |part: &str| !is_word(part) && (part.len() > 12 || part.contains(['=', '@', '+', '%', '.']));
     let parts: Vec<&str> = path.split('/').map(|part| if looks_like_id(part) { "{id}" } else { part }).collect();
     parts.join("/")
 }
@@ -141,7 +140,7 @@ impl Log for Logger {
         }
         let text = clip(&record.args().to_string());
         if cfg!(debug_assertions) || *ECHO {
-            eprintln!("{} {}: {text}", record.level(), record.target());
+            let _ = writeln!(std::io::stderr().lock(), "{} {}: {text}", record.level(), record.target());
         }
         let entry = Record {
             time: now_millis(),
@@ -164,8 +163,7 @@ impl Log for Logger {
 fn seal(cipher: &XChaCha20Poly1305, record: &Record) -> Option<Vec<u8>> {
     let nonce: [u8; NONCE_BYTES] = rand::random();
     let plain = Zeroizing::new(serde_json::to_vec(record).ok()?);
-    let sealed =
-        cipher.encrypt(&XNonce::from(nonce), Payload { msg: &plain, aad: CONTEXT }).ok()?;
+    let sealed = cipher.encrypt(&XNonce::from(nonce), Payload { msg: &plain, aad: CONTEXT }).ok()?;
     let length = u32::try_from(NONCE_BYTES + sealed.len()).ok()?;
     let mut frame = Vec::with_capacity(LENGTH_BYTES + NONCE_BYTES + sealed.len());
     frame.extend_from_slice(&length.to_le_bytes());
@@ -318,7 +316,8 @@ pub fn start(dir: PathBuf, key: impl FnOnce() -> Option<JournalKey> + Send + 'st
         Writer { dir, cipher, current: None }.run(&commands);
     });
     if let Err(error) = started {
-        eprintln!("no journal: {error}");
+        // The journal itself did not start: there is nowhere else to say so.
+        let _ = writeln!(std::io::stderr().lock(), "no journal: {error}");
     }
 }
 

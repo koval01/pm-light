@@ -1,6 +1,11 @@
 //! Drafts, attachments and sending.
 
-use super::{Address, api, Attachment, compose, ComposeLabels, ComposeMode, ComposeState, Deserialize, Engine, Error, Form, join_all, json, Message, Method, on_worker, Outgoing, OwnAddress, Part, PasswordProtection, Recipient, RECIPIENT_INTERNAL, Result, RngCore, SavedDraft, send, SendOptions, Service, sieve, SimpleFilter, STANDARD, text, Uploaded, Value};
+use super::{
+    Address, Attachment, ComposeLabels, ComposeMode, ComposeState, Deserialize, Engine, Error, Form, Message, Method,
+    Outgoing, OwnAddress, Part, PasswordProtection, RECIPIENT_INTERNAL, Recipient, Result, RngCore, STANDARD,
+    SavedDraft, SendOptions, Service, SimpleFilter, Uploaded, Value, api, compose, join_all, json, on_worker, send,
+    sieve, text,
+};
 
 impl Service {
     /// Holds a file's bytes until the draft is saved, so they cross the IPC boundary only once.
@@ -78,9 +83,8 @@ impl Service {
             let material = on_worker(move || crypto.encrypt_attachment(&data, &address)).await?;
             let mime = if file.mime.is_empty() { "application/octet-stream" } else { &file.mime };
             let form = || {
-                let blob = |bytes: &[u8]| {
-                    Part::bytes(bytes.to_vec()).file_name("blob").mime_str("application/octet-stream")
-                };
+                let blob =
+                    |bytes: &[u8]| Part::bytes(bytes.to_vec()).file_name("blob").mime_str("application/octet-stream");
                 let form = Form::new()
                     .text("Filename", file.name.clone())
                     .text("MessageID", draft_id.to_string())
@@ -97,11 +101,7 @@ impl Service {
             let reply: Reply = self.client.upload("/mail/v4/attachments", &form).await?;
             self.staged.lock().remove(&file.staged_id);
             attachments.push(api::to_attachment(&reply.attachment));
-            uploaded.push(Uploaded {
-                id: reply.attachment.id,
-                session_key: material.session_key,
-                signed: true,
-            });
+            uploaded.push(Uploaded { id: reply.attachment.id, session_key: material.session_key, signed: true });
         }
         Ok((uploaded, attachments))
     }
@@ -176,7 +176,11 @@ impl Service {
     /// The same for a letter written as text, which has to name the signature it replaces.
     pub fn switch_plain_signature(&self, body: &str, from: Option<&str>, email: &str, footer: &str) -> String {
         let own = self.signing_addresses(footer);
-        compose::plain::replace_signature(body, compose::signature_for(&own, from), compose::signature_for(&own, Some(email)))
+        compose::plain::replace_signature(
+            body,
+            compose::signature_for(&own, from),
+            compose::signature_for(&own, Some(email)),
+        )
     }
 
     pub fn build_sieve(&self, filter: &SimpleFilter) -> String {
@@ -189,9 +193,8 @@ impl Service {
 
     pub(super) async fn recipient_key(&self, email: String) -> Result<Recipient> {
         let (kind, keys) = self.public_keys(&email).await?;
-        let public_key = (kind == RECIPIENT_INTERNAL)
-            .then(|| send::encryption_key_of(&keys).map(str::to_string))
-            .flatten();
+        let public_key =
+            (kind == RECIPIENT_INTERNAL).then(|| send::encryption_key_of(&keys).map(str::to_string)).flatten();
         Ok(Recipient { email, public_key })
     }
 

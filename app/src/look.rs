@@ -65,7 +65,8 @@ fn tell_the_system(choice: u8) {
         2 => Some("NSAppearanceNameDarkAqua"),
         _ => None,
     };
-    let appearance: Option<Retained<NSAppearance>> = name.and_then(|name| NSAppearance::appearanceNamed(&NSString::from_str(name)));
+    let appearance: Option<Retained<NSAppearance>> =
+        name.and_then(|name| NSAppearance::appearanceNamed(&NSString::from_str(name)));
     let application = NSApplication::sharedApplication(marker);
     let application: &AnyObject = &application;
     // Safety: the application takes an appearance or nothing, on the main thread.
@@ -113,8 +114,7 @@ fn tell_the_system(app: &App) {
 /// Again whenever the scale changes.
 pub fn sharpen_logo(app: &App) {
     let theme = app.global::<Theme>();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let side = (theme.get_logo_size() * app.window().scale_factor()).round() as u32;
+    let side = crate::numbers::pixels(theme.get_logo_size() * app.window().scale_factor());
     if let Some(picture) = sharp_logo(side) {
         theme.set_logo(picture);
     }
@@ -133,7 +133,9 @@ pub fn language() -> String {
     if !chosen.is_empty() {
         return chosen;
     }
-    sys_locale::get_locale().and_then(|locale| locale.split(['-', '_']).next().map(str::to_lowercase)).unwrap_or_default()
+    sys_locale::get_locale()
+        .and_then(|locale| locale.split(['-', '_']).next().map(str::to_lowercase))
+        .unwrap_or_default()
 }
 
 pub fn apply_language() {
@@ -151,8 +153,7 @@ pub fn zoom() -> f64 {
 pub fn apply_zoom(app: &App) {
     let window = app.window();
     let Some(system) = window.with_winit_window(slint::winit_030::winit::window::Window::scale_factor) else { return };
-    #[allow(clippy::cast_possible_truncation)]
-    let scale_factor = (system * zoom()) as f32;
+    let scale_factor = crate::numbers::scale(system * zoom());
     if (window.scale_factor() - scale_factor).abs() > f32::EPSILON {
         crate::rescale::rescale(window, scale_factor);
     }

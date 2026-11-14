@@ -40,7 +40,12 @@ pub const GROUPS: [(&str, &[Tab]); 4] = [
         "tabs.groupMail",
         &[
             tab("apps", "tabs.apps", "download", &["apps.bridge"]),
-            tab("messages", "tabs.messages", "mail", &["settings.reading", "settings.writing", "settings.undoSend", "settings.hideRemote"]),
+            tab(
+                "messages",
+                "tabs.messages",
+                "mail",
+                &["settings.reading", "settings.writing", "settings.undoSend", "settings.hideRemote"],
+            ),
             tab("privacy", "tabs.privacy", "shield-check", &["settings.hideRemote", "settings.confirmLinks"]),
             tab("identity", "tabs.identity", "id-card", &["settings.addresses"]),
             tab("folders", "tabs.folders", "folder", &["nav.folders", "nav.labels"]),
@@ -56,7 +61,12 @@ pub const GROUPS: [(&str, &[Tab]); 4] = [
     (
         "tabs.groupApp",
         &[
-            tab("application", "tabs.application", "monitor", &["settings.notifications", "settings.autostart", "privacy.hide", "privacy.gravatar", "tour.again"]),
+            tab(
+                "application",
+                "tabs.application",
+                "monitor",
+                &["settings.notifications", "settings.autostart", "privacy.hide", "privacy.gravatar", "tour.again"],
+            ),
             tab("connection", "tabs.connection", "activity", &["connection.proton", "connection.quad9"]),
             tab("tor", "tabs.tor", "circuit", &["connection.tor", "connection.torRoute", "connection.torNew"]),
             tab("journal", "tabs.journal", "scroll-text", &[]),
@@ -92,7 +102,12 @@ pub fn shown(say: &dyn Fn(&str) -> String, query: &str) -> Vec<TabRow> {
         let mut heading = say(group);
         for member in members {
             if found.iter().filter_map(|position| tabs.get(*position)).any(|tab| tab.id == member.id) {
-                rows.push(TabRow { id: member.id.into(), title: say(member.title).into(), icon: member.icon.into(), heading: std::mem::take(&mut heading).into() });
+                rows.push(TabRow {
+                    id: member.id.into(),
+                    title: say(member.title).into(),
+                    icon: member.icon.into(),
+                    heading: std::mem::take(&mut heading).into(),
+                });
             }
         }
     }
@@ -100,35 +115,4 @@ pub fn shown(say: &dyn Fn(&str) -> String, query: &str) -> Vec<TabRow> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn same(key: &str) -> String {
-        key.to_string()
-    }
-
-    #[test]
-    fn every_tab_is_shown_with_no_query() {
-        assert_eq!(shown(&same, "").len(), all().count());
-    }
-
-    #[test]
-    fn a_heading_stands_only_above_the_first_of_a_group() {
-        let rows = shown(&same, "");
-        assert_eq!(rows.iter().filter(|row| !row.heading.is_empty()).count(), GROUPS.len());
-    }
-
-    #[test]
-    fn a_search_also_looks_in_what_a_tab_is_about() {
-        let rows = shown(&same, "signOut");
-        assert_eq!(rows.iter().map(|row| row.id.as_str()).collect::<Vec<_>>(), ["overview"]);
-    }
-
-    #[test]
-    fn tab_ids_are_not_repeated() {
-        let mut ids: Vec<&str> = all().map(|tab| tab.id).collect();
-        ids.sort_unstable();
-        ids.dedup();
-        assert_eq!(ids.len(), all().count());
-    }
-}
+mod tests;

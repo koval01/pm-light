@@ -39,7 +39,16 @@ pub fn run(service: &Arc<Service>, app: &App, rows: &[MessageMeta], file: PathBu
         return;
     }
     log::info!("the memory check: {ROUNDS} rounds of {} mails", ids.len());
-    let check = Check { service: service.clone(), app: app.as_weak(), ids, opened: 0, figures: Vec::new(), file, then, timer: Timer::default() };
+    let check = Check {
+        service: service.clone(),
+        app: app.as_weak(),
+        ids,
+        opened: 0,
+        figures: Vec::new(),
+        file,
+        then,
+        timer: Timer::default(),
+    };
     CHECK.set(Some(check));
     after(BETWEEN, step);
 }

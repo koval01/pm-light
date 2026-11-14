@@ -3,7 +3,7 @@
 //! leaves this computer, and it is not kept. A refusal is reported and never tried again by itself:
 //! failures can lock an account.
 
-use super::{Deserialize, encoded, Error, json, Method, on_worker, Result, Service, Value, Zeroizing};
+use super::{Deserialize, Error, Method, Result, Service, Value, Zeroizing, encoded, json, on_worker};
 use crate::crypto::AuthInfo;
 
 const REAUTH_INFO: &str = "/core/v4/auth/info";
@@ -65,7 +65,12 @@ impl Service {
         let name = user.pointer("/User/Name").and_then(Value::as_str).unwrap_or_default().to_string();
         let crypto = self.crypto.clone();
         let secret = confirmation.password.clone();
-        let details = AuthInfo { version: info.version, modulus: info.modulus, server_ephemeral: info.server_ephemeral, salt: info.salt };
+        let details = AuthInfo {
+            version: info.version,
+            modulus: info.modulus,
+            server_ephemeral: info.server_ephemeral,
+            salt: info.salt,
+        };
         let proof = on_worker(move || crypto.login_proof(&name, &secret, &details)).await?;
         let code = confirmation.code.as_ref().map(|code| code.as_str());
         let body = proof_fields(&proof.proof, &proof.ephemeral, &info.srp_session, code, more);
@@ -143,29 +148,4 @@ fn totp_uri(account: &str, secret: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_proof_goes_with_the_code_when_there_is_one() {
-        let body = proof_fields("p", "e", "s", Some("123456"), json!({}));
-        assert_eq!(body, json!({"ClientProof": "p", "ClientEphemeral": "e", "SRPSession": "s", "TwoFactorCode": "123456"}));
-    }
-
-    #[test]
-    fn a_proof_without_a_code_says_nothing_of_one() {
-        assert!(proof_fields("p", "e", "s", None, json!({})).get("TwoFactorCode").is_none());
-    }
-
-    #[test]
-    fn what_a_call_adds_cannot_be_lost() {
-        assert_eq!(proof_fields("p", "e", "s", None, json!({"Email": "a@b.c"})).get("Email"), Some(&json!("a@b.c")));
-    }
-
-    #[test]
-    fn an_account_name_cannot_break_out_of_the_uri() {
-        let uri = totp_uri("a b?c@d.e", "SECRET");
-        assert!(uri.starts_with("otpauth://totp/a"));
-        assert_eq!(uri.matches('?').count(), 1);
-    }
-}
+mod tests;

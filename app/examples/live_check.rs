@@ -7,7 +7,13 @@
 
 use keyring::Entry;
 use proton_core::{AuthStep, PROTON_API, Service, SessionStore, model::ListOptions};
+use std::io::Write as _;
 use std::{sync::Arc, time::Instant};
+
+/// A line of the report, to the terminal that runs this; a closed one is no reason to stop.
+fn say(text: &str) {
+    let _ = writeln!(std::io::stdout().lock(), "{text}");
+}
 
 /// Reads the saved session and can change nothing: not even a failure may clear the app's sign-in.
 struct Borrowed(Option<String>);
@@ -21,7 +27,7 @@ impl SessionStore for Borrowed {
 }
 
 fn line(name: &str, value: impl std::fmt::Display) {
-    println!("{name:<38} {value}");
+    say(&format!("{name:<38} {value}"));
 }
 
 /// The session to borrow: from the environment in CI, else from the keychain.
@@ -40,8 +46,7 @@ fn shown(error: &proton_core::Error) -> String {
 
 async fn run() -> Result<(), String> {
     let saved = saved_session()?;
-    let service =
-        Service::new(PROTON_API, Arc::new(Borrowed(Some(saved))), Box::new(|_| {})).map_err(|e| shown(&e))?;
+    let service = Service::new(PROTON_API, Arc::new(Borrowed(Some(saved))), Box::new(|_| {})).map_err(|e| shown(&e))?;
     service.forbid_token_refresh();
 
     let started = Instant::now();
@@ -64,11 +69,12 @@ async fn run() -> Result<(), String> {
     line("filters read", service.filters().await.is_ok());
     line("contacts read", service.contact_emails().await.is_ok());
 
-    let recent = service
-        .list("inbox", &ListOptions { limit: Some(10), ..Default::default() })
-        .await
-        .map_err(|e| shown(&e))?;
-    println!("\nlast {} messages (signature / html / files / images, trackers, links, removed / ms):", recent.len());
+    let recent =
+        service.list("inbox", &ListOptions { limit: Some(10), ..Default::default() }).await.map_err(|e| shown(&e))?;
+    say(&format!(
+        "\nlast {} messages (signature / html / files / images, trackers, links, removed / ms):",
+        recent.len()
+    ));
     for (index, meta) in recent.iter().enumerate() {
         let started = Instant::now();
         match service.message(&meta.id).await {
@@ -76,7 +82,7 @@ async fn run() -> Result<(), String> {
                 let urls: Vec<String> = m.protection.images.iter().map(|i| i.url.clone()).collect();
                 let images = urls.len();
                 let trackers = service.image_trackers(urls).await.len();
-                println!(
+                say(&format!(
                     "  {index}: {:?} / {} / {} / {images}, {trackers}, {}, {} / {:?}",
                     m.signature,
                     m.html,
@@ -84,9 +90,9 @@ async fn run() -> Result<(), String> {
                     m.protection.links.len(),
                     m.protection.removed.len(),
                     started.elapsed(),
-                );
+                ));
             }
-            Err(e) => println!("  {index}: FAILED {}", shown(&e)),
+            Err(e) => say(&format!("  {index}: FAILED {}", shown(&e))),
         }
     }
 
@@ -112,12 +118,12 @@ fn main() {
     let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
         Ok(runtime) => runtime,
         Err(error) => {
-            println!("stopped: {error}");
+            say(&format!("stopped: {error}"));
             return;
         }
     };
     match runtime.block_on(run()) {
-        Ok(()) => println!("\nread-only check finished"),
-        Err(error) => println!("\nstopped: {error}"),
+        Ok(()) => say("\nread-only check finished"),
+        Err(error) => say(&format!("\nstopped: {error}")),
     }
 }

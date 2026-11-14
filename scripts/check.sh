@@ -3,6 +3,7 @@
 # run it before they build: a build that skips it is not one to hand anyone.
 #
 #   dependencies  cargo-deny: known vulnerabilities, yanked crates, licenses, where crates come from
+#   format        rustfmt, by rustfmt.toml: a file written another way fails
 #   lints         clippy over every crate and test, warnings as errors; the rules are in Cargo.toml
 #                 and forbid unwrap, expect, panic and indexing that can fail
 #   tests         every test, including the dictionaries and the English-only check
@@ -13,6 +14,9 @@ trap 'python3 -I scripts/prune-target.py' EXIT
 
 echo "== dependencies"
 cargo deny check
+
+echo "== format"
+cargo fmt --check
 
 echo "== lints"
 cargo clippy --workspace --all-targets --locked -- -D warnings

@@ -7,9 +7,9 @@ use proton_crypto_account::{
     keys::{AddressKeys, LockedKey, UnlockedAddressKey, UnlockedUserKey, UserKeys},
     proton_crypto::{
         crypto::{
-            AccessKeyInfo, DataEncoding, Verifier, VerifierSync, Decryptor, DecryptorSync, Encryptor, EncryptorSync, PGPMessage,
-            PGPProviderSync, SessionKeyAlgorithm, Signer, SignerSync, UnixTimestamp,
-            VerificationError, VerifiedData,
+            AccessKeyInfo, DataEncoding, Decryptor, DecryptorSync, Encryptor, EncryptorSync, PGPMessage,
+            PGPProviderSync, SessionKeyAlgorithm, Signer, SignerSync, UnixTimestamp, VerificationError, VerifiedData,
+            Verifier, VerifierSync,
         },
         new_pgp_provider, new_srp_provider,
         srp::SRPProvider,
@@ -135,11 +135,7 @@ const fn algorithm_name(algorithm: SessionKeyAlgorithm) -> &'static str {
 }
 
 fn algorithm_of(name: &str) -> SessionKeyAlgorithm {
-    if name == AES128 {
-        SessionKeyAlgorithm::Aes128
-    } else {
-        SessionKeyAlgorithm::Aes256
-    }
+    if name == AES128 { SessionKeyAlgorithm::Aes128 } else { SessionKeyAlgorithm::Aes256 }
 }
 
 const fn status_of(result: &std::result::Result<(), VerificationError>) -> SignatureStatus {
@@ -238,9 +234,7 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
         let addresses = addresses
             .into_iter()
             .map(|address| AddressKeyring {
-                keys: AddressKeys::new(active(address.keys))
-                    .unlock(&self.pgp, &users, Some(&secret))
-                    .unlocked_keys,
+                keys: AddressKeys::new(active(address.keys)).unlock(&self.pgp, &users, Some(&secret)).unlocked_keys,
                 id: address.id,
             })
             .collect();
@@ -275,10 +269,8 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
     }
 
     fn decrypt_message(&self, armored: &str, address_id: &str, sender_keys: &[String]) -> Result<Decrypted> {
-        let senders: Vec<P::PublicKey> = sender_keys
-            .iter()
-            .filter_map(|key| self.pgp.public_key_import(key, DataEncoding::Armor).ok())
-            .collect();
+        let senders: Vec<P::PublicKey> =
+            sender_keys.iter().filter_map(|key| self.pgp.public_key_import(key, DataEncoding::Armor).ok()).collect();
         let keyring = self.keyring.read();
         let verified = self
             .pgp
@@ -341,8 +333,7 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
             encryptor = encryptor.at_signing_time(UnixTimestamp::new(seconds));
         }
         let message = encryptor.encrypt(text).map_err(Error::crypto)?;
-        let armored = String::from_utf8(message.armor().map_err(Error::crypto)?)
-            .map_err(Error::crypto)?;
+        let armored = String::from_utf8(message.armor().map_err(Error::crypto)?).map_err(Error::crypto)?;
         Ok(BodyMaterial {
             armored,
             data_packet: message.as_data_packet().to_vec(),
@@ -378,8 +369,7 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
 
     fn wrap_for_key(&self, session_key: &RawSessionKey, armored_public_key: &str) -> Result<Vec<u8>> {
         let key = self.import_session_key(session_key)?;
-        let recipient =
-            self.pgp.public_key_import(armored_public_key, DataEncoding::Armor).map_err(Error::crypto)?;
+        let recipient = self.pgp.public_key_import(armored_public_key, DataEncoding::Armor).map_err(Error::crypto)?;
         let packets = self
             .pgp
             .new_encryptor()
@@ -391,12 +381,8 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
 
     fn wrap_for_password(&self, session_key: &RawSessionKey, password: &str) -> Result<Vec<u8>> {
         let key = self.import_session_key(session_key)?;
-        let packets = self
-            .pgp
-            .new_encryptor()
-            .with_passphrase(password)
-            .encrypt_session_key(&key)
-            .map_err(Error::crypto)?;
+        let packets =
+            self.pgp.new_encryptor().with_passphrase(password).encrypt_session_key(&key).map_err(Error::crypto)?;
         Ok(packets)
     }
 
@@ -426,10 +412,8 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
     }
 
     fn clearsigned_text(&self, armored: &str, armored_keys: &[String]) -> Option<String> {
-        let keys: Vec<P::PublicKey> = armored_keys
-            .iter()
-            .filter_map(|key| self.pgp.public_key_import(key, DataEncoding::Armor).ok())
-            .collect();
+        let keys: Vec<P::PublicKey> =
+            armored_keys.iter().filter_map(|key| self.pgp.public_key_import(key, DataEncoding::Armor).ok()).collect();
         if keys.is_empty() {
             return None;
         }
@@ -453,22 +437,14 @@ impl<P: PGPProviderSync, S: SRPProvider + 'static> Crypto for Engine<P, S> {
     }
 
     fn password_verifier(&self, password: &str, signed_modulus: &str) -> Result<(String, String)> {
-        let verifier =
-            self.srp.generate_client_verifier(password, signed_modulus).map_err(Error::crypto)?;
+        let verifier = self.srp.generate_client_verifier(password, signed_modulus).map_err(Error::crypto)?;
         Ok((verifier.salt, verifier.verifier))
     }
 
     fn login_proof(&self, username: &str, password: &str, info: &AuthInfo) -> Result<LoginProof> {
         let proof = self
             .srp
-            .generate_client_proof(
-                username,
-                password,
-                info.version,
-                &info.salt,
-                &info.modulus,
-                &info.server_ephemeral,
-            )
+            .generate_client_proof(username, password, info.version, &info.salt, &info.modulus, &info.server_ephemeral)
             .map_err(Error::crypto)?;
         Ok(LoginProof {
             ephemeral: proof.ephemeral,

@@ -1,7 +1,10 @@
 //! Turns what the core publishes into what the window shows. The core runs on its workers and the
 //! window on the main thread, so everything crosses over as plain data.
 
-use crate::{App, BodyLine, FileRow, FolderRow, HeaderRow, InfoGroup, InfoItem, InfoWindow, MailRow, actions, composer, contacts, mail_view, modal, numbers, palette, reader, search};
+use crate::{
+    App, BodyLine, FileRow, FolderRow, HeaderRow, InfoGroup, InfoItem, InfoWindow, MailRow, actions, composer,
+    contacts, mail_view, modal, numbers, palette, reader, search,
+};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use futures::{StreamExt, stream};
 use image::{RgbaImage, imageops};
@@ -13,7 +16,10 @@ use proton_core::{
     timing,
     view::{Filters, ViewUpdate},
 };
-use slint::{Color, ComponentHandle, Image, Model, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, Timer, TimerMode, VecModel, Weak};
+use slint::{
+    Color, ComponentHandle, Image, Model, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, Timer, TimerMode,
+    VecModel, Weak,
+};
 use std::{
     cell::{Cell, RefCell},
     collections::{HashMap, HashSet},
@@ -43,7 +49,8 @@ const READER_AVATAR: f32 = 38.0;
 pub const OPAQUE: u32 = 0xff00_0000;
 /// A folder when the account keeps folders without colours. Labels always have theirs.
 const UNCOLOURED: u32 = 0x009a_a0a6;
-const SYSTEM: [&str; 10] = ["inbox", "starred", "drafts", "scheduled", "snoozed", "sent", "archive", "spam", "trash", "all"];
+const SYSTEM: [&str; 10] =
+    ["inbox", "starred", "drafts", "scheduled", "snoozed", "sent", "archive", "spam", "trash", "all"];
 /// One turn of the splash, up to where the letter lies sealed on the stack.
 const SPLASH_AT_LEAST: Duration = Duration::from_millis(1700);
 
@@ -200,7 +207,12 @@ fn disc(source: &RgbaImage, side: u32) -> RgbaImage {
         } else if reach > ring {
             let share = ring_alpha / 255.0;
             let blend = |value: u8, over: f32| numbers::channel(over.mul_add(share, f32::from(value) * (1.0 - share)));
-            *pixel = image::Rgba([blend(pixel.0[0], ring_red), blend(pixel.0[1], ring_green), blend(pixel.0[2], ring_blue), 255]);
+            *pixel = image::Rgba([
+                blend(pixel.0[0], ring_red),
+                blend(pixel.0[1], ring_green),
+                blend(pixel.0[2], ring_blue),
+                255,
+            ]);
         }
     }
     crate::look::shrink(&canvas, side, side)
@@ -283,7 +295,8 @@ async fn thumbnails_after(service: &Arc<Service>, app: &Weak<App>, message: &Mes
         }
         let Some(small) = service.thumbnail(&message.meta.id, file, &message.address_id).await else { continue };
         let side = pixels_for(THUMBNAIL_POINTS);
-        let made = tokio::task::spawn_blocking(move || logo_of(&small).and_then(|logo| thumbnail_pixels(&logo, side))).await;
+        let made =
+            tokio::task::spawn_blocking(move || logo_of(&small).and_then(|logo| thumbnail_pixels(&logo, side))).await;
         let Some(pixels) = made.ok().flatten() else { continue };
         let row = row.to_string();
         let _ = app.upgrade_in_event_loop(move |app| {
@@ -359,10 +372,10 @@ pub fn publish(service: &Arc<Service>, app: &Weak<App>, update: &ViewUpdate) {
         logos_for(service, app, rows, 0);
     }
     let added: Vec<Row> = update.added.iter().map(row).collect();
-    let page_starts = update.rows.as_ref().map_or_else(
-        || usize::try_from(update.total).unwrap_or(0).saturating_sub(added.len()),
-        Vec::len,
-    );
+    let page_starts = update
+        .rows
+        .as_ref()
+        .map_or_else(|| usize::try_from(update.total).unwrap_or(0).saturating_sub(added.len()), Vec::len);
     logos_for(service, app, &added, page_starts);
     let updated = update.updated_at.map(|at| timing::hour_text(i64::try_from(at).unwrap_or(0)));
     let changed: Vec<(String, bool, bool, Vec<String>)> =
@@ -399,12 +412,8 @@ pub fn publish(service: &Arc<Service>, app: &Weak<App>, update: &ViewUpdate) {
                 reveal(&app);
             }
             LAST_GROUP.set(rows.last().map_or(0, |row| row.group));
-            let known: HashMap<SharedString, Image> = app
-                .get_rows()
-                .iter()
-                .filter(|row| row.has_logo)
-                .map(|row| (row.id.clone(), row.logo))
-                .collect();
+            let known: HashMap<SharedString, Image> =
+                app.get_rows().iter().filter(|row| row.has_logo).map(|row| (row.id.clone(), row.logo)).collect();
             let current = CURRENT.lock().clone().unwrap_or_default();
             let mut shown = with_headings(rows, 0);
             shown.iter_mut().take(LOGOS_AT_ONCE).for_each(|row| row.logo_pending = true);
@@ -503,7 +512,9 @@ fn drop_rows(app: &App, removed: &[String]) {
 
 /// After the open mail left: the next one if the account says so, otherwise nothing is open.
 fn follow(service: &Arc<Service>, app: &Weak<App>, next: Option<String>) {
-    if let Some(id) = next { open_mail(service, app, id) } else {
+    if let Some(id) = next {
+        open_mail(service, app, id);
+    } else {
         *CURRENT.lock() = None;
         mail_view::close();
         if let Some(window) = app.upgrade() {
@@ -593,7 +604,8 @@ thread_local! {
 /// A folder as the journal may name it: Proton's own by their name, the account's own only as such,
 /// since their names are the person's.
 pub fn folder_for_the_journal(id: &str) -> &str {
-    let system = id.len() <= 16 && id.bytes().all(|byte| byte.is_ascii_lowercase() || byte == b'-' || byte.is_ascii_digit());
+    let system =
+        id.len() <= 16 && id.bytes().all(|byte| byte.is_ascii_lowercase() || byte == b'-' || byte.is_ascii_digit());
     if system { id } else { "a folder of the account's own" }
 }
 
@@ -720,7 +732,8 @@ fn has_text(message: &Message) -> bool {
     if !message.html {
         return !source.trim().is_empty();
     }
-    source.contains("<img") || source.split('<').any(|part| part.split_once('>').is_some_and(|(_, text)| !text.trim().is_empty()))
+    source.contains("<img")
+        || source.split('<').any(|part| part.split_once('>').is_some_and(|(_, text)| !text.trim().is_empty()))
 }
 
 /// Splits a text mail into runs, so that each link can be pressed. Mail is hostile input: only web
@@ -731,7 +744,8 @@ fn lines_of(body: &str) -> Vec<(String, String)> {
         let mut rest = line;
         while let Some(start) = ["https://", "http://"].iter().filter_map(|scheme| rest.find(scheme)).min() {
             let Some((before, from_link)) = rest.split_at_checked(start) else { break };
-            let end = from_link.find(|c: char| c.is_whitespace() || matches!(c, '<' | '>' | '"')).unwrap_or(from_link.len());
+            let end =
+                from_link.find(|c: char| c.is_whitespace() || matches!(c, '<' | '>' | '"')).unwrap_or(from_link.len());
             let Some((found, after)) = from_link.split_at_checked(end) else { break };
             let link = found.trim_end_matches(['.', ',', ';', ':', ')', '!', '?']);
             let tail = found.strip_prefix(link).unwrap_or_default();
@@ -775,7 +789,12 @@ pub fn open_link(url: &str) {
     if crate::tor_link::chosen() && matches!(parsed.scheme(), "http" | "https") {
         let Some(app) = actions::main_window() else { return };
         let say = |key: &str| crate::settings::say(&app, key);
-        if !actions::confirmed(&say("links.outsideTorTitle"), &say("links.outsideTorText"), &say("links.open"), &say("common.cancel")) {
+        if !actions::confirmed(
+            &say("links.outsideTorTitle"),
+            &say("links.outsideTorText"),
+            &say("links.open"),
+            &say("common.cancel"),
+        ) {
             log::info!("a link stayed unopened, inside Tor");
             return;
         }
@@ -860,7 +879,12 @@ fn detail_groups(message: &Message) -> Groups {
     let checks = details.auth.iter().map(|check| (0, check.method.to_uppercase(), check.result.clone())).collect();
     let people = |list: &[Address]| -> Vec<Item> {
         list.iter()
-            .map(|person| person.name.as_ref().map_or_else(|| (0, person.email.clone(), String::new()), |name| (0, name.clone(), person.email.clone())))
+            .map(|person| {
+                person.name.as_ref().map_or_else(
+                    || (0, person.email.clone(), String::new()),
+                    |name| (0, name.clone(), person.email.clone()),
+                )
+            })
             .collect()
     };
     filled(vec![(1, about), (10, people(&message.meta.to)), (11, people(&message.cc)), (2, checks)])
@@ -1076,14 +1100,14 @@ pub fn forget_mailbox(app: &App) {
     app.set_query_text(SharedString::new());
 }
 
-
 pub fn failed_toast(app: &Weak<App>) {
     let _ = app.upgrade_in_event_loop(|app| app.set_toast(crate::toasts::FAILED));
 }
 
 /// The compose window has closed: say what became of the message, and show the list as it is now.
 static UNDOABLE: Mutex<Option<String>> = Mutex::new(None);
-static KNOWN_TRACKERS: LazyLock<Mutex<HashMap<String, HashMap<String, String>>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+static KNOWN_TRACKERS: LazyLock<Mutex<HashMap<String, HashMap<String, String>>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The message went out, and can still be called back for a moment.
 pub fn offer_undo(id: String, seconds: u64) {
@@ -1302,7 +1326,9 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
         // Not known in time: it is looked for again once the mail is on screen.
         let timed_out = asked.is_err();
         let asked = asked.ok().flatten();
-        let made = tokio::task::spawn_blocking(move || asked.as_deref().and_then(logo_of).and_then(|logo| picture_pixels(&logo, side)));
+        let made = tokio::task::spawn_blocking(move || {
+            asked.as_deref().and_then(logo_of).and_then(|logo| picture_pixels(&logo, side))
+        });
         let logo_pixels = made.await.ok().flatten();
         let threats = threats_of(&message, &TRACKERS.lock());
         let held_back = service.with_embedded_held_back(&message);
@@ -1347,7 +1373,9 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
 async fn logo_after(service: &Arc<Service>, app: &Weak<App>, message: &Message, id: &str) {
     let logo = picture_of(service, &message.meta.from.email).await;
     let side = pixels_for(READER_AVATAR);
-    let made = tokio::task::spawn_blocking(move || logo.as_deref().and_then(logo_of).and_then(|logo| picture_pixels(&logo, side)));
+    let made = tokio::task::spawn_blocking(move || {
+        logo.as_deref().and_then(logo_of).and_then(|logo| picture_pixels(&logo, side))
+    });
     let Some(pixels) = made.await.ok().flatten() else { return };
     let id = id.to_string();
     let _ = app.upgrade_in_event_loop(move |app| {
@@ -1397,84 +1425,4 @@ fn read_ahead(service: &Arc<Service>, app: &App, id: &str) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_long_line_is_cut_at_a_space_near_the_end() {
-        assert_eq!(cut_to_width("one two three", 8), ["one two", "three"]);
-        assert_eq!(cut_to_width("aaaaaaaaaaaa", 5), ["aaaaa", "aaaaa", "aa"]);
-        assert_eq!(cut_to_width("", 5), [""]);
-        assert_eq!(cut_to_width("exactly", 7), ["exactly"]);
-    }
-
-    #[test]
-    fn no_row_is_wider_than_the_window() {
-        let line = "abc def ".repeat(50) + &"\u{44f}".repeat(300);
-        for columns in [1, 2, 7, 20, 64] {
-            let pieces = cut_to_width(&line, columns);
-            assert!(pieces.iter().all(|piece| piece.chars().count() <= columns), "{columns}");
-            let joined: String = pieces.concat().split_whitespace().collect();
-            assert_eq!(joined, line.split_whitespace().collect::<String>());
-        }
-    }
-
-    #[test]
-    fn header_rows_mark_names_and_keep_folds() {
-        let headers = vec![("To".to_string(), "a\nb".to_string()), ("Cc".to_string(), String::new())];
-        let rows = header_rows(&headers, 40);
-        let names: Vec<bool> = rows.iter().map(|row| row.1).collect();
-        assert_eq!(names, [true, false, false, false, true]);
-    }
-
-    #[test]
-    fn headers_split_into_name_and_text() {
-        let raw = "Subject: Hello: there\r\nDKIM-Signature: v=1;\r\n\ta=rsa-sha256;\r\n  b=abc\r\n\r\nTo: a@b\r\n";
-        let headers = header_lines(raw);
-        assert_eq!(headers.len(), 3);
-        assert_eq!(headers[0], ("Subject".to_string(), "Hello: there".to_string()));
-        assert_eq!(headers[1].1, "v=1;\na=rsa-sha256;\nb=abc");
-        assert_eq!(headers[2].0, "To");
-    }
-
-    #[test]
-    fn a_folded_line_with_a_colon_stays_in_its_header() {
-        let headers = header_lines("Received: from a\n by b: c\nTo: d");
-        assert_eq!(headers[0].1, "from a\nby b: c");
-        assert_eq!(headers.len(), 2);
-    }
-
-    #[test]
-    fn hostile_headers_are_cut_down() {
-        let raw = "A: b\n".repeat(MAX_HEADERS * 2);
-        assert_eq!(header_lines(&raw).len(), MAX_HEADERS);
-        let long = format!("A: {}", "\u{44f}".repeat(MAX_HEADER_TEXT * 2));
-        assert_eq!(header_lines(&long)[0].1.chars().count(), MAX_HEADER_TEXT);
-    }
-
-    #[test]
-    fn links_in_text_can_be_pressed_and_keep_what_surrounds_them() {
-        let pieces = lines_of("See https://a.example/x?y=1. Then\nmailto is plain\nhttp://b.example");
-        assert_eq!(pieces[0], ("See".to_string(), String::new()));
-        assert_eq!(pieces[1].1, "https://a.example/x?y=1");
-        assert_eq!(pieces[2], (".".to_string(), String::new()));
-        assert_eq!(pieces[3], (" Then".to_string(), String::new()));
-        assert_eq!(pieces[4].1, "");
-        assert_eq!(pieces.last().map(|piece| piece.0.as_str()), Some(""));
-        assert!(pieces.iter().any(|piece| piece.1 == "http://b.example"));
-    }
-
-    #[test]
-    fn nothing_but_web_and_mail_addresses_opens() {
-        for url in ["file:///etc/passwd", "javascript:alert(1)", "smb://a/b", ""] {
-            assert!(!["https://", "http://", "mailto:"].iter().any(|scheme| url.starts_with(scheme)));
-        }
-    }
-
-    #[test]
-    fn an_odd_body_cannot_panic_the_split() {
-        for body in ["", "https://", "http://\u{202e}", "\u{43a}\u{438}\u{440}\u{438}\u{43b}\u{43b}\u{438}\u{446}\u{430} https://\u{44f}.example/\u{43f}\u{443}\u{442}\u{44c}, \u{434}\u{430}\u{43b}\u{44c}\u{448}\u{435}"] {
-            let _ = lines_of(body);
-        }
-    }
-}
+mod tests;

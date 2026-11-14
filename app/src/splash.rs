@@ -28,7 +28,8 @@ const GRADIENTS: &str = r##"<defs><linearGradient id="body" x1="0" y1="0" x2="0.
 /// The inside, a hair smaller than the pocket and the flap that cover it, so that its dark edge never shows through
 /// theirs where the two would meet.
 const BACK: &str = r#"<rect x="12.6" y="40.6" width="94.8" height="54" rx="11.4" fill="url(#inner)"/>"#;
-const POCKET: &str = r#"<path d="M12 52 L60 82 L108 52 V94 A12 12 0 0 1 96 106 H24 A12 12 0 0 1 12 94 Z" fill="url(#body)"/>"#;
+const POCKET: &str =
+    r#"<path d="M12 52 L60 82 L108 52 V94 A12 12 0 0 1 96 106 H24 A12 12 0 0 1 12 94 Z" fill="url(#body)"/>"#;
 const FLAP: &str = "M24 40 H96 A12 12 0 0 1 108 52 L66 80 A13 13 0 0 1 54 80 L12 52 A12 12 0 0 1 24 40 Z";
 const PAPER: &str = r##"<rect x="24" y="30" width="72" height="62" rx="6" fill="#ffffff"/><rect x="34" y="44" width="52" height="5" rx="2.5" fill="#b9cdf2"/><rect x="34" y="56" width="52" height="5" rx="2.5" fill="#cfdcf6"/><rect x="34" y="68" width="34" height="5" rx="2.5" fill="#cfdcf6"/>"##;
 
@@ -98,7 +99,12 @@ pub fn frame_svg(pose: &Pose, width: u32, height: u32) -> String {
         pose.sway
     );
     svg.push_str(BACK);
-    let flap = |fill: &str| format!(r#"<path d="{FLAP}" fill="url(#{fill})" transform="translate(0 40) scale(1 {}) translate(0 -40)"/>"#, pose.fold);
+    let flap = |fill: &str| {
+        format!(
+            r#"<path d="{FLAP}" fill="url(#{fill})" transform="translate(0 40) scale(1 {}) translate(0 -40)"/>"#,
+            pose.fold
+        )
+    };
     if pose.fold < 0.0 {
         svg.push_str(&flap("inner"));
     }
@@ -106,9 +112,7 @@ pub fn frame_svg(pose: &Pose, width: u32, height: u32) -> String {
         let _ = write!(
             svg,
             r#"<g opacity="{}" transform="translate(0 {}) rotate({} 60 61)">{PAPER}</g>"#,
-            pose.letter_shown,
-            pose.letter_y,
-            pose.letter_turn
+            pose.letter_shown, pose.letter_y, pose.letter_turn
         );
     }
     svg.push_str(POCKET);
@@ -146,9 +150,12 @@ fn pixels(points: f32, scale: f32) -> u32 {
 fn made(scale: f32) -> Option<(Vec<Rgba8PixelBuffer>, Vec<Rgba8PixelBuffer>)> {
     let (width, height) = (pixels(LARGE, scale), pixels(LARGE * TALL / WIDE, scale));
     let turn = (0..FRAMES)
-        .map(|frame| drawn(&frame_svg(&pose(crate::numbers::float(frame) / crate::numbers::float(FRAMES)), width, height)))
+        .map(|frame| {
+            drawn(&frame_svg(&pose(crate::numbers::float(frame) / crate::numbers::float(FRAMES)), width, height))
+        })
         .collect::<Option<Vec<_>>>()?;
-    let flight = (0..FLIGHT).map(|step| drawn(&logo_svg(pixels(flight_size(step), scale)))).collect::<Option<Vec<_>>>()?;
+    let flight =
+        (0..FLIGHT).map(|step| drawn(&logo_svg(pixels(flight_size(step), scale)))).collect::<Option<Vec<_>>>()?;
     Some((turn, flight))
 }
 

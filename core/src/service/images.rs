@@ -1,6 +1,9 @@
 //! Images inside mail, fetched through Proton.
 
-use super::{Attachment, encoded, Error, HashMap, html, IMAGE_CONCURRENCY, is_inline_image, Message, on_worker, Result, safety, Service, stream, StreamExt, to_data_url, Value};
+use super::{
+    Attachment, Error, HashMap, IMAGE_CONCURRENCY, Message, Result, Service, StreamExt, Value, encoded, html,
+    is_inline_image, on_worker, safety, stream, to_data_url,
+};
 use crate::file_kind::{self, FileKind};
 
 const LOGO: &str = "logo";
@@ -26,7 +29,10 @@ impl Service {
             }
             let path = format!("/core/v4/images?Url={}&DryRun=1", encoded(&url));
             let (_, headers) = self.client.fetch(&path).await.ok()?;
-            let tracker = headers.get("x-pm-tracker-provider").and_then(|value| value.to_str().ok()).filter(|name| !name.is_empty());
+            let tracker = headers
+                .get("x-pm-tracker-provider")
+                .and_then(|value| value.to_str().ok())
+                .filter(|name| !name.is_empty());
             let tracker = tracker.map(str::to_string);
             if let Some(store) = store {
                 store.put(TRACKER, &url, &tracker);
@@ -58,9 +64,8 @@ impl Service {
 
     /// The message with its remote images in place, all fetched through Proton's proxy.
     pub async fn with_remote_images(&self, safe_html: &str, urls: Vec<String>) -> String {
-        let fetches = urls.into_iter().map(|url| async move {
-            self.remote_image(&url).await.ok().map(|data| (url, data))
-        });
+        let fetches =
+            urls.into_iter().map(|url| async move { self.remote_image(&url).await.ok().map(|data| (url, data)) });
         let images: HashMap<String, String> =
             stream::iter(fetches).buffer_unordered(IMAGE_CONCURRENCY).filter_map(|r| async { r }).collect().await;
         html::with_images(safe_html, &images)
@@ -69,7 +74,9 @@ impl Service {
     /// A tiny picture for a file's row, as a data link, or nothing if the file should keep its icon.
     /// Each costs a download, so it is kept sealed with the mail, and a picture is asked for once.
     pub async fn thumbnail(&self, message_id: &str, file: &Attachment, address_id: &str) -> Option<String> {
-        if file_kind::by_name(&file.name, &file.mime) != FileKind::Picture || file.size > file_kind::THUMBNAIL_MOST_BYTES {
+        if file_kind::by_name(&file.name, &file.mime) != FileKind::Picture
+            || file.size > file_kind::THUMBNAIL_MOST_BYTES
+        {
             return None;
         }
         let key = format!("{message_id}/{}", file.id);
@@ -92,7 +99,9 @@ impl Service {
     /// Their own drafts and Proton's mail are exempt, as in `transformEmbedded.ts`.
     pub fn with_embedded_held_back(&self, message: &Message) -> Option<String> {
         let exempt = message.from_proton == Some(true) || message.meta.folder == DRAFTS;
-        (message.html && !exempt && self.habits().hide_embedded).then(|| html::without_embedded(&message.safe_body)).flatten()
+        (message.html && !exempt && self.habits().hide_embedded)
+            .then(|| html::without_embedded(&message.safe_body))
+            .flatten()
     }
 
     fn logo_domain(email: &str) -> Option<String> {

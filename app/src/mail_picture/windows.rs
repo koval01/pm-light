@@ -44,7 +44,11 @@ pub fn capture(view: &WebView, width: f64, height: f64, then: impl FnOnce(Option
     }));
     // Safety: a call on the page's own interface, on the window's thread that made it.
     let asked = unsafe {
-        page.CallDevToolsProtocolMethod(&HSTRING::from("Page.captureScreenshot"), &HSTRING::from(asked(width, height)), &handler)
+        page.CallDevToolsProtocolMethod(
+            &HSTRING::from("Page.captureScreenshot"),
+            &HSTRING::from(asked(width, height)),
+            &handler,
+        )
     };
     if let Some(code) = asked.as_ref().err().map(|error| error.code().0) {
         log::warn!("DevTools could not be asked: {code:#010x}");

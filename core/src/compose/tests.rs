@@ -167,7 +167,8 @@ fn a_draft_restores_its_fields_and_attachments() {
         key_packets: "k".into(),
         signed: true,
         inline: false,
-        content_id: None, previewable: false,
+        content_id: None,
+        previewable: false,
     };
     let m = Message { attachments: vec![file.clone()], bcc: vec![address("z@x.io")], ..message() };
     let c = start(ComposeMode::Draft, &m);
@@ -228,12 +229,8 @@ fn prepared_mail_keeps_its_lines() {
 
 #[test]
 fn a_letter_starts_as_the_account_asks() {
-    let habits = Habits {
-        font_face: Some("Georgia".into()),
-        font_size: Some(16),
-        right_to_left: true,
-        ..Habits::default()
-    };
+    let habits =
+        Habits { font_face: Some("Georgia".into()), font_size: Some(16), right_to_left: true, ..Habits::default() };
     assert_eq!(
         styled_first_line("<div><br></div><p>rest</p>", &habits),
         r#"<div style="font-family: Georgia; font-size: 16px;" dir="rtl"><br></div><p>rest</p>"#
@@ -243,15 +240,15 @@ fn a_letter_starts_as_the_account_asks() {
 #[test]
 fn a_letter_stays_plain_when_nothing_is_asked() {
     assert_eq!(styled_first_line("<div><br></div>", &Habits::default()), "<div><br></div>");
-    assert_eq!(styled_first_line("<p>a draft</p>", &Habits { right_to_left: true, ..Habits::default() }), "<p>a draft</p>");
+    assert_eq!(
+        styled_first_line("<p>a draft</p>", &Habits { right_to_left: true, ..Habits::default() }),
+        "<p>a draft</p>"
+    );
 }
 
 #[test]
 fn a_draft_with_no_subject_stays_without_one() {
-    let m = |subject: &str| Message {
-        meta: MessageMeta { subject: subject.into(), ..message().meta },
-        ..message()
-    };
+    let m = |subject: &str| Message { meta: MessageMeta { subject: subject.into(), ..message().meta }, ..message() };
     let subject = |m: &Message| compose_from(ComposeMode::Draft, Some(m), &own(), &labels()).subject;
     assert_eq!(subject(&m("(No Subject)")), "");
     assert_eq!(subject(&m("Hi")), "Hi");
@@ -337,7 +334,17 @@ fn suggestions_skip_what_is_already_there() {
 fn only_ascii_addresses_pass() {
     assert!(is_valid_address("first.last+tag@sub.example.org"));
     assert!(is_valid_address("a@xn--e1aybc.xn--p1ai"));
-    for bad in ["\u{44f}\u{449}\u{438}\u{43a}@example.org", "user@\u{43f}\u{440}\u{438}\u{43c}\u{435}\u{440}.\u{440}\u{444}", "\u{444}\u{444}\u{444}2004@\u{444}\u{444}\u{444}.\u{444}\u{444}\u{444}", "a@b", "a@-b.org", "a@b-.org", "a@b..org", "a@b.1", "@b.org"] {
+    for bad in [
+        "\u{44f}\u{449}\u{438}\u{43a}@example.org",
+        "user@\u{43f}\u{440}\u{438}\u{43c}\u{435}\u{440}.\u{440}\u{444}",
+        "\u{444}\u{444}\u{444}2004@\u{444}\u{444}\u{444}.\u{444}\u{444}\u{444}",
+        "a@b",
+        "a@-b.org",
+        "a@b-.org",
+        "a@b..org",
+        "a@b.1",
+        "@b.org",
+    ] {
         assert!(!is_valid_address(bad), "{bad}");
     }
 }

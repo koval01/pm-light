@@ -6,8 +6,9 @@ use parking_lot::Mutex;
 use proton_core::{
     Service,
     compose::ComposeMode,
-    file_kind, safety,
+    file_kind,
     model::{Attachment, MessageChanges},
+    safety,
     timing::SnoozeChoice,
 };
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
@@ -153,7 +154,13 @@ pub fn ask_to_leave_tor(app: &App) -> bool {
 }
 
 pub fn ask_to_unsubscribe(app: &App, text: &str) -> bool {
-    asked(MessageLevel::Info, &app.get_word_unsubscribe_title(), text, &app.get_word_unsubscribe(), &app.get_word_cancel())
+    asked(
+        MessageLevel::Info,
+        &app.get_word_unsubscribe_title(),
+        text,
+        &app.get_word_unsubscribe(),
+        &app.get_word_cancel(),
+    )
 }
 
 /// Everything here acts on what the core calls the targets: the rows ticked, or else the open one.
@@ -259,7 +266,13 @@ pub fn block_sender() {
     let Some(email) = view::current_sender() else { return };
     let title = app.invoke_block_title(email.as_str().into());
     let yes = service.habits().skip_block_question
-        || asked(MessageLevel::Warning, &title, &app.get_word_block_text(), &app.get_word_block(), &app.get_word_cancel());
+        || asked(
+            MessageLevel::Warning,
+            &title,
+            &app.get_word_block_text(),
+            &app.get_word_block(),
+            &app.get_word_cancel(),
+        );
     if yes {
         tokio::spawn(async move {
             toast(if service.block_sender(&email).await.is_ok() { BLOCKED } else { FAILED });

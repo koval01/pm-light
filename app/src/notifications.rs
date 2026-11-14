@@ -44,7 +44,8 @@ fn ask_for_badges() {
         REFUSED.store(!granted.as_bool(), std::sync::atomic::Ordering::Relaxed);
     });
     let options = UNAuthorizationOptions::Badge | UNAuthorizationOptions::Alert | UNAuthorizationOptions::Sound;
-    UNUserNotificationCenter::currentNotificationCenter().requestAuthorizationWithOptions_completionHandler(options, &answered);
+    UNUserNotificationCenter::currentNotificationCenter()
+        .requestAuthorizationWithOptions_completionHandler(options, &answered);
 }
 
 #[cfg(target_os = "windows")]
@@ -87,7 +88,17 @@ mod windows {
         let mut key: HKEY = null_mut();
         // Safety: every pointer is to a terminated string or a local that outlives the call.
         let opened = unsafe {
-            RegCreateKeyExW(HKEY_CURRENT_USER, path.as_ptr(), 0, null(), REG_OPTION_NON_VOLATILE, KEY_WRITE, null(), &raw mut key, null_mut())
+            RegCreateKeyExW(
+                HKEY_CURRENT_USER,
+                path.as_ptr(),
+                0,
+                null(),
+                REG_OPTION_NON_VOLATILE,
+                KEY_WRITE,
+                null(),
+                &raw mut key,
+                null_mut(),
+            )
         };
         if opened != DONE {
             log::warn!("the app id could not be registered: {opened}");
@@ -130,15 +141,4 @@ pub fn announce(app: &App, count: u64) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::is_bundled;
-
-    #[test]
-    fn only_a_program_inside_an_app_bundle_asks_the_notification_centre() {
-        assert!(is_bundled("/Applications/Proton Mail Light.app"));
-        assert!(is_bundled("/Users/a/target/native/Proton Mail Light.APP"));
-        assert!(!is_bundled("/Users/a/proton-mail/target/native"));
-        assert!(!is_bundled("/Users/a/proton-mail/target/debug/"));
-        assert!(!is_bundled(""));
-    }
-}
+mod tests;

@@ -55,8 +55,13 @@ pub fn capture(view: &WebView, _width: f64, _height: f64, then: impl FnOnce(Opti
 pub fn drawn(pdf: &NSData) -> Option<Vec<u8>> {
     // Every class first: a missing one must end this before the graphics state is changed, never between its save
     // and its restore.
-    let (reps, bitmaps, contexts, colors, paths) =
-        (class(c"NSPDFImageRep")?, class(c"NSBitmapImageRep")?, class(c"NSGraphicsContext")?, class(c"NSColor")?, class(c"NSBezierPath")?);
+    let (reps, bitmaps, contexts, colors, paths) = (
+        class(c"NSPDFImageRep")?,
+        class(c"NSBitmapImageRep")?,
+        class(c"NSGraphicsContext")?,
+        class(c"NSColor")?,
+        class(c"NSBezierPath")?,
+    );
     // Safety: AppKit's own classes, each result checked for nothing before it is used. The context drawn into is a
     // bitmap's own, made current for this thread only and put back before the block ends.
     unsafe {
@@ -122,7 +127,9 @@ pub fn copy(png: &[u8]) -> bool {
     let png = data_of(png);
     // Safety: AppKit's own pasteboard, on the window's thread.
     unsafe {
-        let Some(board): Option<Retained<AnyObject>> = class(c"NSPasteboard").and_then(|boards| msg_send![boards, generalPasteboard]) else {
+        let Some(board): Option<Retained<AnyObject>> =
+            class(c"NSPasteboard").and_then(|boards| msg_send![boards, generalPasteboard])
+        else {
             return false;
         };
         put(&board, &png)

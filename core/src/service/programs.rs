@@ -1,6 +1,6 @@
 //! What an account has besides its mail: invitations, SMTP tokens, and the users of an organization.
 
-use super::{api, Error, json, Method, Organization, Referrals, Result, Service, SmtpToken, Value};
+use super::{Error, Method, Organization, Referrals, Result, Service, SmtpToken, Value, api, json};
 
 const REFERRALS_SHOWN: usize = 100;
 const MEMBERS_SHOWN: usize = 100;
@@ -51,27 +51,14 @@ impl Service {
         let path = format!("/core/v4/members?Page=0&PageSize={MEMBERS_SHOWN}");
         let organization = without_a_plan_for_it(self.client.get::<Value>("/core/v4/organizations").await)?;
         // Asked only where there is an organization: without one Proton answers this with a 500.
-        let members = if organization.is_null() { Value::Null } else { self.client.get::<Value>(&path).await.unwrap_or(Value::Null) };
+        let members = if organization.is_null() {
+            Value::Null
+        } else {
+            self.client.get::<Value>(&path).await.unwrap_or(Value::Null)
+        };
         Ok(api::to_organization(organization.get("Organization").unwrap_or(&Value::Null), &members))
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn refusal(status: u16) -> Result<Value> {
-        Err(Error::Api { status, code: 2501, message: String::new() })
-    }
-
-    #[test]
-    fn a_plan_without_an_organization_is_not_a_failure() {
-        assert_eq!(without_a_plan_for_it(refusal(422)).ok(), Some(Value::Null));
-        assert_eq!(without_a_plan_for_it(refusal(403)).ok(), Some(Value::Null));
-    }
-
-    #[test]
-    fn a_real_failure_stays_one() {
-        assert!(without_a_plan_for_it(refusal(500)).is_err());
-    }
-}
+mod tests;

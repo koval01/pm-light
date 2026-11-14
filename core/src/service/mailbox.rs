@@ -1,6 +1,12 @@
 //! Reading the mailbox: folders, lists, messages and what they carry.
 
-use super::{api, Arc, Attachment, body_text, Counts, Deserialize, details, encoded, Engine, Error, Folder, html, is_inline_image, KEPT_THREADS, ListOptions, mail_store, MailChange, MailProtection, MailStore, Message, MessageMeta, MIME_CACHE_MESSAGES, MimeAttachment, on_worker, OPENED_AHEAD_TOGETHER, OPENED_BYTES, OPENED_MESSAGES, Ordering, parse_mime, PathBuf, PublicKeyRow, Result, safety, send, Service, STANDARD, stream, StreamExt, text, to_data_url, Value};
+use super::{
+    Arc, Attachment, Counts, Deserialize, Engine, Error, Folder, KEPT_THREADS, ListOptions, MIME_CACHE_MESSAGES,
+    MailChange, MailProtection, MailStore, Message, MessageMeta, MimeAttachment, OPENED_AHEAD_TOGETHER, OPENED_BYTES,
+    OPENED_MESSAGES, Ordering, PathBuf, PublicKeyRow, Result, STANDARD, Service, StreamExt, Value, api, body_text,
+    details, encoded, html, is_inline_image, mail_store, on_worker, parse_mime, safety, send, stream, text,
+    to_data_url,
+};
 use crate::view::StoredList;
 use std::path::Path;
 
@@ -39,10 +45,8 @@ impl Service {
                     .unwrap_or_default(),
             )
         };
-        let (folders, labels) = futures::try_join!(
-            fetch("folder", api::LABEL_TYPE_FOLDER),
-            fetch("label", api::LABEL_TYPE_LABEL)
-        )?;
+        let (folders, labels) =
+            futures::try_join!(fetch("folder", api::LABEL_TYPE_FOLDER), fetch("label", api::LABEL_TYPE_LABEL))?;
         Ok(api::system_folders().into_iter().chain(folders).chain(labels).collect())
     }
 
@@ -80,7 +84,8 @@ impl Service {
 
     /// As `isConversationMode` in Proton's client: a search finds messages, and so do these folders.
     fn lists_conversations(&self, folder: &str, options: &ListOptions) -> bool {
-        let searching = [&options.keyword, &options.from, &options.to, &options.subject].iter().any(|field| field.is_some());
+        let searching =
+            [&options.keyword, &options.from, &options.to, &options.subject].iter().any(|field| field.is_some());
         self.groups_mail() && !searching && !ALWAYS_MESSAGES.contains(&folder)
     }
 
@@ -92,7 +97,8 @@ impl Service {
             total: Option<u64>,
         }
         let label = api::listed_label(folder, &self.habits());
-        let reply: Reply = self.client.get(&format!("/mail/v4/conversations?{}", api::list_query(label, options))).await?;
+        let reply: Reply =
+            self.client.get(&format!("/mail/v4/conversations?{}", api::list_query(label, options))).await?;
         let rows = reply.conversations.iter().map(|row| api::conversation_row(row, folder)).collect();
         Ok(Listed { rows, total: reply.total })
     }
@@ -175,7 +181,8 @@ impl Service {
             return None;
         }
         if let Some(row) = row.filter(|row| row.unread != kept.meta.unread || row.labels != kept.meta.labels) {
-            let meta = MessageMeta { unread: row.unread, starred: row.starred, labels: row.labels, ..kept.meta.clone() };
+            let meta =
+                MessageMeta { unread: row.unread, starred: row.starred, labels: row.labels, ..kept.meta.clone() };
             kept = Arc::new(Message { meta, ..(*kept).clone() });
         }
         opened.push_back(kept.clone());
@@ -236,7 +243,8 @@ impl Service {
     fn store_message(&self, message: &Arc<Message>) {
         let Some(store) = self.store() else { return };
         let message = message.clone();
-        let files = self.mime_files.lock().iter().find(|(id, _)| *id == message.meta.id).map(|(_, files)| files.clone());
+        let files =
+            self.mime_files.lock().iter().find(|(id, _)| *id == message.meta.id).map(|(_, files)| files.clone());
         drop(tokio::task::spawn_blocking(move || {
             if let Some(files) = files {
                 store.put(MIME_FILES, &message.meta.id, &files);
@@ -250,7 +258,9 @@ impl Service {
         let wanted = id.to_string();
         let read = on_worker(move || {
             let message: Option<Message> = store.get(MAIL, &wanted);
-            let packed = message.as_ref().is_some_and(|message| message.attachments.iter().any(|file| file.id.starts_with("mime-")));
+            let packed = message
+                .as_ref()
+                .is_some_and(|message| message.attachments.iter().any(|file| file.id.starts_with("mime-")));
             let files: Option<Vec<MimeAttachment>> = if packed { store.get(MIME_FILES, &wanted) } else { None };
             Ok((message, packed, files))
         });
@@ -436,9 +446,10 @@ impl Service {
                 continue;
             }
             if let Ok(data) = self.open_attachment(message_id, attachment, address_id).await
-                && safety::is_displayable_image(&attachment.mime, &data) {
-                    out = out.replace(&reference, &to_data_url(&attachment.mime, &data));
-                }
+                && safety::is_displayable_image(&attachment.mime, &data)
+            {
+                out = out.replace(&reference, &to_data_url(&attachment.mime, &data));
+            }
         }
         out
     }

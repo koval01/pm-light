@@ -3,3 +3,6 @@ allow-expect-in-tests = true
 allow-panic-in-tests = true
 allow-indexing-slicing-in-tests = true
 doc-valid-idents = ["OpenPGP", "WebKit", "WebKitGTK", "WebView2", "GnuPG", "DigiCert", "AppKit", ".."]
+# Tests may print what they found for `--nocapture`, and look at values with dbg!; the app itself may not.
+allow-print-in-tests = true
+allow-dbg-in-tests = true

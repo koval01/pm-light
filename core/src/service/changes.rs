@@ -1,6 +1,6 @@
 //! Changing the mailbox: moving, marking, deleting and labelling.
 
-use super::{api, Error, json, MessageChanges, Method, Result, Service, Value};
+use super::{Error, MessageChanges, Method, Result, Service, Value, api, json};
 
 impl Service {
     pub(super) async fn batch(&self, path: &str, ids: &[String], what: &str, extra: Value) -> Result<()> {
@@ -34,7 +34,12 @@ impl Service {
     }
 
     /// Rows may stand for conversations, whose whole selves then take the change, as in Proton's.
-    pub(super) async fn change_rows(&self, ids: &[String], changes: &MessageChanges, conversations: bool) -> Result<()> {
+    pub(super) async fn change_rows(
+        &self,
+        ids: &[String],
+        changes: &MessageChanges,
+        conversations: bool,
+    ) -> Result<()> {
         if !conversations {
             return self.patch(ids, changes).await;
         }

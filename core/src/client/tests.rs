@@ -4,8 +4,7 @@ use crate::test_server::{script, serve};
 use std::{sync::Arc, time::Duration};
 
 const REFUSED: &str = r#"{"Code":10013,"Error":"Invalid refresh token"}"#;
-const NEW_TOKENS: &str =
-    r#"{"Code":1000,"AccessToken":"new-access","RefreshToken":"new-refresh","UID":"uid"}"#;
+const NEW_TOKENS: &str = r#"{"Code":1000,"AccessToken":"new-access","RefreshToken":"new-refresh","UID":"uid"}"#;
 const FINE: &str = r#"{"Code":1000}"#;
 
 /// A client holding a session, and a record of what it reported about it.
@@ -210,7 +209,10 @@ async fn a_proxy_in_the_environment_is_ignored() {
 /// A redirect must not take the session's headers to another server.
 #[tokio::test(flavor = "multi_thread")]
 async fn does_not_follow_a_redirect() {
-    use std::{io::{Read, Write}, net::TcpListener};
+    use std::{
+        io::{Read, Write},
+        net::TcpListener,
+    };
     let (first, second) = (TcpListener::bind("127.0.0.1:0").unwrap(), TcpListener::bind("127.0.0.1:0").unwrap());
     let (base, target) = (first.local_addr().unwrap(), second.local_addr().unwrap());
     std::thread::spawn(move || {

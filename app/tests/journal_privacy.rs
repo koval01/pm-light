@@ -12,8 +12,27 @@ use std::{
 const MACROS: [&str; 5] = ["log::error!(", "log::warn!(", "log::info!(", "log::debug!(", "log::trace!("];
 /// Words that name the person's things. A record may not mention them in what it fills in.
 const PRIVATE: [&str; 21] = [
-    "email", "address", "addresses", "subject", "body", "html", "password", "secret", "token", "query", "keyword",
-    "url", "recipient", "sender", "contact", "file_name", "message.meta", "to", "cc", "bcc", "from",
+    "email",
+    "address",
+    "addresses",
+    "subject",
+    "body",
+    "html",
+    "password",
+    "secret",
+    "token",
+    "query",
+    "keyword",
+    "url",
+    "recipient",
+    "sender",
+    "contact",
+    "file_name",
+    "message.meta",
+    "to",
+    "cc",
+    "bcc",
+    "from",
 ];
 /// What may stand next to an error: its kind, or a summary made for the journal.
 const SAFE_ERROR: [&str; 4] = ["kind(", "failure(", "clean_path(", "error_code"];
@@ -88,7 +107,10 @@ fn problems(record: &str) -> Vec<String> {
     for part in filled_in(record) {
         let lower = part.to_lowercase();
         let words: Vec<&str> = lower.split(|c: char| !(c.is_alphanumeric() || c == '_' || c == '.')).collect();
-        if let Some(word) = PRIVATE.iter().find(|private| words.iter().any(|word| word == *private || word.ends_with(&format!(".{private}")))) {
+        if let Some(word) = PRIVATE
+            .iter()
+            .find(|private| words.iter().any(|word| word == *private || word.ends_with(&format!(".{private}"))))
+        {
             found.push(format!("`{part}` is the person's: {word}"));
         }
         let mentions_error = words.iter().any(|word| *word == "error" || *word == "e" || word.starts_with("error."));

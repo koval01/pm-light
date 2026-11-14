@@ -1,6 +1,6 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 //! The window. Everything below it is `proton-core`.
+
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod account_check;
 mod account_panel;
@@ -10,9 +10,9 @@ mod autolock;
 mod composer;
 mod contacts;
 mod folder_names;
-mod guard;
 #[cfg(target_os = "linux")]
 mod gtk_loop;
+mod guard;
 mod incoming;
 mod keyboard;
 mod list_style;
@@ -24,8 +24,8 @@ mod memory_check;
 mod menu;
 mod modal;
 mod moment_picker;
-mod numbers;
 mod notifications;
+mod numbers;
 mod palette;
 mod preferences;
 mod preview;
@@ -45,9 +45,9 @@ mod splash;
 mod stalls;
 mod startup;
 mod sync;
+mod toasts;
 mod tor_link;
 mod tour;
-mod toasts;
 mod tray;
 mod verify;
 mod view;
@@ -57,7 +57,7 @@ mod window_place;
 
 use proton_core::{PROTON_API, REPOSITORY, Service};
 use std::sync::Arc;
-use view::{apply_filters, close_mail, open_info, show_images, list_title, open_mail, publish, show_stage};
+use view::{apply_filters, close_mail, list_title, open_info, open_mail, publish, show_images, show_stage};
 
 /// The window as Slint generates it. That code is not ours to hold to our lints, so they stop at
 /// this module, and everything else is held to all of them.
@@ -221,7 +221,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     dress(&app);
     let ended = app.as_weak();
     // No way to Proton yet: `tor_link::begin` chooses it, Tor or not, before anything goes out.
-    let service = Service::undecided(PROTON_API, session::keychain(), Box::new(move |ending| auth::session_ended(&ended, ending)));
+    let service = Service::undecided(
+        PROTON_API,
+        session::keychain(),
+        Box::new(move |ending| auth::session_ended(&ended, ending)),
+    );
     // The account check borrows the session: a refresh would rotate the tokens of whoever saved it.
     if account_check::asked() {
         service.forbid_token_refresh();

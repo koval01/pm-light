@@ -21,7 +21,9 @@ thread_local! {
 /// The file the check writes to, when the app was started for one.
 #[must_use]
 pub fn asked_in(arguments: impl Iterator<Item = String>) -> Option<PathBuf> {
-    arguments.filter_map(|argument| argument.strip_prefix(ARGUMENT).map(PathBuf::from)).find(|path| !path.as_os_str().is_empty())
+    arguments
+        .filter_map(|argument| argument.strip_prefix(ARGUMENT).map(PathBuf::from))
+        .find(|path| !path.as_os_str().is_empty())
 }
 
 /// From `main`, once the window is up.
@@ -46,7 +48,10 @@ pub fn run_if_asked(app: &App) {
 /// What `<file>.txt` holds.
 #[must_use]
 pub fn report(png: &[u8], cut: bool, copied: bool) -> String {
-    let size = image::ImageReader::new(Cursor::new(png)).with_guessed_format().ok().and_then(|reader| reader.into_dimensions().ok());
+    let size = image::ImageReader::new(Cursor::new(png))
+        .with_guessed_format()
+        .ok()
+        .and_then(|reader| reader.into_dimensions().ok());
     let (width, height) = size.unwrap_or((0, 0));
     format!("width={width}\nheight={height}\nbytes={}\ncut={cut}\ncopied={copied}\n", png.len())
 }
@@ -57,7 +62,8 @@ pub fn finish(png: &[u8], cut: bool) {
     let copied = system::copy_checked(png);
     let mut note = path.clone().into_os_string();
     note.push(".txt");
-    let written = std::fs::write(&path, png).is_ok() && std::fs::write(PathBuf::from(note), report(png, cut, copied)).is_ok();
+    let written =
+        std::fs::write(&path, png).is_ok() && std::fs::write(PathBuf::from(note), report(png, cut, copied)).is_ok();
     log::info!("the mail picture checked: {} KB, copied {copied}, written {written}", png.len() / 1024);
 }
 

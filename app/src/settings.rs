@@ -2,10 +2,9 @@
 //! is put together only when its tab is opened. Each page says what it shows, and hears what is done
 //! to it, in one of the files here.
 
-mod account_pages;
 mod about_page;
+mod account_pages;
 mod app_pages;
-mod tor_page;
 mod filter_pages;
 mod guarded_pages;
 mod lock_page;
@@ -14,6 +13,7 @@ mod print_check;
 mod program_pages;
 pub mod rows;
 pub mod tabs;
+mod tor_page;
 
 use crate::{App, Say, Settings, SettingsRow, SettingsSection, mail_view, view};
 use proton_core::{Service, error::Error};
@@ -81,7 +81,11 @@ impl Ctx {
     }
 
     /// Something that changes the account. A failure is said aloud, and nothing else happens.
-    pub fn act(&self, task: impl Future<Output = Result<(), Error>> + Send + 'static, then: impl FnOnce(&Self) + Send + 'static) {
+    pub fn act(
+        &self,
+        task: impl Future<Output = Result<(), Error>> + Send + 'static,
+        then: impl FnOnce(&Self) + Send + 'static,
+    ) {
         let generation = GENERATION.get();
         let ctx = self.clone();
         tokio::spawn(async move {
@@ -144,7 +148,10 @@ impl Ctx {
         for section in app.global::<Settings>().get_sections().iter() {
             for (index, row) in section.rows.iter().enumerate() {
                 if row.id == id {
-                    section.rows.set_row_data(index, SettingsRow { text: digits.as_str().into(), options: rows::digit_cells(&digits), ..row });
+                    section.rows.set_row_data(
+                        index,
+                        SettingsRow { text: digits.as_str().into(), options: rows::digit_cells(&digits), ..row },
+                    );
                 }
             }
         }
@@ -174,7 +181,10 @@ impl Ctx {
         let sections = app.global::<Settings>().get_sections();
         let Some(position) = sections.iter().position(|known| known.id == section) else { return };
         if let Some(found) = sections.row_data(position) {
-            sections.set_row_data(position, SettingsSection { rows: ModelRc::from(Rc::new(VecModel::from(rows))), ..found });
+            sections.set_row_data(
+                position,
+                SettingsSection { rows: ModelRc::from(Rc::new(VecModel::from(rows))), ..found },
+            );
         }
     }
 
@@ -203,7 +213,10 @@ fn refresh_tabs(app: &App) {
 }
 
 fn web_tab(ctx: &Ctx) {
-    ctx.show(vec![rows::plain(vec![rows::note(&ctx.say("tabs.webOnly")), rows::button("site", &ctx.say("tabs.openInProton"), true)])]);
+    ctx.show(vec![rows::plain(vec![
+        rows::note(&ctx.say("tabs.webOnly")),
+        rows::button("site", &ctx.say("tabs.openInProton"), true),
+    ])]);
 }
 
 fn draw(ctx: &Ctx, id: &str) {
@@ -252,7 +265,11 @@ fn hear(ctx: &Ctx, tab: &str, id: &str, part: i32, value: i32) {
         return;
     }
     if let Some(slug) = id.strip_prefix("manage:") {
-        view::open_link(&if slug.is_empty() { "https://account.proton.me".to_string() } else { tabs::web_address(slug) });
+        view::open_link(&if slug.is_empty() {
+            "https://account.proton.me".to_string()
+        } else {
+            tabs::web_address(slug)
+        });
         return;
     }
     match tab {

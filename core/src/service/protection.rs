@@ -1,6 +1,6 @@
 //! Sender lists, forwarding, domains, recovery and keys: what guards the mailbox.
 
-use super::{api, encoded, Error, json, Method, Result, Service, text, Value};
+use super::{Error, Method, Result, Service, Value, api, encoded, json, text};
 use crate::{
     domain_check::{self, LiveCheck},
     model::{DomainStatus, Forwarding, KeyInfo, RecoveryStatus, SenderList, SenderRule},
@@ -71,15 +71,12 @@ impl Service {
     /// What DNS says right now, without waiting for Proton's own periodic check.
     pub async fn check_domain(&self, name: &str) -> Result<LiveCheck> {
         let rows = self.all_pages("/core/v4/domains", "Domains").await?;
-        let row = rows
-            .iter()
-            .find(|row| text(row, "DomainName") == name)
-            .ok_or_else(|| Error::other("Unknown domain"))?;
+        let row =
+            rows.iter().find(|row| text(row, "DomainName") == name).ok_or_else(|| Error::other("Unknown domain"))?;
         let owned = self.client.dns()?;
         let dns = &*owned;
         let dmarc_host = format!("_dmarc.{name}");
-        let (root, mail, dmarc) =
-            futures::try_join!(dns.txt(name), dns.mx(name), dns.txt(&dmarc_host))?;
+        let (root, mail, dmarc) = futures::try_join!(dns.txt(name), dns.mx(name), dns.txt(&dmarc_host))?;
         let keys = row.pointer("/DKIM/Config").and_then(Value::as_array).cloned().unwrap_or_default();
         let dkim = futures::future::try_join_all(keys.iter().map(|key| async move {
             let found = dns.cname(&format!("{}.{name}", text(key, "Hostname"))).await?;
@@ -102,10 +99,7 @@ impl Service {
             self.client.get::<Value>("/core/v4/settings")
         )?;
         let empty = Value::Null;
-        Ok(api::to_recovery(
-            user.get("User").unwrap_or(&empty),
-            settings.get("UserSettings").unwrap_or(&empty),
-        ))
+        Ok(api::to_recovery(user.get("User").unwrap_or(&empty), settings.get("UserSettings").unwrap_or(&empty)))
     }
 
     /// Fingerprints only. The keys themselves stay inside `crypto`.

@@ -1,6 +1,10 @@
 //! Signing in and out, and reopening a saved session.
 
-use super::{Address, AddressInput, AuthInfo, AuthStep, Deserialize, Ending, Engine, Error, json, KeySaltRow, Link, LockedKey, Login, mail_store, Method, number, on_worker, Result, SavedSession, Service, Session, Stage, StageListener, STANDARD, text, TWO_FACTOR_TOTP, Value, vault, Zeroizing};
+use super::{
+    Address, AddressInput, AuthInfo, AuthStep, Deserialize, Ending, Engine, Error, KeySaltRow, Link, LockedKey, Login,
+    Method, Result, STANDARD, SavedSession, Service, Session, Stage, StageListener, TWO_FACTOR_TOTP, Value, Zeroizing,
+    json, mail_store, number, on_worker, text, vault,
+};
 
 impl Service {
     pub async fn sign_in(&self, username: &str, password: &str) -> Result<AuthStep> {
@@ -169,21 +173,23 @@ impl Service {
         struct Salts {
             key_salts: Vec<KeySaltRow>,
         }
-        let (material, salts) = futures::try_join!(
-            self.fetch_key_material(),
-            self.client.get::<Salts>("/core/v4/keys/salts")
-        )?;
+        let (material, salts) =
+            futures::try_join!(self.fetch_key_material(), self.client.get::<Salts>("/core/v4/keys/salts"))?;
         let crypto = self.crypto.clone();
         let (keys, rows) = material;
         let (keys_for_secret, password) = (keys.clone(), Zeroizing::new(password.to_string()));
-        let secret =
-            on_worker(move || crypto.key_secret(&password, &keys_for_secret, &salts.key_salts)).await?;
+        let secret = on_worker(move || crypto.key_secret(&password, &keys_for_secret, &salts.key_salts)).await?;
         self.open(keys, rows, Zeroizing::new(secret)).await?;
         *self.login.lock() = Login::default();
         Ok(AuthStep::Ready)
     }
 
-    pub(super) async fn open(&self, user_keys: Vec<LockedKey>, rows: Vec<Value>, secret: Zeroizing<Vec<u8>>) -> Result<()> {
+    pub(super) async fn open(
+        &self,
+        user_keys: Vec<LockedKey>,
+        rows: Vec<Value>,
+        secret: Zeroizing<Vec<u8>>,
+    ) -> Result<()> {
         let mut rows = rows;
         rows.sort_by_key(|row| row.get("Order").and_then(Value::as_u64).unwrap_or(0));
         let inputs = rows
@@ -233,9 +239,9 @@ impl Service {
         if self.key_secret.lock().is_some() {
             return AuthStep::Ready;
         }
-        self.restore().await.unwrap_or_else(|error| AuthStep::Waiting {
-            link: error.link().unwrap_or(Link::Unavailable),
-        })
+        self.restore()
+            .await
+            .unwrap_or_else(|error| AuthStep::Waiting { link: error.link().unwrap_or(Link::Unavailable) })
     }
 
     /// Reopens the last session. Only Proton's refusal forgets it: a machine that starts offline,
@@ -264,9 +270,8 @@ impl Service {
         };
         log::info!("reopening the saved session");
         let store_key = saved.store_key.as_ref().and_then(|text| STANDARD.decode(text.as_bytes()).ok());
-        *self.store_key.lock() = store_key
-            .and_then(|bytes| <[u8; mail_store::KEY_BYTES]>::try_from(bytes).ok())
-            .map(Zeroizing::new);
+        *self.store_key.lock() =
+            store_key.and_then(|bytes| <[u8; mail_store::KEY_BYTES]>::try_from(bytes).ok()).map(Zeroizing::new);
         self.client.set_session(Some(saved.session.clone()));
         self.reach(Stage::Connecting);
         let reopened = async {

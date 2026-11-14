@@ -1,7 +1,7 @@
 //! Sender lists, forwarding, domains and recovery between Proton's shape and ours. The numbers are
 //! the constants of Proton's web client.
 
-use super::{json, Value, LOCATION_BLOCKED};
+use super::{LOCATION_BLOCKED, Value, json};
 use crate::{
     error::{Error, Result},
     model::{DomainStatus, Forwarding, ForwardingState, RecoveryPhrase, RecoveryStatus, SenderList, SenderRule},

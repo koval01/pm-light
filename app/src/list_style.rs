@@ -74,7 +74,8 @@ pub fn connect(service: &Arc<Service>, app: &App) {
     let (picking, weak) = (service.clone(), app.as_weak());
     app.on_choose_page(move || {
         let Some(app) = weak.upgrade() else { return };
-        let (current, pages) = (u64::try_from(app.get_list_page()).unwrap_or(0), u64::try_from(app.get_list_pages()).unwrap_or(0));
+        let (current, pages) =
+            (u64::try_from(app.get_list_page()).unwrap_or(0), u64::try_from(app.get_list_pages()).unwrap_or(0));
         let pages = listed(current, pages);
         let names: Vec<String> = pages.iter().map(|page| (page + 1).to_string()).collect();
         let marked = pages.iter().position(|page| *page == current);

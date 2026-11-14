@@ -16,10 +16,13 @@ const BY_NAME: &[(FileKind, &[&str])] = &[
     (FileKind::Video, &["3gp", "avi", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "webm", "wmv"]),
     (FileKind::Audio, &["aac", "aiff", "flac", "m4a", "mid", "midi", "mp3", "oga", "ogg", "opus", "wav", "wma"]),
     (FileKind::Pdf, &["pdf"]),
-    (FileKind::Text, &[
-        "c", "conf", "cpp", "css", "csv", "go", "h", "htm", "html", "ini", "java", "js", "json", "kt", "log", "md",
-        "py", "rb", "rs", "sh", "sql", "swift", "toml", "ts", "tsv", "txt", "xml", "yaml", "yml",
-    ]),
+    (
+        FileKind::Text,
+        &[
+            "c", "conf", "cpp", "css", "csv", "go", "h", "htm", "html", "ini", "java", "js", "json", "kt", "log", "md",
+            "py", "rb", "rs", "sh", "sql", "swift", "toml", "ts", "tsv", "txt", "xml", "yaml", "yml",
+        ],
+    ),
     (FileKind::Document, &["doc", "docm", "docx", "epub", "odt", "pages", "rtf"]),
     (FileKind::Sheet, &["numbers", "ods", "xls", "xlsm", "xlsx"]),
     (FileKind::Slides, &["key", "odp", "ppt", "pptm", "pptx"]),

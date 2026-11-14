@@ -1,6 +1,9 @@
 //! Adding, renaming and removing folders and labels from the sidebar, the name asked for in a dialog.
 
-use crate::{App, NameWindow, actions, auth, look, modal, settings::{self, Ctx}};
+use crate::{
+    App, NameWindow, actions, auth, look, modal,
+    settings::{self, Ctx},
+};
 use proton_core::{Service, model::Folder};
 use slint::{ComponentHandle, Timer, Weak};
 use std::{cell::RefCell, future::Future, sync::Arc, time::Duration};
@@ -41,17 +44,15 @@ fn window() -> Option<NameWindow> {
 fn finish(service: &Arc<Service>, app: &Weak<App>, answer: proton_core::error::Result<()>) {
     let (service, app, ctx) = (service.clone(), app.clone(), Ctx { service: service.clone(), app: app.clone() });
     let weak = app.clone();
-    let _ = app.upgrade_in_event_loop(move |_| {
-        match answer {
-            Ok(()) => {
-                close();
-                auth::refresh_folders(&service, &weak);
-            }
-            Err(error) => {
-                if let Some(window) = window() {
-                    window.set_busy(false);
-                    window.set_problem(ctx.error_text(&error).into());
-                }
+    let _ = app.upgrade_in_event_loop(move |_| match answer {
+        Ok(()) => {
+            close();
+            auth::refresh_folders(&service, &weak);
+        }
+        Err(error) => {
+            if let Some(window) = window() {
+                window.set_busy(false);
+                window.set_problem(ctx.error_text(&error).into());
             }
         }
     });

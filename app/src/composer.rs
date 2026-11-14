@@ -383,10 +383,17 @@ fn chosen_options(window: &ComposeWindow) -> Result<SendOptions, i32> {
     let deliver_at = if schedule.is_empty() {
         None
     } else {
-        Some(timing::scheduled_time(&schedule).map_err(|error| if matches!(error, Error::PastTime) { FAILED_PAST } else { FAILED_TIME })?)
+        Some(
+            timing::scheduled_time(&schedule)
+                .map_err(|error| if matches!(error, Error::PastTime) { FAILED_PAST } else { FAILED_TIME })?,
+        )
     };
     let password = Some(window.get_password().to_string()).filter(|password| !password.is_empty());
-    let hours = usize::try_from(window.get_expires()).ok().and_then(|position| EXPIRY_HOURS.get(position)).copied().unwrap_or(0);
+    let hours = usize::try_from(window.get_expires())
+        .ok()
+        .and_then(|position| EXPIRY_HOURS.get(position))
+        .copied()
+        .unwrap_or(0);
     Ok(SendOptions {
         deliver_at,
         password_hint: password.as_ref().map(|_| window.get_password_hint().to_string()),
@@ -427,7 +434,10 @@ fn show_schedule(window: &ComposeWindow) {
     let say = window.global::<Say>();
     let text = timing::scheduled_time(&window.get_schedule()).map_or_else(
         |_| String::new(),
-        |at| say.invoke_text("compose.scheduledFor".into()).replace("{when}", &timing::moment_text(i64::try_from(at).unwrap_or(0))),
+        |at| {
+            say.invoke_text("compose.scheduledFor".into())
+                .replace("{when}", &timing::moment_text(i64::try_from(at).unwrap_or(0)))
+        },
     );
     window.set_schedule_text(text.into());
 }
@@ -780,7 +790,6 @@ fn connect_actions(service: &Arc<Service>, window: &ComposeWindow) {
             tray::show_from_menu(window.window(), &picking);
         }
     });
-
 }
 
 /// Everything that needs the window to exist for the system, which it does only after `show`.
@@ -790,25 +799,27 @@ fn open_page(service: &Arc<Service>, window: ComposeWindow, body: &str, begins_a
     let number = PAGE_NUMBER.get() + 1;
     PAGE_NUMBER.set(number);
     let address = SERVED.serve(number, body.to_string());
-    let built = crate::webviews::page(|builder| mail_view::keep_to_drawing(builder)
-        // The page carries its own policy, with the nonce of its one script.
-        .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, None))
-        .with_url(&address)
-        .with_incognito(true)
-        .with_bounds(bounds(&window))
-        .with_navigation_handler(|url| own_page(&url))
-        .with_ipc_handler(move |request: Request<String>| {
-            let (service, message) = (messages.clone(), request.into_body());
-            let _ = slint::invoke_from_event_loop(move || on_page_message(&service, &message));
-        })
-        .with_drag_drop_handler(move |event| {
-            if let DragDropEvent::Drop { paths, .. } = event {
-                let service = dropped.clone();
-                let _ = slint::invoke_from_event_loop(move || add_paths(&service, paths));
-            }
-            true
-        })
-        .build_as_child(&window.window().window_handle()));
+    let built = crate::webviews::page(|builder| {
+        mail_view::keep_to_drawing(builder)
+            // The page carries its own policy, with the nonce of its one script.
+            .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, None))
+            .with_url(&address)
+            .with_incognito(true)
+            .with_bounds(bounds(&window))
+            .with_navigation_handler(|url| own_page(&url))
+            .with_ipc_handler(move |request: Request<String>| {
+                let (service, message) = (messages.clone(), request.into_body());
+                let _ = slint::invoke_from_event_loop(move || on_page_message(&service, &message));
+            })
+            .with_drag_drop_handler(move |event| {
+                if let DragDropEvent::Drop { paths, .. } = event {
+                    let service = dropped.clone();
+                    let _ = slint::invoke_from_event_loop(move || add_paths(&service, paths));
+                }
+                true
+            })
+            .build_as_child(&window.window().window_handle())
+    });
     let Ok(view) = built else {
         *DRAFT.lock() = None;
         let _ = window.hide();
@@ -911,7 +922,13 @@ pub fn start_draft(service: &Arc<Service>, app: &slint::Weak<crate::App>, id: St
     start_from(service, app, ComposeMode::Draft, Some(id), labels);
 }
 
-fn start_from(service: &Arc<Service>, app: &slint::Weak<crate::App>, mode: ComposeMode, reference: Option<String>, labels: ComposeLabels) {
+fn start_from(
+    service: &Arc<Service>,
+    app: &slint::Weak<crate::App>,
+    mode: ComposeMode,
+    reference: Option<String>,
+    labels: ComposeLabels,
+) {
     log::info!("writing: {mode:?}");
     let forward = matches!(mode, ComposeMode::Forward).then(view::open_message).flatten();
     let (service, app) = (service.clone(), app.clone());
@@ -962,28 +979,4 @@ fn footer_words(app: &crate::App) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn area_for(body: &str, plain: bool) -> String {
-        writing_area(&ComposeState { body: body.into(), plain, ..compose::compose_prepared(&[], "", "") }, false)
-    }
-
-    #[test]
-    fn a_plain_letter_keeps_the_lines_it_starts_with() {
-        // One more than the letter has: the parser takes it away again.
-        assert!(area_for("\n\n\n\nwords", true).contains(">\n\n\n\n\nwords</textarea>"));
-    }
-
-    #[test]
-    fn a_plain_letter_cannot_close_its_field() {
-        let area = area_for("</textarea><script>x</script>", true);
-        assert_eq!(area.matches("</textarea>").count(), 1);
-        assert!(!area.contains("<script>"));
-    }
-
-    #[test]
-    fn a_rich_letter_stays_in_the_editor() {
-        assert!(area_for("<b>words</b>", false).contains(r#"contenteditable="true"><b>words</b></div>"#));
-    }
-}
+mod tests;

@@ -1,16 +1,15 @@
 //! The only code that talks to Proton: identity headers, retries, token refresh, batch results.
 
 use crate::{
-    error::{Error, HumanVerification, Result},
     dns::Quad9,
+    error::{Error, HumanVerification, Result},
     journal::clean_path,
 };
 use parking_lot::Mutex;
 use rand::RngCore;
-use reqwest::{header::HeaderMap, multipart::Form, Method, Response};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::{json, Value};
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use reqwest::{Method, Response, header::HeaderMap, multipart::Form};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde_json::{Value, json};
 use std::{
     collections::HashMap,
     sync::{
@@ -19,6 +18,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// The host Proton's own apps use.
 pub const PROTON_API: &str = "https://mail-api.proton.me";
@@ -196,9 +196,10 @@ const fn refuses_session(error: &Error) -> bool {
 fn check(status: u16, body: &Value, batch: bool) -> Result<()> {
     let code = body.get("Code").and_then(Value::as_i64);
     if code == Some(CODE_HUMAN_VERIFICATION)
-        && let Some(challenge) = verification_in(body) {
-            return Err(Error::Verification(challenge));
-        }
+        && let Some(challenge) = verification_in(body)
+    {
+        return Err(Error::Verification(challenge));
+    }
     let accepted = matches!(code, None | Some(CODE_OK)) || (batch && code == Some(CODE_BATCH));
     if (200..300).contains(&status) && accepted {
         return Ok(());
@@ -241,7 +242,12 @@ fn heard_back(transport: &Transport, took: Duration) {
     });
 }
 
-pub(crate) fn http_client_with(base: &str, tls: rustls::ClientConfig, proxy: Option<&str>, dns: &Arc<Quad9>) -> Result<reqwest::Client> {
+pub(crate) fn http_client_with(
+    base: &str,
+    tls: rustls::ClientConfig,
+    proxy: Option<&str>,
+    dns: &Arc<Quad9>,
+) -> Result<reqwest::Client> {
     let builder = reqwest::Client::builder()
         .user_agent(user_agent())
         .timeout(Duration::from_secs(120))
@@ -315,7 +321,9 @@ impl Client {
             Way::Direct => crate::tor::Connections::fixed(http_client_with(&base, tls, None, &dns)?),
             Way::Tor { tor, .. } => {
                 let (proxy, at, quad9) = (tor.proxy_for_proton(), base.clone(), dns.clone());
-                crate::tor::Connections::following(tor, move || http_client_with(&at, tls.clone(), Some(&proxy), &quad9))?
+                crate::tor::Connections::following(tor, move || {
+                    http_client_with(&at, tls.clone(), Some(&proxy), &quad9)
+                })?
             }
         };
         let tor = match way {
@@ -324,11 +332,14 @@ impl Client {
         };
         let transport = Transport { http, dns, base, through_tor, tor };
         self.transport.set(transport).map_err(|_| Error::other("the way to Proton is chosen already"))?;
-        log::info!("the way to Proton: {}", match way {
-            Way::Direct => "direct",
-            Way::Tor { route: crate::tor::Route::Onion, .. } => "Tor, to Proton's onion site",
-            Way::Tor { route: crate::tor::Route::Exit, .. } => "Tor, out of an exit",
-        });
+        log::info!(
+            "the way to Proton: {}",
+            match way {
+                Way::Direct => "direct",
+                Way::Tor { route: crate::tor::Route::Onion, .. } => "Tor, to Proton's onion site",
+                Way::Tor { route: crate::tor::Route::Exit, .. } => "Tor, out of an exit",
+            }
+        );
         Ok(())
     }
 
@@ -421,11 +432,10 @@ impl Client {
             set("x-pm-human-verification-token", &verification.token);
             set("x-pm-human-verification-token-type", &verification.method);
         }
-        if !no_auth
-            && let Some(session) = self.session.lock().as_ref() {
-                set("x-pm-uid", &session.uid);
-                set("authorization", &format!("Bearer {}", session.access_token));
-            }
+        if !no_auth && let Some(session) = self.session.lock().as_ref() {
+            set("x-pm-uid", &session.uid);
+            set("authorization", &format!("Bearer {}", session.access_token));
+        }
         headers
     }
 
@@ -499,7 +509,8 @@ impl Client {
         let bytes = response.bytes().await?;
         let body: Value = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
         check(status, &body, batch).inspect_err(|error| {
-            let code = body.get("Code").and_then(Value::as_i64).map_or_else(|| "none".to_string(), |code| code.to_string());
+            let code =
+                body.get("Code").and_then(Value::as_i64).map_or_else(|| "none".to_string(), |code| code.to_string());
             log::warn!("Proton answered {status}: {}, code {code}", error.kind());
         })?;
         Ok(body)
@@ -598,21 +609,13 @@ impl Client {
         let response = self.send_with(Method::GET, path, "*/*", false, &attach).await?;
         let status = response.status();
         if !status.is_success() {
-            return Err(Error::Api {
-                status: status.as_u16(),
-                code: 0,
-                message: format!("HTTP {}", status.as_u16()),
-            });
+            return Err(Error::Api { status: status.as_u16(), code: 0, message: format!("HTTP {}", status.as_u16()) });
         }
         let headers = response.headers().clone();
         Ok((response.bytes().await?.to_vec(), headers))
     }
 
-    pub async fn upload<T: DeserializeOwned>(
-        &self,
-        path: &str,
-        form: &(dyn Fn() -> Form + Send + Sync),
-    ) -> Result<T> {
+    pub async fn upload<T: DeserializeOwned>(&self, path: &str, form: &(dyn Fn() -> Form + Send + Sync)) -> Result<T> {
         let attach = |request: reqwest::RequestBuilder| request.multipart(form());
         let response = self.send_with(Method::POST, path, API_ACCEPT, false, &attach).await?;
         Self::parse(self.finish(response, false).await?)

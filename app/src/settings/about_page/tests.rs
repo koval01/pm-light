@@ -30,7 +30,13 @@ fn the_components_of_this_system_are_listed() {
     for component in &all {
         assert!(!component.version.is_empty() && !component.license.is_empty(), "{component:?}");
     }
-    let system = if cfg!(target_os = "macos") { 'm' } else if cfg!(target_os = "windows") { 'w' } else { 'l' };
+    let system = if cfg!(target_os = "macos") {
+        'm'
+    } else if cfg!(target_os = "windows") {
+        'w'
+    } else {
+        'l'
+    };
     assert!(COMPONENTS.lines().all(|line| line.rsplit('\t').next().is_some_and(|systems| systems.contains(system))));
 }
 

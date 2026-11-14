@@ -270,3 +270,8 @@ screen, and it never touches the real Keychain entries.
 - In Rust logic, third-party file names, links and HTML are hostile input.
 - No `unwrap` and no slicing of strings in Rust: clippy denies both, because a panic on mail is a crash someone else
   can trigger. Use `split_at_checked` or bytes.
+- One format, `rustfmt.toml`'s: `cargo fmt` before a commit, and `scripts/check.sh` fails on anything else.
+- A lint is set aside only where it is wrong, with `#[expect]` and a reason, never `#[allow]`: rewrite the code
+  first. What the app says goes to the journal; a program of `app/examples` writes its report to stdout itself.
+- `app/tests/structure.rs` holds the shape: tests in `name/tests.rs`, a `//!` line atop every file, at most 500 lines
+  a file (the few longer ones may only shrink), `unsafe` only in the files listed there, and none in the core.

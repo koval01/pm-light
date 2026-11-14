@@ -46,7 +46,12 @@ pub fn section_of(ctx: &Ctx) -> SettingsSection {
         let selected = AUTO_LOCK.iter().position(|known| *known == minutes).unwrap_or(0);
         lines.push(segmented("lock-auto", &ctx.say("lock.auto"), options, selected));
         if session::touch_id::available() {
-            lines.push(switch("lock-touch", &ctx.say("lock.touchIdOption"), &ctx.say("lock.touchIdHint"), session::has_unlock_key()));
+            lines.push(switch(
+                "lock-touch",
+                &ctx.say("lock.touchIdOption"),
+                &ctx.say("lock.touchIdHint"),
+                session::has_unlock_key(),
+            ));
         }
     }
     section("lock", &ctx.say("lock.section"), "", lines)
@@ -105,7 +110,8 @@ pub fn heard(ctx: &Ctx, id: &str, value: i32) -> bool {
     match id {
         SAVE => save(ctx),
         "lock-auto" => {
-            let minutes = usize::try_from(value).ok().and_then(|position| AUTO_LOCK.get(position)).copied().unwrap_or(0);
+            let minutes =
+                usize::try_from(value).ok().and_then(|position| AUTO_LOCK.get(position)).copied().unwrap_or(0);
             preferences::change(|preferences| preferences.auto_lock_minutes = minutes);
         }
         "lock-touch" => set_touch_id(ctx, value == 1),

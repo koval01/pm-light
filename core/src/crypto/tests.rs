@@ -9,8 +9,7 @@ use proton_crypto_account::{
 };
 
 const LOCKED_USER_KEY: &str = include_str!("test_key.asc");
-const USER_KEY_ID: &str =
-    "aTdvCsWuv2V_YQQ5nLKsWPkHWMrlHfUxL9aTWakz6blhwI0q_j4MKnxO29xMQ4slCRvo3lFLE8ljb3kvMP2PQQ==";
+const USER_KEY_ID: &str = "aTdvCsWuv2V_YQQ5nLKsWPkHWMrlHfUxL9aTWakz6blhwI0q_j4MKnxO29xMQ4slCRvo3lFLE8ljb3kvMP2PQQ==";
 const USER_KEY_SALT: &str = "6bIzN4A8bOwmsiEuCPj74g==";
 const PASSWORD: &str = "password";
 const ADDRESS: &str = "address-1";
@@ -46,9 +45,7 @@ fn fixture() -> Fixture {
     let crypto = engine();
     let secret = crypto.key_secret(PASSWORD, &[locked_user_key()], &salts()).unwrap();
     let pgp = new_pgp_provider();
-    let users = UserKeys::new(vec![locked_user_key()])
-        .unlock(&pgp, &KeySecret::new(secret.clone()))
-        .unlocked_keys;
+    let users = UserKeys::new(vec![locked_user_key()]).unlock(&pgp, &KeySecret::new(secret.clone())).unlocked_keys;
     let local = LocalAddressKey::generate(
         &pgp,
         "user@proton.me",
@@ -76,11 +73,7 @@ fn fixture() -> Fixture {
     let public_key = pgp.public_key_export(&unlocked[0].public_key, DataEncoding::Armor).unwrap();
     let public_key = String::from_utf8(public_key.as_ref().to_vec()).unwrap();
     crypto
-        .unlock(
-            vec![locked_user_key()],
-            vec![AddressInput { id: ADDRESS.into(), keys: vec![locked] }],
-            &secret,
-        )
+        .unlock(vec![locked_user_key()], vec![AddressInput { id: ADDRESS.into(), keys: vec![locked] }], &secret)
         .unwrap();
     Fixture { crypto, public_key }
 }
@@ -187,11 +180,7 @@ fn a_password_opens_a_session_key_and_a_wrong_one_does_not() {
     let material = f.crypto.encrypt_body("secret", ADDRESS, None).unwrap();
     let packet = f.crypto.wrap_for_password(&material.session_key, "correct horse").unwrap();
     let pgp = new_pgp_provider();
-    let opened = pgp
-        .new_decryptor()
-        .with_passphrase("correct horse")
-        .decrypt_session_key(&packet)
-        .unwrap();
+    let opened = pgp.new_decryptor().with_passphrase("correct horse").decrypt_session_key(&packet).unwrap();
     let (key, _) = pgp.session_key_export(&opened).unwrap();
     assert_eq!(key.as_ref(), &material.session_key.key[..]);
     // A packet sealed by a password carries no check of its own (OpenPGP's SKESK v4): a wrong password is usually
@@ -211,11 +200,8 @@ fn a_password_opens_a_session_key_and_a_wrong_one_does_not() {
 fn enc_token_hides_the_token_under_the_password() {
     let f = fixture();
     let armored = f.crypto.encrypt_for_password("token", "pw").unwrap();
-    let opened = new_pgp_provider()
-        .new_decryptor()
-        .with_passphrase("pw")
-        .decrypt(&armored, DataEncoding::Armor)
-        .unwrap();
+    let opened =
+        new_pgp_provider().new_decryptor().with_passphrase("pw").decrypt(&armored, DataEncoding::Armor).unwrap();
     assert_eq!(opened.into_vec(), b"token");
 }
 
@@ -266,8 +252,7 @@ fn login_proofs_are_well_formed() {
 fn package_for(f: &Fixture, recipients: &[Recipient], protection: Option<&PasswordProtection>) -> serde_json::Value {
     let body = f.crypto.encrypt_body("<p>x</p>", ADDRESS, None).unwrap();
     let attachment = f.crypto.encrypt_attachment(b"file", ADDRESS).unwrap();
-    let uploaded =
-        [Uploaded { id: "A".into(), session_key: attachment.session_key, signed: true }];
+    let uploaded = [Uploaded { id: "A".into(), session_key: attachment.session_key, signed: true }];
     send::build_package(f.crypto.as_ref(), "text/html", &body, recipients, &uploaded, protection).unwrap()
 }
 

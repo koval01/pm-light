@@ -74,12 +74,8 @@ fn translations(language: &str) -> HashMap<Key, String> {
 }
 
 fn placeholders(text: &str) -> Vec<String> {
-    let mut found: Vec<String> = text
-        .split('{')
-        .skip(1)
-        .filter_map(|part| part.split_once('}'))
-        .map(|(name, _)| name.to_string())
-        .collect();
+    let mut found: Vec<String> =
+        text.split('{').skip(1).filter_map(|part| part.split_once('}')).map(|(name, _)| name.to_string()).collect();
     found.sort();
     found
 }
@@ -194,7 +190,10 @@ fn every_text_is_translated_once() {
 
 #[test]
 fn a_context_written_in_the_text_is_read() {
-    assert_eq!(texts_on(r#"x: @tr("recovery.off" => "Off");"#, "Say"), vec![("recovery.off".to_string(), "Off".to_string())]);
+    assert_eq!(
+        texts_on(r#"x: @tr("recovery.off" => "Off");"#, "Say"),
+        vec![("recovery.off".to_string(), "Off".to_string())]
+    );
     assert_eq!(texts_on(r#"x: @tr("Off");"#, "Say"), vec![("Say".to_string(), "Off".to_string())]);
     assert_eq!(texts_on(r#"a: @tr("A"); b: @tr("c" => "B");"#, "App").len(), 2);
 }
@@ -214,8 +213,11 @@ fn every_text_has_its_translations() {
 fn no_translation_is_empty() {
     for language in LANGUAGES {
         let known = translations(language);
-        let empty: Vec<&Key> =
-            known.iter().filter(|((_, id), text)| !id.is_empty() && text.trim().is_empty()).map(|(key, _)| key).collect();
+        let empty: Vec<&Key> = known
+            .iter()
+            .filter(|((_, id), text)| !id.is_empty() && text.trim().is_empty())
+            .map(|(key, _)| key)
+            .collect();
         assert!(empty.is_empty(), "{language} has nothing for {empty:#?}");
     }
 }

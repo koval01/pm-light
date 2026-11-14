@@ -29,7 +29,9 @@ thread_local! {
 }
 
 pub fn page() -> String {
-    format!(r#"<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="x-dns-prefetch-control" content="off"><meta http-equiv="Content-Security-Policy" content="{POLICY}"><style>html,body{{margin:0;background:#fff}}</style></head><body></body></html>"#)
+    format!(
+        r#"<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="x-dns-prefetch-control" content="off"><meta http-equiv="Content-Security-Policy" content="{POLICY}"><style>html,body{{margin:0;background:#fff}}</style></head><body></body></html>"#
+    )
 }
 
 /// What the page runs to build the document. The document is JSON, which is also a script's literal.
@@ -111,24 +113,29 @@ fn place(prepared: &PrintDocument, app: &App) {
 pub fn print(app: &App, prepared: PrintDocument) {
     go_away();
     let weak = app.as_weak();
-    let built = crate::webviews::page(|builder| mail_view::keep_to_drawing(builder)
-        .page_scripts_off()
-        .with_navigation_handler(|url| own_page(&url))
-        .with_on_page_load_handler(move |event, _| {
-            if matches!(event, PageLoadEvent::Finished) {
-                let (weak, prepared) = (weak.clone(), prepared.clone());
-                let _ = slint::invoke_from_event_loop(move || {
-                    if let Some(app) = weak.upgrade() {
-                        place(&prepared, &app);
-                    }
-                });
-            }
-        })
-        .with_html(page())
-        .with_incognito(true)
-        .with_bounds(Rect { position: LogicalPosition::new(0.0, 0.0).into(), size: LogicalSize::new(1.0, 1.0).into() })
-        .with_visible(false)
-        .build_as_child(&app.window().window_handle()));
+    let built = crate::webviews::page(|builder| {
+        mail_view::keep_to_drawing(builder)
+            .page_scripts_off()
+            .with_navigation_handler(|url| own_page(&url))
+            .with_on_page_load_handler(move |event, _| {
+                if matches!(event, PageLoadEvent::Finished) {
+                    let (weak, prepared) = (weak.clone(), prepared.clone());
+                    let _ = slint::invoke_from_event_loop(move || {
+                        if let Some(app) = weak.upgrade() {
+                            place(&prepared, &app);
+                        }
+                    });
+                }
+            })
+            .with_html(page())
+            .with_incognito(true)
+            .with_bounds(Rect {
+                position: LogicalPosition::new(0.0, 0.0).into(),
+                size: LogicalSize::new(1.0, 1.0).into(),
+            })
+            .with_visible(false)
+            .build_as_child(&app.window().window_handle())
+    });
     match built {
         Ok(view) => {
             crate::webviews::scripts_settled(&view);
@@ -139,18 +146,4 @@ pub fn print(app: &App, prepared: PrintDocument) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use proton_core::print::PrintPart;
-
-    #[test]
-    fn a_document_cannot_end_the_script_it_travels_in() {
-        let prepared = PrintDocument {
-            style: "a{}".to_string(),
-            fit: "b{}".to_string(),
-            parts: vec![PrintPart { marks: String::new(), html: "\"});alert(1);//".to_string() }],
-        };
-        let script = placing(&prepared).unwrap_or_default();
-        assert!(script.contains(r#"\"});alert(1);//"#));
-    }
-}
+mod tests;

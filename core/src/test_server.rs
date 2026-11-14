@@ -40,9 +40,7 @@ fn read_request(stream: &mut TcpStream) -> String {
 
 /// `answer` gets the path and how many requests came before. `None` closes the server, and from
 /// then on nothing answers, as when a network drops.
-pub fn serve(
-    answer: impl Fn(&str, usize) -> Option<(u16, &'static str)> + Send + 'static,
-) -> Server {
+pub fn serve(answer: impl Fn(&str, usize) -> Option<(u16, &'static str)> + Send + 'static) -> Server {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
     let seen = Arc::new(Mutex::new(Vec::new()));

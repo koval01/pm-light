@@ -67,7 +67,19 @@ fn an_end_excludes_the_day_named() {
 
 #[test]
 fn the_text_can_always_be_rebuilt_from_its_pieces() {
-    for input in ["", "  ", " a  b ", "-x", "- x", r#"from:"a b" -/x\/y/i"#, "foo:bar", "from:", "/open", "\"open", "\u{44f} \u{44e}"] {
+    for input in [
+        "",
+        "  ",
+        " a  b ",
+        "-x",
+        "- x",
+        r#"from:"a b" -/x\/y/i"#,
+        "foo:bar",
+        "from:",
+        "/open",
+        "\"open",
+        "\u{44f} \u{44e}",
+    ] {
         assert_eq!(joined(&parse(input)), input, "{input}");
     }
 }
@@ -197,7 +209,23 @@ fn the_builder_writes_what_the_parser_reads() {
 
 #[test]
 fn hostile_text_does_not_panic() {
-    for input in ["\"", "/", "-", "--", ":", "::", "a:", "/\\", "/\\/", "from:\"", "from:/", "\u{202e}", "-\u{44f}:", "is:", "has:"] {
+    for input in [
+        "\"",
+        "/",
+        "-",
+        "--",
+        ":",
+        "::",
+        "a:",
+        "/\\",
+        "/\\/",
+        "from:\"",
+        "from:/",
+        "\u{202e}",
+        "-\u{44f}:",
+        "is:",
+        "has:",
+    ] {
         let parsed = parse(input);
         assert_eq!(joined(&parsed), input.trim_end_matches(' '), "{input}");
     }
@@ -216,4 +244,3 @@ fn the_builder_opens_on_what_the_field_holds() {
     assert_eq!(form.pattern, "a/b");
     assert_eq!(parse(&form.text()).problem, None);
 }
-

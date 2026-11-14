@@ -1,6 +1,6 @@
 //! Contacts and their cards.
 
-use super::{CARD_SIGNED, ContactEmail, CONTACTS_PAGE, json, Method, Result, RngCore, Service, text, Value, vcard};
+use super::{CARD_SIGNED, CONTACTS_PAGE, ContactEmail, Method, Result, RngCore, Service, Value, json, text, vcard};
 
 impl Service {
     pub async fn create_contact(&self, name: &str, email: &str) -> Result<()> {
@@ -34,7 +34,10 @@ impl Service {
                 email: text(c, "Email"),
                 contact_id: text(c, "ContactID"),
             }));
-            let total = reply.get("Total").and_then(Value::as_u64).map_or(out.len(), |t| usize::try_from(t).unwrap_or(usize::MAX));
+            let total = reply
+                .get("Total")
+                .and_then(Value::as_u64)
+                .map_or(out.len(), |t| usize::try_from(t).unwrap_or(usize::MAX));
             if count < CONTACTS_PAGE || out.len() >= total {
                 break;
             }

@@ -27,9 +27,10 @@ fn message(html: bool) -> Message {
         address_id: "a".into(),
         size: 0,
         signature: SignatureStatus::Unsigned,
-        raw_headers: "Subject: Hello\r\nContent-Type: multipart/mixed;\r\n boundary=\"old\"\r\nMIME-Version: 1.0\r\nX-Keep: \
+        raw_headers:
+            "Subject: Hello\r\nContent-Type: multipart/mixed;\r\n boundary=\"old\"\r\nMIME-Version: 1.0\r\nX-Keep: \
                       yes\r\n folded\r\nContent-Transfer-Encoding: 7bit\r\n"
-            .into(),
+                .into(),
         unsubscribe: None,
         receipt_requested: false,
         cc: vec![],
@@ -78,9 +79,15 @@ fn old_structure_headers_go_and_the_rest_stay() {
 #[test]
 fn a_mail_without_files_reads_back() {
     let parsed = parse_mime(&build(&message(true), &[]));
-    assert_eq!(parsed.html.as_deref(), Some("\u{41f}\u{440}\u{438}\u{432}\u{435}\u{442}, <b>\u{43c}\u{438}\u{440}</b>"));
+    assert_eq!(
+        parsed.html.as_deref(),
+        Some("\u{41f}\u{440}\u{438}\u{432}\u{435}\u{442}, <b>\u{43c}\u{438}\u{440}</b>")
+    );
     let parsed = parse_mime(&build(&message(false), &[]));
-    assert_eq!(parsed.text.as_deref(), Some("\u{41f}\u{440}\u{438}\u{432}\u{435}\u{442}, <b>\u{43c}\u{438}\u{440}</b>"));
+    assert_eq!(
+        parsed.text.as_deref(),
+        Some("\u{41f}\u{440}\u{438}\u{432}\u{435}\u{442}, <b>\u{43c}\u{438}\u{440}</b>")
+    );
 }
 
 #[test]
@@ -91,7 +98,10 @@ fn files_read_back_whole() {
         (file("logo.png", "image/png", true, Some("<logo@mail>")), vec![1, 2, 3]),
     ];
     let parsed = parse_mime(&build(&message(true), &files));
-    assert_eq!(parsed.html.as_deref(), Some("\u{41f}\u{440}\u{438}\u{432}\u{435}\u{442}, <b>\u{43c}\u{438}\u{440}</b>"));
+    assert_eq!(
+        parsed.html.as_deref(),
+        Some("\u{41f}\u{440}\u{438}\u{432}\u{435}\u{442}, <b>\u{43c}\u{438}\u{440}</b>")
+    );
     assert_eq!(parsed.attachments.len(), 2);
     assert_eq!(parsed.attachments[0].data, data);
     assert_eq!(parsed.attachments[1].data, [1, 2, 3]);

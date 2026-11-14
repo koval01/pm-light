@@ -236,10 +236,8 @@ async fn another_refusal_is_not_asked_again() {
 #[tokio::test]
 async fn waiting_for_tor_ends_at_the_limit() {
     let started = std::time::Instant::now();
-    let stream: crate::error::Result<()> = patiently(MS * 200, MS * 20, || async {
-        Err(Refusal(arti_client::ErrorKind::BootstrapRequired))
-    })
-    .await;
+    let stream: crate::error::Result<()> =
+        patiently(MS * 200, MS * 20, || async { Err(Refusal(arti_client::ErrorKind::BootstrapRequired)) }).await;
     assert!(stream.is_err());
     assert!(started.elapsed() < MS * 400, "{:?}", started.elapsed());
 }

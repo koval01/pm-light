@@ -1,4 +1,7 @@
-use serde::{ser::SerializeStruct, Serialize, Serializer};
+//! The one error type of the core: what went wrong, how the connection to Proton stands, and the words a person
+//! sees for it. Its kind, never its text, is what the journal keeps.
+
+use serde::{Serialize, Serializer, ser::SerializeStruct};
 use std::time::Duration;
 
 pub type Result<T> = std::result::Result<T, Error>;

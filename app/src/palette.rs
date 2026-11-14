@@ -1,7 +1,10 @@
 //! The command palette and the keyboard help. A command is what a button or a key already does, so
 //! nothing here decides anything of its own.
 
-use crate::{App, CommandRow, PaletteWindow, Words, actions, auth, contacts, look, modal, preferences, print_dialog, settings, view};
+use crate::{
+    App, CommandRow, PaletteWindow, Words, actions, auth, contacts, look, modal, preferences, print_dialog, settings,
+    view,
+};
 use proton_core::{
     Service,
     keymap::{self, Action, Shortcut},
@@ -113,7 +116,9 @@ fn settings_commands(app: &App) -> Vec<Command> {
     let say = |key: &str| settings::say(app, key);
     let title = say("nav.settings");
     let mut list = vec![command(title.clone(), "", Run::Settings(settings::FIRST_TAB))];
-    list.extend(settings::all_tabs().map(|tab| command(format!("{title}: {}", say(tab.title)), "", Run::Settings(tab.id))));
+    list.extend(
+        settings::all_tabs().map(|tab| command(format!("{title}: {}", say(tab.title)), "", Run::Settings(tab.id))),
+    );
     list.push(command(say("palette.themeLight"), "", Run::Theme(1)));
     list.push(command(say("palette.themeDark"), "", Run::Theme(2)));
     list.push(command(say("palette.themeSystem"), "", Run::Theme(0)));
@@ -274,9 +279,11 @@ pub fn shortcut_rows(app: &App) -> Vec<(bool, String, String)> {
     let command = if cfg!(target_os = "macos") { "⌘ K" } else { "Ctrl K" };
     let words = app.global::<Words>();
     let mut rows = vec![(false, words.get_palette().to_string(), command.to_string())];
-    rows.extend(keymap::shortcuts().into_iter().map(|Shortcut { action, keys, chord }| {
-        (chord, action_text(app, action).to_string(), keys)
-    }));
+    rows.extend(
+        keymap::shortcuts()
+            .into_iter()
+            .map(|Shortcut { action, keys, chord }| (chord, action_text(app, action).to_string(), keys)),
+    );
     rows
 }
 

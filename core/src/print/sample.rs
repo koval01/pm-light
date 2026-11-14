@@ -2,12 +2,12 @@
 //! a mail and a printed sheet come out of its web engine. Nothing in it is anyone's.
 
 use super::{PrintDocument, PrintItem, PrintLabels, PrintOptions, document};
-use std::fmt::Write as _;
 use crate::{
     crypto::SignatureStatus,
     details::MessageDetails,
     model::{Address, MailProtection, Message, MessageMeta},
 };
+use std::fmt::Write as _;
 
 /// 2026-01-15 10:30 UTC, in milliseconds, as a message's date is.
 const SENT: u64 = 1_768_473_000_000;
@@ -65,7 +65,11 @@ fn message() -> Message {
         body: body.clone(),
         safe_body: body,
         protection: MailProtection::default(),
-        details: MessageDetails { encryption: "end-to-end".into(), auth: Vec::new(), message_id: "<sample@example.com>".into() },
+        details: MessageDetails {
+            encryption: "end-to-end".into(),
+            auth: Vec::new(),
+            message_id: "<sample@example.com>".into(),
+        },
         html: true,
         attachments: Vec::new(),
         from_proton: Some(false),

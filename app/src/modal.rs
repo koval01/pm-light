@@ -49,7 +49,9 @@ pub fn present(parent: &Window, overlay: &Window) {
 #[cfg(not(target_os = "macos"))]
 fn centre(parent: &Window, overlay: &Window) {
     use slint::winit_030::winit::dpi::PhysicalPosition;
-    let Some(Ok(place)) = parent.with_winit_window(slint::winit_030::winit::window::Window::outer_position) else { return };
+    let Some(Ok(place)) = parent.with_winit_window(slint::winit_030::winit::window::Window::outer_position) else {
+        return;
+    };
     let Some(room) = parent.with_winit_window(slint::winit_030::winit::window::Window::outer_size) else { return };
     let Some(size) = overlay.with_winit_window(slint::winit_030::winit::window::Window::outer_size) else { return };
     let along = |start: i32, outer: u32, inner: u32| {
@@ -78,9 +80,9 @@ pub fn dismiss(parent: &Window, overlay: &Window) {
 
 #[cfg(target_os = "macos")]
 mod platform {
+    use super::FRAME;
     use objc2::rc::Retained;
     use objc2_app_kit::{NSView, NSWindow, NSWindowStyleMask};
-    use super::FRAME;
     use slint::{Timer, Window};
     use wry::raw_window_handle::{HasWindowHandle, RawWindowHandle};
 

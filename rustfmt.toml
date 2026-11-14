@@ -1,0 +1,4 @@
+# The width the code is written in, and short constructs kept on one line while they fit. `cargo fmt --check` holds
+# every file to it (scripts/check.sh).
+max_width = 120
+use_small_heuristics = "Max"

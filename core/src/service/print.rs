@@ -1,6 +1,9 @@
 //! Gathers what is to be printed: one message, a thread, or several of either.
 
-use super::{Arc, Deserialize, encoded, Error, Message, now_seconds, on_worker, Result, Serialize, Service, stream, StreamExt, to_text, TryStreamExt, Value};
+use super::{
+    Arc, Deserialize, Error, Message, Result, Serialize, Service, StreamExt, TryStreamExt, Value, encoded, now_seconds,
+    on_worker, stream, to_text,
+};
 use crate::{
     print::{self, PrintDocument, PrintItem, PrintLabels, PrintOptions, SealSheet},
     scan,
@@ -45,15 +48,27 @@ pub enum PrintCheck {
 pub enum SealCheck {
     Nothing,
     /// Pieces of the text, and no code with a signature to tie them to.
-    NoSignature { parts: usize },
+    NoSignature {
+        parts: usize,
+    },
     /// The signature holds, and part of the text could not be read.
-    Incomplete { signer: String, have: usize, need: usize },
+    Incomplete {
+        signer: String,
+        have: usize,
+        need: usize,
+    },
     Damaged,
     /// Proton knows no key for the address named as the signer.
-    NoKey { signer: String },
+    NoKey {
+        signer: String,
+    },
     /// That address did not sign this. Nothing in the code can be believed, so none of it is shown.
-    Forged { signer: String },
-    Genuine { mail: Box<SealedMail> },
+    Forged {
+        signer: String,
+    },
+    Genuine {
+        mail: Box<SealedMail>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -252,15 +267,13 @@ impl Service {
             Ok::<_, Error>((message, body, earlier, seal))
         });
         let gathered: Vec<_> = stream::iter(gather).buffered(PRINT_CONCURRENCY).try_collect().await?;
-        let items: Vec<PrintItem<'_>> = gathered
-            .iter()
-            .map(|(message, body, earlier, seal): &(Arc<Message>, String, Option<u64>, Option<SealSheet>)| PrintItem {
-                message,
-                body: body.clone(),
-                earlier: *earlier,
-                seal: seal.clone(),
-            })
-            .collect();
+        let items: Vec<PrintItem<'_>> =
+            gathered
+                .iter()
+                .map(|(message, body, earlier, seal): &(Arc<Message>, String, Option<u64>, Option<SealSheet>)| {
+                    PrintItem { message, body: body.clone(), earlier: *earlier, seal: seal.clone() }
+                })
+                .collect();
         Ok(print::document(&items, options, labels))
     }
 }

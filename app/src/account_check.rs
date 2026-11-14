@@ -35,7 +35,9 @@ thread_local! {
 /// The file the check writes to, when the app was started for one.
 #[must_use]
 pub fn asked_in(arguments: impl Iterator<Item = String>) -> Option<PathBuf> {
-    arguments.filter_map(|argument| argument.strip_prefix(ARGUMENT).map(PathBuf::from)).find(|path| !path.as_os_str().is_empty())
+    arguments
+        .filter_map(|argument| argument.strip_prefix(ARGUMENT).map(PathBuf::from))
+        .find(|path| !path.as_os_str().is_empty())
 }
 
 /// Whether this start is the account check.

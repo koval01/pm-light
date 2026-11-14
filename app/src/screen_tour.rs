@@ -140,7 +140,16 @@ pub fn start(app: &App, note: PathBuf) {
     log::info!("the screen tour: {} steps", steps.len());
     let _ = std::fs::remove_file(beside(&note, ".step"));
     let _ = std::fs::remove_file(beside(&note, ".done"));
-    let tour = Tour { service, app: app.as_weak(), rows, steps, next: 0, note, waited: Duration::ZERO, timer: Timer::default() };
+    let tour = Tour {
+        service,
+        app: app.as_weak(),
+        rows,
+        steps,
+        next: 0,
+        note,
+        waited: Duration::ZERO,
+        timer: Timer::default(),
+    };
     TOUR.set(Some(tour));
     // Whatever else the machine opened must not stand in front of the pictures.
     app.window().with_winit_window(slint::winit_030::winit::window::Window::focus_window);
@@ -290,7 +299,8 @@ fn end() {
 /// The mail the tour opened is unread again where it was, and CI is told the tour is over.
 fn finish() {
     let Some(tour) = TOUR.take() else { return };
-    let unread: Vec<String> = tour.rows.iter().filter(|row| row.unread && row.messages == 0).map(|row| row.id.clone()).collect();
+    let unread: Vec<String> =
+        tour.rows.iter().filter(|row| row.unread && row.messages == 0).map(|row| row.id.clone()).collect();
     let (service, done) = (tour.service.clone(), beside(&tour.note, ".done"));
     log::info!("the screen tour ended after {} steps; {} mails to mark unread again", tour.next, unread.len());
     tokio::spawn(async move {

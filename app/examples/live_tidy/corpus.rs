@@ -48,7 +48,14 @@ fn base64_lines(bytes: &[u8]) -> String {
 }
 
 fn html(from: &str, subject: &str, days_ago: i64, hour: u32, id: &str, body: &str, unread: bool) -> Mail {
-    let head = header(from, subject, days_ago, hour, id, "Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n");
+    let head = header(
+        from,
+        subject,
+        days_ago,
+        hour,
+        id,
+        "Content-Type: text/html; charset=utf-8\r\nContent-Transfer-Encoding: base64\r\n",
+    );
     Mail { literal: format!("{head}\r\n{}\r\n", base64_lines(body.as_bytes())), unread }
 }
 
@@ -103,7 +110,9 @@ fn invoice_pdf() -> Vec<u8> {
     for offset in offsets {
         pdf.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
     }
-    pdf.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{table}\n%%EOF\n", objects.len() + 1).as_bytes());
+    pdf.extend_from_slice(
+        format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{table}\n%%EOF\n", objects.len() + 1).as_bytes(),
+    );
     pdf
 }
 
@@ -120,7 +129,8 @@ fn newsletter() -> Mail {
 <p style="font-size:11px;color:#888">You get this mail as a customer of the Sample Shop. <a href="https://shop.example/unsubscribe?u=sample">Unsubscribe</a></p>
 <img src="https://tracker.shop.example/open.gif?u=sample" width="1" height="1" alt="">
 </td></tr></table></td></tr></table>"#;
-    let mut mail = html("Sample Shop <news@shop.example>", "Autumn sale: up to 40% off", 0, 8, "newsletter", body, true);
+    let mut mail =
+        html("Sample Shop <news@shop.example>", "Autumn sale: up to 40% off", 0, 8, "newsletter", body, true);
     mail.literal = mail.literal.replacen(
         "MIME-Version: 1.0\r\n",
         "MIME-Version: 1.0\r\nList-Unsubscribe: <https://shop.example/unsubscribe?u=sample>\r\n",
@@ -170,7 +180,15 @@ fn inline_picture() -> Mail {
 fn phishing() -> Mail {
     let body = r#"<p>Dear customer,</p><p>your mailbox is almost full. Sign in within 24 hours or it will be closed:</p>
 <p><a href="http://proton-login.attacker.example/verify">https://account.proton.me/login</a></p><p>Proton Team</p>"#;
-    html("Proton Support <support@proton-security.example>", "Action required: your mailbox will be closed", 3, 6, "phishing", body, true)
+    html(
+        "Proton Support <support@proton-security.example>",
+        "Action required: your mailbox will be closed",
+        3,
+        6,
+        "phishing",
+        body,
+        true,
+    )
 }
 
 fn long_letter() -> Mail {
@@ -178,24 +196,54 @@ fn long_letter() -> Mail {
         .map(|n| format!("Paragraph {n}. A long letter is read by scrolling, and the reader keeps its place while new mail arrives."))
         .collect::<Vec<_>>()
         .join("\r\n\r\n");
-    let about = About { from: "Long Reader <long@example.org>", subject: "A long letter, to scroll through", days_ago: 4, hour: 9, id: "long" };
+    let about = About {
+        from: "Long Reader <long@example.org>",
+        subject: "A long letter, to scroll through",
+        days_ago: 4,
+        hour: 9,
+        id: "long",
+    };
     plain(&about, "", &paragraphs, false)
 }
 
 fn russian() -> Mail {
-    let body = "Привет!\r\n\r\nЭто письмо на русском, чтобы проверить кириллицу в теме, в имени и в тексте.\r\n\r\nАнна";
-    plain(&About { from: "Анна Петрова <anna@example.org>", subject: "Встреча в четверг", days_ago: 1, hour: 15, id: "russian" }, "", body, true)
+    let body =
+        "Привет!\r\n\r\nЭто письмо на русском, чтобы проверить кириллицу в теме, в имени и в тексте.\r\n\r\nАнна";
+    plain(
+        &About {
+            from: "Анна Петрова <anna@example.org>",
+            subject: "Встреча в четверг",
+            days_ago: 1,
+            hour: 15,
+            id: "russian",
+        },
+        "",
+        body,
+        true,
+    )
 }
 
 fn thread() -> Vec<Mail> {
     let first = plain(
-        &About { from: "Carol Example <carol@example.com>", subject: "The plan for Monday", days_ago: 5, hour: 9, id: "thread-1" },
+        &About {
+            from: "Carol Example <carol@example.com>",
+            subject: "The plan for Monday",
+            days_ago: 5,
+            hour: 9,
+            id: "thread-1",
+        },
         "",
         "Hi,\r\n\r\nshall we meet on Monday at ten?\r\n\r\nCarol",
         false,
     );
     let second = plain(
-        &About { from: "Dan Example <dan@example.com>", subject: "Re: The plan for Monday", days_ago: 5, hour: 11, id: "thread-2" },
+        &About {
+            from: "Dan Example <dan@example.com>",
+            subject: "Re: The plan for Monday",
+            days_ago: 5,
+            hour: 11,
+            id: "thread-2",
+        },
         "In-Reply-To: <thread-1@sample.example>\r\nReferences: <thread-1@sample.example>\r\n",
         "Ten works for me.\r\n\r\nDan\r\n\r\n> shall we meet on Monday at ten?",
         true,

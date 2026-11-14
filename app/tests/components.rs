@@ -17,7 +17,9 @@ fn locked(lock: &str) -> BTreeSet<String> {
     let mut found = BTreeSet::new();
     for package in lock.split("[[package]]").skip(1) {
         let field = |key: &str| {
-            package.lines().find_map(|line| line.strip_prefix(&format!("{key} = \""))?.strip_suffix('"').map(str::to_string))
+            package
+                .lines()
+                .find_map(|line| line.strip_prefix(&format!("{key} = \""))?.strip_suffix('"').map(str::to_string))
         };
         if let (Some(name), Some(version)) = (field("name"), field("version"))
             && !OWN.contains(&name.as_str())

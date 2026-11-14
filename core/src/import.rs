@@ -28,10 +28,7 @@ fn header_lines(literal: &str) -> Vec<(String, String)> {
 
 /// The value of `name`, whatever its case, and with nothing that could end the line it is written on.
 fn header(lines: &[(String, String)], name: &str) -> Option<String> {
-    lines
-        .iter()
-        .find(|(found, _)| found.eq_ignore_ascii_case(name))
-        .map(|(_, value)| value.replace(['\r', '\n'], " "))
+    lines.iter().find(|(found, _)| found.eq_ignore_ascii_case(name)).map(|(_, value)| value.replace(['\r', '\n'], " "))
 }
 
 /// The message as Proton imports it: `multipart/encrypted`, the `Version: 1` part, then `armored`, the whole of
@@ -50,7 +47,10 @@ pub fn pgp_mime(literal: &str, armored: &str, boundary: &str) -> String {
         put("Message-Id", &id);
     }
     put("Mime-Version", "1.0");
-    put("Content-Type", &format!("multipart/encrypted; boundary=\"{boundary}\"; protocol=\"application/pgp-encrypted\""));
+    put(
+        "Content-Type",
+        &format!("multipart/encrypted; boundary=\"{boundary}\"; protocol=\"application/pgp-encrypted\""),
+    );
     for name in KEPT.iter().skip(1) {
         if let Some(value) = header(&lines, name) {
             put(name, &value);

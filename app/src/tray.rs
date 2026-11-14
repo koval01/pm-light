@@ -1,9 +1,9 @@
 //! System menus: the tray, and the menu behind the three dots. Both belong to the system, so they
 //! are the same on screen as any other program's, and nothing in the window can sit above them.
 
-use crate::{App, mail_picture, menu, palette, actions, print_dialog, view};
-use proton_core::timing::SnoozeChoice;
+use crate::{App, actions, mail_picture, menu, palette, print_dialog, view};
 use image::ImageFormat;
+use proton_core::timing::SnoozeChoice;
 use slint::{ComponentHandle, Weak};
 use std::cell::RefCell;
 use tray_icon::{
@@ -18,11 +18,8 @@ use wry::raw_window_handle::HasWindowHandle;
 use wry::raw_window_handle::RawWindowHandle;
 
 /// Single-colour on macOS, so that the system can tint it for a light or dark menu bar.
-const ICON: &[u8] = if cfg!(target_os = "macos") {
-    include_bytes!("../icons/tray.png")
-} else {
-    include_bytes!("../icons/32x32.png")
-};
+const ICON: &[u8] =
+    if cfg!(target_os = "macos") { include_bytes!("../icons/tray.png") } else { include_bytes!("../icons/32x32.png") };
 const OPEN: &str = "open";
 const QUIT: &str = "quit";
 const NAME: &str = "Proton Mail Light";
@@ -274,7 +271,11 @@ pub fn show_action_menu(app: &App, kind: &str) {
     let menu = Menu::new();
     match kind {
         "snooze" => {
-            for (id, text) in [(LATER, app.get_word_later()), (TOMORROW, app.get_word_tomorrow()), (NEXT_WEEK, app.get_word_next_week())] {
+            for (id, text) in [
+                (LATER, app.get_word_later()),
+                (TOMORROW, app.get_word_tomorrow()),
+                (NEXT_WEEK, app.get_word_next_week()),
+            ] {
                 let _ = menu.append(&item(id, &text));
             }
         }
@@ -327,21 +328,4 @@ fn show_in(window: &slint::Window, menu: Menu) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn shows_nothing_for_an_empty_inbox() {
-        assert_eq!(count_text(0), None);
-    }
-
-    #[test]
-    fn shows_the_count() {
-        assert_eq!(count_text(27).as_deref(), Some("27"));
-    }
-
-    #[test]
-    fn caps_a_huge_count() {
-        assert_eq!(count_text(12_000).as_deref(), Some("999+"));
-    }
-}
+mod tests;

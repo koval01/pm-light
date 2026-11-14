@@ -214,7 +214,18 @@ fn a_check_code_reads_back() {
 
 #[test]
 fn only_our_codes_are_read_and_their_ids_cannot_reach_another_path() {
-    for code in ["", "x", "PML1", "PML1..f", "PML2.id.f", "PML1.id.", "PML1.id.f.extra", "PML1.../../x.f", "PML1.a?b.f", "PML1.a b.f"] {
+    for code in [
+        "",
+        "x",
+        "PML1",
+        "PML1..f",
+        "PML2.id.f",
+        "PML1.id.",
+        "PML1.id.f.extra",
+        "PML1.../../x.f",
+        "PML1.a?b.f",
+        "PML1.a b.f",
+    ] {
         assert_eq!(parse_check_code(code), None, "{code}");
     }
     assert_eq!(parse_check_code(&format!("PML1.{}.f", "a".repeat(LONGEST_ID + 1))), None);

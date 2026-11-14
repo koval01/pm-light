@@ -26,6 +26,13 @@ pub fn pixels(value: f32) -> u32 {
     whole
 }
 
+/// A scale factor, a few pixels to a point, as the toolkit takes it: well inside an `f32`.
+pub fn scale(value: f64) -> f32 {
+    #[expect(clippy::cast_possible_truncation, reason = "clamped to 1/64..=64 just before, far inside an f32")]
+    let narrow = value.clamp(1.0 / 64.0, 64.0) as f32;
+    narrow
+}
+
 /// A size to show, to three digits: past 2^53 bytes the last ones do not matter.
 #[expect(clippy::cast_precision_loss, reason = "a size is shown to three digits")]
 pub const fn approximate(count: u64) -> f64 {
@@ -43,24 +50,4 @@ pub fn share(used: u64, whole: u64) -> f32 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_share_stays_between_nothing_and_all() {
-        assert!(share(0, 0).abs() < f32::EPSILON);
-        assert!((share(1, 4) - 0.25).abs() < 1e-6);
-        assert!((share(9, 4) - 1.0).abs() < f32::EPSILON);
-        assert!((share(u64::MAX, u64::MAX) - 1.0).abs() < f32::EPSILON);
-    }
-
-    #[test]
-    fn out_of_range_values_are_held_at_the_edges() {
-        assert_eq!(channel(-3.0), 0);
-        assert_eq!(channel(300.0), 255);
-        assert_eq!(channel(f32::NAN), 0);
-        assert_eq!(pixels(-1.0), 0);
-        assert_eq!(pixels(1e9), 65_535);
-        assert_eq!(float(70_000), 65_535.0);
-    }
-}
+mod tests;

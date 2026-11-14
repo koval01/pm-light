@@ -1,12 +1,17 @@
 //! Translates Proton's replies into the model, and the model's choices into Proton's parameters.
 
 use crate::{
-    model::{PaymentMethod, Invoice, InvoiceState, Billing, BillingPlan, Account, Plan, AccountSession, AuthLogEntry, Referrals, Referred, ReferredState, SmtpToken, Organization, Member, MemberState, Habits, UserChoices, MailSettings, UnsubscribeMethods, MailtoUnsubscribe, AutoReply, Folder, Address, MessageMeta, Attachment, ListOptions, Counts, Count},
+    model::{
+        Account, AccountSession, Address, Attachment, AuthLogEntry, AutoReply, Billing, BillingPlan, Count, Counts,
+        Folder, Habits, Invoice, InvoiceState, ListOptions, MailSettings, MailtoUnsubscribe, Member, MemberState,
+        MessageMeta, Organization, PaymentMethod, Plan, Referrals, Referred, ReferredState, SmtpToken,
+        UnsubscribeMethods, UserChoices,
+    },
     safety,
     text::{plaintext_to_html, to_text},
 };
 use serde::Deserialize;
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 use std::collections::HashMap;
 use url::form_urlencoded;
 
@@ -411,9 +416,7 @@ pub fn new_mail_count(before: &Counts, after: &Counts) -> u64 {
 
 #[must_use]
 pub fn needs_read_receipt(flags: u64, headers: &Map<String, Value>) -> bool {
-    headers.contains_key("Disposition-Notification-To")
-        && flags & FLAG_SENT == 0
-        && flags & FLAG_RECEIPT_SENT == 0
+    headers.contains_key("Disposition-Notification-To") && flags & FLAG_SENT == 0 && flags & FLAG_RECEIPT_SENT == 0
 }
 
 #[cfg(test)]

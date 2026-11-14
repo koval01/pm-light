@@ -13,10 +13,9 @@ fn mail(text: &str) -> SealedMail {
     }
 }
 
-/// Stands in for OpenPGP: the signed text is what comes back once a signature has held.
-#[expect(clippy::unnecessary_wraps, reason = "it takes the place of a signer, which can fail")]
-fn keep(text: &str) -> Result<String> {
-    Ok(text.to_string())
+/// A signer that stands in for OpenPGP: the signed text is what comes back once a signature has held.
+fn keep() -> impl FnOnce(&str) -> Result<String> {
+    |text| Ok(text.to_string())
 }
 
 fn noise(length: usize) -> String {
@@ -31,7 +30,7 @@ fn noise(length: usize) -> String {
 
 #[test]
 fn a_short_mail_is_whole_in_the_signed_code() {
-    let seal = pack(&mail("Hello\nthere"), keep).unwrap();
+    let seal = pack(&mail("Hello\nthere"), keep()).unwrap();
     assert!(seal.text_codes.is_empty());
     assert!(seal.statement.contains("Hello\nthere") && seal.statement.contains("From: a@b.c"));
     assert_eq!(assemble(&seal.statement, &[]), Assembly::Complete(Box::new(mail("Hello\nthere"))));
@@ -39,7 +38,7 @@ fn a_short_mail_is_whole_in_the_signed_code() {
 
 #[test]
 fn the_signed_part_is_readable_by_a_person() {
-    let seal = pack(&mail("Hello"), keep).unwrap();
+    let seal = pack(&mail("Hello"), keep()).unwrap();
     let first = seal.statement.lines().next().unwrap();
     assert_eq!(first, TITLE);
     assert!(seal.statement.contains("Subject: Subject") && seal.statement.contains("Text-SHA256: "));
@@ -48,7 +47,7 @@ fn the_signed_part_is_readable_by_a_person() {
 #[test]
 fn a_long_mail_goes_in_further_codes_held_by_the_hash() {
     let long = noise(4000);
-    let seal = pack(&mail(&long), keep).unwrap();
+    let seal = pack(&mail(&long), keep()).unwrap();
     assert!(seal.text_codes.len() > 2 && !seal.statement.contains(&long));
     let shuffled: Vec<String> = seal.text_codes.iter().rev().cloned().collect();
     let Assembly::Complete(found) = assemble(&seal.statement, &shuffled) else { panic!("not complete") };
@@ -57,7 +56,7 @@ fn a_long_mail_goes_in_further_codes_held_by_the_hash() {
 
 #[test]
 fn a_missing_code_is_counted_and_the_signed_part_still_stands() {
-    let seal = pack(&mail(&noise(4000)), keep).unwrap();
+    let seal = pack(&mail(&noise(4000)), keep()).unwrap();
     let parts: usize = seal.text_codes[0].split('.').nth(3).unwrap().parse().unwrap();
     let left: Vec<String> = seal.text_codes[seal.text_codes.len() - parts + 1..].to_vec();
     assert_eq!(assemble(&seal.statement, &left), Assembly::Incomplete { have: parts - 1, need: parts });
@@ -66,28 +65,32 @@ fn a_missing_code_is_counted_and_the_signed_part_still_stands() {
 
 #[test]
 fn text_swapped_under_a_good_signature_is_found() {
-    let seal = pack(&mail(&noise(4000)), keep).unwrap();
-    let other = pack(&mail(&noise(4100)), keep).unwrap();
+    let seal = pack(&mail(&noise(4000)), keep()).unwrap();
+    let other = pack(&mail(&noise(4100)), keep()).unwrap();
     assert!(matches!(assemble(&seal.statement, &other.text_codes), Assembly::Incomplete { .. }));
     let id: String = seal.text_codes[0].split('.').nth(1).unwrap().to_string();
-    let forged: Vec<String> = other.text_codes.iter().map(|code| {
-        let mut fields: Vec<&str> = code.split('.').collect();
-        fields[1] = &id;
-        fields.join(".")
-    }).collect();
+    let forged: Vec<String> = other
+        .text_codes
+        .iter()
+        .map(|code| {
+            let mut fields: Vec<&str> = code.split('.').collect();
+            fields[1] = &id;
+            fields.join(".")
+        })
+        .collect();
     assert_eq!(assemble(&seal.statement, &forged), Assembly::Damaged);
 }
 
 #[test]
 fn an_inline_text_changed_after_signing_is_found() {
-    let seal = pack(&mail("Pay 100"), keep).unwrap();
+    let seal = pack(&mail("Pay 100"), keep()).unwrap();
     assert_eq!(assemble(&seal.statement.replace("Pay 100", "Pay 900"), &[]), Assembly::Damaged);
 }
 
 #[test]
 fn a_subject_cannot_write_fields_of_its_own() {
     let hostile = SealedMail { subject: "x\nSigner: evil@x.y\n\nFake".into(), ..mail("Hello") };
-    let seal = pack(&hostile, keep).unwrap();
+    let seal = pack(&hostile, keep()).unwrap();
     let Assembly::Complete(found) = assemble(&seal.statement, &[]) else { panic!("not complete") };
     assert_eq!(found.signer, "me@proton.me");
     assert_eq!(found.text, "Hello");
@@ -96,21 +99,21 @@ fn a_subject_cannot_write_fields_of_its_own() {
 #[test]
 fn no_signed_line_ends_in_a_space_whatever_is_empty() {
     let bare = SealedMail { attachments: Vec::new(), recipients: Vec::new(), subject: "  ".into(), ..mail("a  \nb ") };
-    let seal = pack(&bare, keep).unwrap();
+    let seal = pack(&bare, keep()).unwrap();
     assert!(seal.statement.lines().all(|line| line == line.trim_end()), "{}", seal.statement);
     assert!(matches!(assemble(&seal.statement, &[]), Assembly::Complete(_)));
 }
 
 #[test]
 fn trailing_spaces_do_not_break_the_hash() {
-    let seal = pack(&mail("line   \nnext\r\nlast\n\n"), keep).unwrap();
+    let seal = pack(&mail("line   \nnext\r\nlast\n\n"), keep()).unwrap();
     let Assembly::Complete(found) = assemble(&seal.statement, &[]) else { panic!("not complete") };
     assert_eq!(found.text, "line\nnext\nlast");
 }
 
 #[test]
 fn a_mail_too_long_for_the_codes_is_refused_and_not_cut() {
-    assert!(matches!(pack(&mail(&noise(100_000)), keep), Err(Error::TooLongToSeal)));
+    assert!(matches!(pack(&mail(&noise(100_000)), keep()), Err(Error::TooLongToSeal)));
 }
 
 #[test]
@@ -153,15 +156,20 @@ fn junk_codes_cannot_panic_the_reader() {
 
 #[test]
 fn any_codes_up_to_the_number_of_spares_can_be_lost() {
-    let seal = pack(&mail(&noise(4000)), keep).unwrap();
+    let seal = pack(&mail(&noise(4000)), keep()).unwrap();
     let all = seal.text_codes.len();
     let need = all - spares_for(all - all / 4);
     let spares = all - need;
     assert!(spares >= 2, "{all} codes");
     for first in 0..all {
         let lost: Vec<usize> = (0..spares).map(|step| (first + step * 2) % all).collect();
-        let codes: Vec<String> = seal.text_codes.iter().enumerate()
-            .filter(|(index, _)| !lost.contains(index)).map(|(_, code)| code.clone()).collect();
+        let codes: Vec<String> = seal
+            .text_codes
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| !lost.contains(index))
+            .map(|(_, code)| code.clone())
+            .collect();
         let Assembly::Complete(found) = assemble(&seal.statement, &codes) else { panic!("{lost:?} lost") };
         assert_eq!(found.text, noise(4000));
     }
@@ -176,6 +184,6 @@ fn sheets_printed_before_spare_codes_still_read() {
     let total = chunks.len();
     let codes: Vec<String> =
         chunks.iter().enumerate().map(|(i, chunk)| format!("{TEXT_PREFIX}.{id}.{i}.{total}.{chunk}")).collect();
-    let seal = pack(&mail(&noise(1500)), keep).unwrap();
+    let seal = pack(&mail(&noise(1500)), keep()).unwrap();
     assert!(matches!(assemble(&seal.statement, &codes), Assembly::Complete(_)));
 }

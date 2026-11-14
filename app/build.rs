@@ -72,7 +72,9 @@ const COMPILER_STACK: usize = 64 * 1024 * 1024;
 
 fn compile_window() -> Result<(), Box<dyn Error>> {
     let compiler = std::thread::Builder::new().name("slint".to_string()).stack_size(COMPILER_STACK).spawn(|| {
-        let config = slint_build::CompilerConfiguration::new().with_style("fluent".to_string()).with_bundled_translations("lang");
+        let config = slint_build::CompilerConfiguration::new()
+            .with_style("fluent".to_string())
+            .with_bundled_translations("lang");
         slint_build::compile_with_config("ui/app.slint", config).map_err(|error| error.to_string())
     })?;
     match compiler.join() {

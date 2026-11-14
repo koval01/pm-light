@@ -1,6 +1,9 @@
 //! Mail settings, auto-reply and filter issues between Proton's shape and ours.
 
-use super::{json, Value, Habits, UserChoices, MailSettings, ApiUnsubscribe, UnsubscribeMethods, MailtoUnsubscribe, AutoReply, REPEAT_PERMANENT, to_text, REPEAT_FIXED, plaintext_to_html};
+use super::{
+    ApiUnsubscribe, AutoReply, Habits, MailSettings, MailtoUnsubscribe, REPEAT_FIXED, REPEAT_PERMANENT,
+    UnsubscribeMethods, UserChoices, Value, json, plaintext_to_html, to_text,
+};
 
 /// Endpoint and values of each toggle, from Proton's web client.
 pub struct Toggle {
@@ -14,12 +17,33 @@ pub struct Toggle {
 }
 
 pub const TOGGLES: &[Toggle] = &[
-    Toggle { key: "hideRemoteImages", path: "hide-remote-images", field: "HideRemoteImages", read: None, on: 1, off: 0 },
-    Toggle { key: "nextMessageOnMove", path: "next-message-on-move", field: "NextMessageOnMove", read: None, on: 2, off: 0 },
+    Toggle {
+        key: "hideRemoteImages",
+        path: "hide-remote-images",
+        field: "HideRemoteImages",
+        read: None,
+        on: 1,
+        off: 0,
+    },
+    Toggle {
+        key: "nextMessageOnMove",
+        path: "next-message-on-move",
+        field: "NextMessageOnMove",
+        read: None,
+        on: 2,
+        off: 0,
+    },
     Toggle { key: "shortcuts", path: "shortcuts", field: "Shortcuts", read: None, on: 1, off: 0 },
     Toggle { key: "autoSaveContacts", path: "autocontacts", field: "AutoSaveContacts", read: None, on: 1, off: 0 },
     Toggle { key: "confirmLinks", path: "confirmlink", field: "ConfirmLink", read: None, on: 1, off: 0 },
-    Toggle { key: "autoDeleteOld", path: "auto-delete-spam-and-trash-days", field: "Days", read: Some("AutoDeleteSpamAndTrashDays"), on: 30, off: 0 },
+    Toggle {
+        key: "autoDeleteOld",
+        path: "auto-delete-spam-and-trash-days",
+        field: "Days",
+        read: Some("AutoDeleteSpamAndTrashDays"),
+        on: 30,
+        off: 0,
+    },
 ];
 
 /// One value a setting may take. Nothing else ever goes to the server.
@@ -70,8 +94,18 @@ const fn choice(key: &'static str, path: &'static str, field: &'static str, valu
     MailChoice { key, path, field, read: field, values }
 }
 
-pub const FONT_FACES: [&str; 10] =
-    ["Sans-serif", "Serif", "Georgia", "Arial", "Helvetica", "Menlo, Consolas, Courier New, Monospace", "Tahoma, sans-serif", "Verdana", "Times New Roman", "Trebuchet MS"];
+pub const FONT_FACES: [&str; 10] = [
+    "Sans-serif",
+    "Serif",
+    "Georgia",
+    "Arial",
+    "Helvetica",
+    "Menlo, Consolas, Courier New, Monospace",
+    "Tahoma, sans-serif",
+    "Verdana",
+    "Times New Roman",
+    "Trebuchet MS",
+];
 pub const FONT_SIZES: [i64; 8] = [10, 12, 14, 16, 18, 20, 22, 24];
 /// Proton's list stops here, whatever the setting says.
 const MAX_LIST_PAGE: u64 = 150;
@@ -84,7 +118,12 @@ const FOOTER_LOCKED: i64 = 2;
 const MOVED_IN_SENT: i64 = 2;
 
 pub const MAIL_CHOICES: &[MailChoice] = &[
-    choice("showMoved", "moved", "ShowMoved", &[Allowed::Number(0), Allowed::Number(1), Allowed::Number(2), Allowed::Number(3)]),
+    choice(
+        "showMoved",
+        "moved",
+        "ShowMoved",
+        &[Allowed::Number(0), Allowed::Number(1), Allowed::Number(2), Allowed::Number(3)],
+    ),
     choice("viewMode", "viewmode", "ViewMode", OFF_ON),
     choice("viewLayout", "viewlayout", "ViewLayout", OFF_ON),
     choice("composerMode", "composermode", "ComposerMode", OFF_ON),
@@ -92,12 +131,28 @@ pub const MAIL_CHOICES: &[MailChoice] = &[
     choice("stickyLabels", "stickylabels", "StickyLabels", OFF_ON),
     choice("almostAllMail", "almost-all-mail", "AlmostAllMail", OFF_ON),
     choice("protonFooter", "pmsignature", "PMSignature", OFF_ON),
-    MailChoice { key: "draftType", path: "drafttype", field: "MIMEType", read: "DraftMIMEType", values: &[Allowed::Text("text/html"), Allowed::Text("text/plain")] },
+    MailChoice {
+        key: "draftType",
+        path: "drafttype",
+        field: "MIMEType",
+        read: "DraftMIMEType",
+        values: &[Allowed::Text("text/html"), Allowed::Text("text/plain")],
+    },
     choice("direction", "righttoleft", "RightToLeft", OFF_ON),
     choice("hideEmbedded", "hide-embedded-images", "HideEmbeddedImages", OFF_ON),
     choice("hideSenderImages", "hide-sender-images", "HideSenderImages", OFF_ON),
-    choice("removeMetadata", "remove-image-metadata", "RemoveImageMetadata", &[Allowed::Flag(false), Allowed::Flag(true)]),
-    choice("blockConfirmation", "block-sender-confirmation", "BlockSenderConfirmation", &[Allowed::Unset, Allowed::Number(1)]),
+    choice(
+        "removeMetadata",
+        "remove-image-metadata",
+        "RemoveImageMetadata",
+        &[Allowed::Flag(false), Allowed::Flag(true)],
+    ),
+    choice(
+        "blockConfirmation",
+        "block-sender-confirmation",
+        "BlockSenderConfirmation",
+        &[Allowed::Unset, Allowed::Number(1)],
+    ),
     choice("spamAction", "spam-action", "SpamAction", &[Allowed::Unset, Allowed::Number(0), Allowed::Number(1)]),
     choice("sign", "sign", "Sign", OFF_ON),
     choice("attachPublicKey", "attachpublic", "AttachPublicKey", OFF_ON),
@@ -105,28 +160,38 @@ pub const MAIL_CHOICES: &[MailChoice] = &[
     choice("promptPin", "promptpin", "PromptPin", OFF_ON),
     choice("folderColor", "enablefoldercolor", "EnableFolderColor", OFF_ON),
     choice("inheritFolderColor", "inheritparentfoldercolor", "InheritParentFolderColor", OFF_ON),
-    choice("fontFace", "fontface", "FontFace", &[
-        Allowed::Text(FONT_FACES[0]),
-        Allowed::Text(FONT_FACES[1]),
-        Allowed::Text(FONT_FACES[2]),
-        Allowed::Text(FONT_FACES[3]),
-        Allowed::Text(FONT_FACES[4]),
-        Allowed::Text(FONT_FACES[5]),
-        Allowed::Text(FONT_FACES[6]),
-        Allowed::Text(FONT_FACES[7]),
-        Allowed::Text(FONT_FACES[8]),
-        Allowed::Text(FONT_FACES[9]),
-    ]),
-    choice("fontSize", "fontsize", "FontSize", &[
-        Allowed::Number(FONT_SIZES[0]),
-        Allowed::Number(FONT_SIZES[1]),
-        Allowed::Number(FONT_SIZES[2]),
-        Allowed::Number(FONT_SIZES[3]),
-        Allowed::Number(FONT_SIZES[4]),
-        Allowed::Number(FONT_SIZES[5]),
-        Allowed::Number(FONT_SIZES[6]),
-        Allowed::Number(FONT_SIZES[7]),
-    ]),
+    choice(
+        "fontFace",
+        "fontface",
+        "FontFace",
+        &[
+            Allowed::Text(FONT_FACES[0]),
+            Allowed::Text(FONT_FACES[1]),
+            Allowed::Text(FONT_FACES[2]),
+            Allowed::Text(FONT_FACES[3]),
+            Allowed::Text(FONT_FACES[4]),
+            Allowed::Text(FONT_FACES[5]),
+            Allowed::Text(FONT_FACES[6]),
+            Allowed::Text(FONT_FACES[7]),
+            Allowed::Text(FONT_FACES[8]),
+            Allowed::Text(FONT_FACES[9]),
+        ],
+    ),
+    choice(
+        "fontSize",
+        "fontsize",
+        "FontSize",
+        &[
+            Allowed::Number(FONT_SIZES[0]),
+            Allowed::Number(FONT_SIZES[1]),
+            Allowed::Number(FONT_SIZES[2]),
+            Allowed::Number(FONT_SIZES[3]),
+            Allowed::Number(FONT_SIZES[4]),
+            Allowed::Number(FONT_SIZES[5]),
+            Allowed::Number(FONT_SIZES[6]),
+            Allowed::Number(FONT_SIZES[7]),
+        ],
+    ),
 ];
 
 /// Which of its values each setting stands at, where it stands at one of them.
@@ -134,7 +199,13 @@ pub const MAIL_CHOICES: &[MailChoice] = &[
 pub fn read_choices(raw: &Value) -> std::collections::HashMap<&'static str, usize> {
     MAIL_CHOICES
         .iter()
-        .filter_map(|choice| choice.values.iter().position(|value| value.matches(raw.get(choice.read))).map(|position| (choice.key, position)))
+        .filter_map(|choice| {
+            choice
+                .values
+                .iter()
+                .position(|value| value.matches(raw.get(choice.read)))
+                .map(|position| (choice.key, position))
+        })
         .collect()
 }
 
@@ -195,7 +266,8 @@ pub const NEWS: [(&str, u32); 13] = [
 ];
 
 /// Account settings that are a plain yes or no.
-pub const USER_FLAGS: [(&str, &str, &str); 2] = [("telemetry", "telemetry", "Telemetry"), ("crashReports", "crashreports", "CrashReports")];
+pub const USER_FLAGS: [(&str, &str, &str); 2] =
+    [("telemetry", "telemetry", "Telemetry"), ("crashReports", "crashreports", "CrashReports")];
 
 pub fn to_user_choices(settings: &Value) -> UserChoices {
     let flag = |pointer: &str| settings.pointer(pointer).and_then(Value::as_u64).unwrap_or(0) != 0;
@@ -289,5 +361,8 @@ pub fn from_auto_reply(reply: &AutoReply, zone: &str) -> Value {
 /// Proton counts lines from zero.
 pub fn issue_text(issue: &Value) -> String {
     let message = issue.get("message").and_then(Value::as_str).unwrap_or("Invalid filter");
-    issue.pointer("/from/line").and_then(Value::as_u64).map_or_else(|| message.to_string(), |line| format!("{}: {message}", line + 1))
+    issue
+        .pointer("/from/line")
+        .and_then(Value::as_u64)
+        .map_or_else(|| message.to_string(), |line| format!("{}: {message}", line + 1))
 }

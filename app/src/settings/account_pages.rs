@@ -2,8 +2,7 @@
 //! What changes keys, money or the way back into an account happens on Proton's own site.
 
 use super::{
-    Ctx, guarded_pages, lock_page,
-    mail_pages,
+    Ctx, guarded_pages, lock_page, mail_pages,
     rows::{self, area, button, entry, fact, ghost, hidden_fact, hint, meter, note, plain, section, segmented, switch},
 };
 use crate::{SettingsRow, SettingsSection, actions, auth};
@@ -38,7 +37,10 @@ pub fn plan_text(ctx: &Ctx, account: &Account) -> String {
 
 /// The space used, out of the space there is.
 pub fn storage_text(ctx: &Ctx, storage: &Storage) -> String {
-    ctx.say_with("settings.storage", &[("used", &rows::size(ctx, storage.used)), ("max", &rows::size(ctx, storage.max))])
+    ctx.say_with(
+        "settings.storage",
+        &[("used", &rows::size(ctx, storage.used)), ("max", &rows::size(ctx, storage.max))],
+    )
 }
 
 pub fn overview(ctx: &Ctx) {
@@ -63,7 +65,11 @@ fn plan_section(ctx: &Ctx, billing: &Billing, storage: Option<&Storage>) -> Sett
             lines.push(fact(&plan.title, &ctx.say_with("billing.months", &[("count", &plan.months.to_string())])));
             lines.push(fact(&ctx.say("billing.price"), &rows::money(plan.amount, &plan.currency)));
             let date = rows::day(plan.period_end);
-            let value = if plan.renews { format!("{date} · {}", rows::money(plan.renew_amount, &plan.currency)) } else { date };
+            let value = if plan.renews {
+                format!("{date} · {}", rows::money(plan.renew_amount, &plan.currency))
+            } else {
+                date
+            };
             lines.push(fact(&ctx.say(if plan.renews { "billing.renews" } else { "billing.ends" }), &value));
         }
         None => lines.push(note(&ctx.say("account.planFree"))),
@@ -93,7 +99,12 @@ pub fn subscription(ctx: &Ctx) {
             lines.push(hint(&ctx.say("privacy.hoverPayment")));
             sections.push(section("", &ctx.say("billing.methods"), "", lines));
         }
-        sections.push(section("", &ctx.say("billing.credit"), "", vec![fact(&ctx.say("billing.creditAvailable"), &rows::money(billing.credit, &billing.currency))]));
+        sections.push(section(
+            "",
+            &ctx.say("billing.credit"),
+            "",
+            vec![fact(&ctx.say("billing.creditAvailable"), &rows::money(billing.credit, &billing.currency))],
+        ));
         if !billing.invoices.is_empty() {
             let lines = billing
                 .invoices
@@ -115,10 +126,15 @@ pub fn subscription(ctx: &Ctx) {
                 .collect();
             sections.push(section("", &ctx.say("billing.invoices"), "", lines));
         }
-        sections.push(section("", &ctx.say("billing.invoiceDetails"), "", vec![
-            area("invoice-text", "", &choices.invoice_text, 3),
-            button("invoice-save", &ctx.say("common.save"), true),
-        ]));
+        sections.push(section(
+            "",
+            &ctx.say("billing.invoiceDetails"),
+            "",
+            vec![
+                area("invoice-text", "", &choices.invoice_text, 3),
+                button("invoice-save", &ctx.say("common.save"), true),
+            ],
+        ));
         sections.push(news_section(ctx, &choices));
         sections.push(manage(ctx, "subscription", &ctx.say("billing.manageHint")));
         ctx.show(sections);
@@ -153,7 +169,10 @@ fn log_label(ctx: &Ctx, entry: &AuthLogEntry) -> String {
 }
 
 fn log_row(ctx: &Ctx, line: &AuthLogEntry) -> SettingsRow {
-    let place: Vec<&str> = [line.ip.as_str(), line.location.as_str(), line.device.as_str()].into_iter().filter(|text| !text.is_empty()).collect();
+    let place: Vec<&str> = [line.ip.as_str(), line.location.as_str(), line.device.as_str()]
+        .into_iter()
+        .filter(|text| !text.is_empty())
+        .collect();
     SettingsRow {
         bad: line.failed,
         hidden: true,
@@ -183,14 +202,29 @@ pub fn security(ctx: &Ctx) {
         let log = if account.log_mode > 0 { service.auth_log().await.unwrap_or_default() } else { Vec::new() };
         Ok((sessions, account.log_mode, log, service.user_choices().await?, account.two_factor))
     };
-    ctx.load(task, |ctx, (sessions, mode, log, choices, second): (Vec<AccountSession>, u64, Vec<AuthLogEntry>, UserChoices, &'static str)| {
-        guarded_pages::note_second_factor(second);
-        let others = if sessions.len() > 1 { ctx.say("sessions.revokeOthers") } else { String::new() };
-        let lines = sessions.iter().map(|session| session_row(ctx, session)).collect();
-        let mut sections = vec![lock_page::section_of(ctx), section("revoke-others", &ctx.say("sessions.title"), &others, lines), log_section(ctx, mode, &log), privacy_section(ctx, &choices)];
-        sections.extend(guarded_pages::card_for(ctx));
-        ctx.show(sections);
-    });
+    ctx.load(
+        task,
+        |ctx,
+         (sessions, mode, log, choices, second): (
+            Vec<AccountSession>,
+            u64,
+            Vec<AuthLogEntry>,
+            UserChoices,
+            &'static str,
+        )| {
+            guarded_pages::note_second_factor(second);
+            let others = if sessions.len() > 1 { ctx.say("sessions.revokeOthers") } else { String::new() };
+            let lines = sessions.iter().map(|session| session_row(ctx, session)).collect();
+            let mut sections = vec![
+                lock_page::section_of(ctx),
+                section("revoke-others", &ctx.say("sessions.title"), &others, lines),
+                log_section(ctx, mode, &log),
+                privacy_section(ctx, &choices),
+            ];
+            sections.extend(guarded_pages::card_for(ctx));
+            ctx.show(sections);
+        },
+    );
 }
 
 /// Switches of the account, wherever they stand.
@@ -223,7 +257,12 @@ pub fn heard_security(ctx: &Ctx, id: &str, value: i32) {
         ctx.act(async move { service.revoke_session(&session).await }, super::redraw);
     } else if id == "revoke-others" {
         let title = ctx.say("sessions.revokeOthers");
-        if actions::confirmed(&title, &ctx.say("sessions.revokeOthersText"), &ctx.say("sessions.revoke"), &ctx.say("common.cancel")) {
+        if actions::confirmed(
+            &title,
+            &ctx.say("sessions.revokeOthersText"),
+            &ctx.say("sessions.revoke"),
+            &ctx.say("common.cancel"),
+        ) {
             ctx.act(async move { service.revoke_other_sessions().await }, super::redraw);
         }
     } else if id == "log-mode" {
@@ -263,10 +302,20 @@ fn news_section(ctx: &Ctx, choices: &UserChoices) -> SettingsSection {
 fn privacy_section(ctx: &Ctx, choices: &UserChoices) -> SettingsSection {
     let mut lines = vec![
         switch("flag:telemetry", &ctx.say("privacy.telemetry"), &ctx.say("privacy.telemetryHint"), choices.telemetry),
-        switch("flag:crashReports", &ctx.say("privacy.crashReports"), &ctx.say("privacy.crashReportsHint"), choices.crash_reports),
+        switch(
+            "flag:crashReports",
+            &ctx.say("privacy.crashReports"),
+            &ctx.say("privacy.crashReportsHint"),
+            choices.crash_reports,
+        ),
     ];
     if choices.breach_alerts_offered {
-        lines.push(switch("breach", &ctx.say("privacy.breachAlerts"), &ctx.say("privacy.breachAlertsHint"), choices.breach_alerts));
+        lines.push(switch(
+            "breach",
+            &ctx.say("privacy.breachAlerts"),
+            &ctx.say("privacy.breachAlertsHint"),
+            choices.breach_alerts,
+        ));
     }
     section("", &ctx.say("privacy.title"), "", lines)
 }
@@ -286,7 +335,11 @@ fn draw_encryption(ctx: &Ctx, choices: &mail_pages::Choices) {
             ..entry("", &name, &key.fingerprint)
         }
     }));
-    ctx.show(vec![plain(lines), mail_pages::pgp_section(ctx, choices), manage(ctx, "encryption-keys", &ctx.say("keys.manageHint"))]);
+    ctx.show(vec![
+        plain(lines),
+        mail_pages::pgp_section(ctx, choices),
+        manage(ctx, "encryption-keys", &ctx.say("keys.manageHint")),
+    ]);
 }
 
 fn live_rows(ctx: &Ctx, check: &LiveCheck) -> Vec<SettingsRow> {
@@ -320,7 +373,8 @@ pub fn domains(ctx: &Ctx) {
             head.button = ctx.say("domains.checkNow").into();
             lines.push(head);
             let states = [domain.verified, domain.mx, domain.spf, domain.dkim, domain.dmarc];
-            let labels = ["domains.verified", "domains.mx", "domains.spf", "domains.dkim", "domains.dmarc"].map(|key| ctx.say(key));
+            let labels = ["domains.verified", "domains.mx", "domains.spf", "domains.dkim", "domains.dmarc"]
+                .map(|key| ctx.say(key));
             lines.push(rows::tags(labels.to_vec(), &states));
             if let Some(check) = CHECKS.lock().as_ref().and_then(|checks| checks.get(&domain.name)) {
                 lines.extend(live_rows(ctx, check));

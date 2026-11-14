@@ -5,6 +5,7 @@
 //! fetch, so opening a mail tells its sender nothing even if the policy were missing.
 
 use crate::model::{CleanedLink, MailProtection, ProtectedImage};
+use crate::pattern::{Pattern, group};
 use crate::text::{plaintext_to_html, to_text};
 use ammonia::{Builder, UrlRelative};
 use cssparser::{ParseError, Parser, ParserInput, Token};
@@ -13,7 +14,6 @@ use lol_html::{
     html_content::{ContentType, Element},
     rewrite_str, text,
 };
-use crate::pattern::{Pattern, group};
 use std::{
     cell::{Cell, RefCell},
     collections::{BTreeMap, HashMap, HashSet},
@@ -22,22 +22,141 @@ use std::{
 use url::Url;
 
 const ALLOWED_TAGS: &[&str] = &[
-    "a", "abbr", "acronym", "address", "article", "aside", "b", "bdi", "bdo", "big", "blockquote",
-    "br", "caption", "center", "cite", "code", "col", "colgroup", "dd", "del", "details", "dfn", "dir",
-    "div", "dl", "dt", "em", "figcaption", "figure", "font", "footer", "h1", "h2", "h3", "h4", "h5", "h6",
-    "header", "hgroup", "hr", "i", "img", "ins", "kbd", "label", "legend", "li", "main", "mark",
-    "menu", "nav", "ol", "p", "picture", "pre", "q", "rp", "rt", "ruby", "s", "samp", "section", "small",
-    "span", "strike", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "tfoot", "th",
-    "thead", "time", "tr", "tt", "u", "ul", "var", "wbr",
+    "a",
+    "abbr",
+    "acronym",
+    "address",
+    "article",
+    "aside",
+    "b",
+    "bdi",
+    "bdo",
+    "big",
+    "blockquote",
+    "br",
+    "caption",
+    "center",
+    "cite",
+    "code",
+    "col",
+    "colgroup",
+    "dd",
+    "del",
+    "details",
+    "dfn",
+    "dir",
+    "div",
+    "dl",
+    "dt",
+    "em",
+    "figcaption",
+    "figure",
+    "font",
+    "footer",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "hr",
+    "i",
+    "img",
+    "ins",
+    "kbd",
+    "label",
+    "legend",
+    "li",
+    "main",
+    "mark",
+    "menu",
+    "nav",
+    "ol",
+    "p",
+    "picture",
+    "pre",
+    "q",
+    "rp",
+    "rt",
+    "ruby",
+    "s",
+    "samp",
+    "section",
+    "small",
+    "span",
+    "strike",
+    "strong",
+    "style",
+    "sub",
+    "summary",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "tfoot",
+    "th",
+    "thead",
+    "time",
+    "tr",
+    "tt",
+    "u",
+    "ul",
+    "var",
+    "wbr",
 ];
 const DROPPED_WITH_CONTENT: &[&str] = &[
-    "applet", "area", "audio", "embed", "frame", "frameset", "iframe", "map", "math", "noembed", "noframes", "noscript",
-    "object", "plaintext", "script", "select", "svg", "template", "textarea", "title", "video", "xmp",
+    "applet",
+    "area",
+    "audio",
+    "embed",
+    "frame",
+    "frameset",
+    "iframe",
+    "map",
+    "math",
+    "noembed",
+    "noframes",
+    "noscript",
+    "object",
+    "plaintext",
+    "script",
+    "select",
+    "svg",
+    "template",
+    "textarea",
+    "title",
+    "video",
+    "xmp",
 ];
 const GENERIC_ATTRIBUTES: &[&str] = &[
-    "align", "alt", "bgcolor", "border", "cellpadding", "cellspacing", "class", "color", "colspan", "dir",
-    "face", "height", "hspace", "id", "lang", "name", "rowspan", "size", "span", "start", "style", "title",
-    "type", "valign", "vspace", "width",
+    "align",
+    "alt",
+    "bgcolor",
+    "border",
+    "cellpadding",
+    "cellspacing",
+    "class",
+    "color",
+    "colspan",
+    "dir",
+    "face",
+    "height",
+    "hspace",
+    "id",
+    "lang",
+    "name",
+    "rowspan",
+    "size",
+    "span",
+    "start",
+    "style",
+    "title",
+    "type",
+    "valign",
+    "vspace",
+    "width",
 ];
 const URL_SCHEMES: &[&str] = &["http", "https", "mailto", "tel", "cid", "data"];
 /// Worth telling the reader about; `meta` and the like are in nearly every newsletter.
@@ -62,9 +181,26 @@ const OWN_CLASSES: &[&str] = &["protonmail_quote", "protonmail_signature_block"]
 const HELD_IMAGE: &str = "data-held-src";
 
 const TRACKING_PARAMS: &[&str] = &[
-    "fbclid", "gclid", "gclsrc", "dclid", "msclkid", "twclid", "ttclid", "yclid", "igshid", "mc_cid",
-    "mc_eid", "_hsenc", "_hsmi", "mkt_tok", "vero_id", "oly_enc_id", "oly_anon_id", "ml_subscriber",
-    "ml_subscriber_hash", "s_cid",
+    "fbclid",
+    "gclid",
+    "gclsrc",
+    "dclid",
+    "msclkid",
+    "twclid",
+    "ttclid",
+    "yclid",
+    "igshid",
+    "mc_cid",
+    "mc_eid",
+    "_hsenc",
+    "_hsmi",
+    "mkt_tok",
+    "vero_id",
+    "oly_enc_id",
+    "oly_anon_id",
+    "ml_subscriber",
+    "ml_subscriber_hash",
+    "s_cid",
 ];
 
 static CLEANER: LazyLock<Builder<'static>> = LazyLock::new(|| {
@@ -73,10 +209,7 @@ static CLEANER: LazyLock<Builder<'static>> = LazyLock::new(|| {
         .tags(ALLOWED_TAGS.iter().copied().collect())
         .clean_content_tags(DROPPED_WITH_CONTENT.iter().copied().collect())
         .generic_attributes(GENERIC_ATTRIBUTES.iter().copied().collect())
-        .tag_attributes(HashMap::from([
-            ("a", HashSet::from(["href"])),
-            ("img", HashSet::from(["src"])),
-        ]))
+        .tag_attributes(HashMap::from([("a", HashSet::from(["href"])), ("img", HashSet::from(["src"]))]))
         .url_schemes(URL_SCHEMES.iter().copied().collect())
         .url_relative(UrlRelative::PassThrough)
         .link_rel(Some("noopener noreferrer"))
@@ -95,7 +228,10 @@ pub(crate) static TAG: Pattern = Pattern::new(r"<(/?)([a-zA-Z][a-zA-Z0-9]*)");
 
 /// At-rules that fetch something or reach outside the mail's own styles.
 fn is_blocked_at_rule(name: &str) -> bool {
-    matches!(name.to_ascii_lowercase().as_str(), "import" | "font-face" | "namespace" | "charset" | "document" | "-moz-document")
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        "import" | "font-face" | "namespace" | "charset" | "document" | "-moz-document"
+    )
 }
 
 fn is_blocked_property(name: &str) -> bool {
@@ -183,8 +319,11 @@ fn walk_css(parser: &mut Parser<'_, '_>, out: &mut String, depth: usize) {
                 }
                 out.push(closing);
             }
-            Token::Ident(name) if after_colon && property.eq_ignore_ascii_case("position")
-                && (name.eq_ignore_ascii_case("fixed") || name.eq_ignore_ascii_case("sticky")) => {
+            Token::Ident(name)
+                if after_colon
+                    && property.eq_ignore_ascii_case("position")
+                    && (name.eq_ignore_ascii_case("fixed") || name.eq_ignore_ascii_case("sticky")) =>
+            {
                 out.push_str("static");
                 after_colon = false;
             }
@@ -283,9 +422,8 @@ fn is_remote(src: &str) -> bool {
 
 fn looks_like_pixel(img: &Element<'_, '_>) -> bool {
     let tiny = |name: &str| {
-        img.get_attribute(name).is_some_and(|value| {
-            value.trim().trim_end_matches("px").parse::<u32>().is_ok_and(|n| n <= 1)
-        })
+        img.get_attribute(name)
+            .is_some_and(|value| value.trim().trim_end_matches("px").parse::<u32>().is_ok_and(|n| n <= 1))
     };
     tiny("width") || tiny("height") || img.get_attribute("style").is_some_and(|s| PIXEL_STYLE.is_match(&s))
 }
@@ -341,11 +479,7 @@ pub fn protect(html: &str) -> Protected {
     if excessive {
         return Protected {
             html: plaintext_to_html(&to_text(html.get(..MAX_HTML_BYTES.min(html.len())).unwrap_or_default())),
-            protection: MailProtection {
-                removed: vec!["oversized".to_string()],
-                threats: 1,
-                ..Default::default()
-            },
+            protection: MailProtection { removed: vec!["oversized".to_string()], threats: 1, ..Default::default() },
         };
     }
     let removed = active_elements(html);
@@ -451,7 +585,6 @@ pub fn for_editor(html: &str) -> String {
 pub fn clean_signature(html: &str) -> String {
     for_editor(&CLEANER.clean(html).to_string())
 }
-
 
 /// Puts fetched images in place. An image that could not be fetched stays blocked.
 #[must_use]

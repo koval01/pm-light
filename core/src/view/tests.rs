@@ -279,9 +279,7 @@ fn a_page_travels_on_its_own() {
 }
 
 fn page(from: u64, count: u64) -> Vec<MessageMeta> {
-    (from..from + count)
-        .map(|at| MessageMeta { date: 1_000_000 - at, ..row(&format!("m{at}")) })
-        .collect()
+    (from..from + count).map(|at| MessageMeta { date: 1_000_000 - at, ..row(&format!("m{at}")) }).collect()
 }
 
 fn loaded_pages(pages: u64) -> View {
@@ -344,6 +342,7 @@ fn a_search_is_not_mixed_with_the_folder() {
 }
 
 #[test]
+#[cfg_attr(checked_memory, ignore = "a measure of speed, which the address sanitizer slows several times over")]
 fn paging_stays_quick_with_a_very_long_list() {
     let mut view = loaded_pages(1);
     let mark = view.begin_more().unwrap();
@@ -375,7 +374,8 @@ fn a_scan_continues_from_what_it_read_not_what_it_kept() {
 fn conversations_do_not_mix_with_the_messages_before_them() {
     let mut view = View::default();
     let mark = view.open("inbox");
-    let messages: Vec<MessageMeta> = (0..PAGE).map(|at| MessageMeta { date: 1_000_000 - at, ..row(&format!("m{at}")) }).collect();
+    let messages: Vec<MessageMeta> =
+        (0..PAGE).map(|at| MessageMeta { date: 1_000_000 - at, ..row(&format!("m{at}")) }).collect();
     assert!(view.loaded(mark, messages));
     let mark = view.begin();
     let conversations: Vec<MessageMeta> =

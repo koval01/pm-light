@@ -313,7 +313,9 @@ impl Tor {
             );
             self.new_circuits();
         } else {
-            log::info!("Tor: Proton answered in {middle} ms in the middle, and Quad9 was slow too: the network is slow, not the circuit");
+            log::info!(
+                "Tor: Proton answered in {middle} ms in the middle, and Quad9 was slow too: the network is slow, not the circuit"
+            );
         }
     }
 

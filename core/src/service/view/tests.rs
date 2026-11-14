@@ -17,11 +17,14 @@ fn page_asked(path: &str) -> Option<u64> {
 #[test]
 fn a_page_is_asked_for_by_its_number_and_the_pages_are_counted() {
     let server = serve(|path, _| {
-        Some((200, match page_asked(path) {
-            Some(2) => counted_page(100, 20, 120),
-            Some(page) => counted_page(usize::try_from(page).unwrap_or(0) * 50, 50, 120),
-            None => r#"{"Code":1000}"#,
-        }))
+        Some((
+            200,
+            match page_asked(path) {
+                Some(2) => counted_page(100, 20, 120),
+                Some(page) => counted_page(usize::try_from(page).unwrap_or(0) * 50, 50, 120),
+                None => r#"{"Code":1000}"#,
+            },
+        ))
     });
     let (service, updates) = mailbox_at(&server.base);
     finishes(async move {
@@ -38,7 +41,9 @@ fn a_page_is_asked_for_by_its_number_and_the_pages_are_counted() {
 
 #[test]
 fn a_list_that_grows_shows_no_pages() {
-    let server = serve(|path, _| Some((200, if page_asked(path).is_some() { counted_page(0, 50, 120) } else { r#"{"Code":1000}"# })));
+    let server = serve(|path, _| {
+        Some((200, if page_asked(path).is_some() { counted_page(0, 50, 120) } else { r#"{"Code":1000}"# }))
+    });
     let (service, updates) = mailbox_at(&server.base);
     finishes(async move {
         service.view_open("inbox").await;
@@ -59,12 +64,15 @@ fn deleting_the_last_page_away_shows_the_page_before() {
             seen_delete.store(true, std::sync::atomic::Ordering::SeqCst);
         }
         let total = if seen_delete.load(std::sync::atomic::Ordering::SeqCst) { 100 } else { 120 };
-        Some((200, match page_asked(path) {
-            Some(2) if total == 100 => counted_page(0, 0, 100),
-            Some(2) => counted_page(100, 20, total),
-            Some(page) => counted_page(usize::try_from(page).unwrap_or(0) * 50, 50, total),
-            None => r#"{"Code":1000,"Responses":[]}"#,
-        }))
+        Some((
+            200,
+            match page_asked(path) {
+                Some(2) if total == 100 => counted_page(0, 0, 100),
+                Some(2) => counted_page(100, 20, total),
+                Some(page) => counted_page(usize::try_from(page).unwrap_or(0) * 50, 50, total),
+                None => r#"{"Code":1000,"Responses":[]}"#,
+            },
+        ))
     });
     let (service, updates) = mailbox_at(&server.base);
     finishes(async move {

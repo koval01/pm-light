@@ -36,7 +36,8 @@ fn every_element_shown_by_a_condition_in_the_window_is_placed() {
 
 #[test]
 fn the_check_catches_an_element_left_to_its_own_size() {
-    let source = "export component App inherits Window {\n    if root.open: Rectangle {\n        background: red;\n    }\n}\n";
+    let source =
+        "export component App inherits Window {\n    if root.open: Rectangle {\n        background: red;\n    }\n}\n";
     assert_eq!(unplaced(source).len(), 1);
     let placed = "export component App inherits Window {\n    if root.open: Rectangle {\n        x: 0;\n        y: 0;\n        height: 10px;\n    }\n}\n";
     assert!(unplaced(placed).is_empty());
@@ -68,7 +69,8 @@ fn wrapped_without_height(source: &str) -> Vec<usize> {
         }
         // The element the line belongs to: from its opening brace to its closing one.
         let start = (0..index).rev().find(|&at| lines[at].trim_end().ends_with('{')).unwrap_or(0);
-        let editable = lines[start..index].iter().any(|line| line.contains("single-line: false") || line.contains("TextInput"));
+        let editable =
+            lines[start..index].iter().any(|line| line.contains("single-line: false") || line.contains("TextInput"));
         let depth = lines[start].len() - lines[start].trim_start().len();
         let end = (index..lines.len())
             .find(|&at| lines[at].trim() == "}" && lines[at].len() - lines[at].trim_start().len() == depth)
@@ -133,7 +135,8 @@ fn every_icon_button_of_the_window_says_what_it_does() {
     let part = source.get(start..end).expect("the window");
     let buttons = icon_buttons(part);
     assert!(buttons.len() > 25, "only {} icon buttons were found", buttons.len());
-    let silent: Vec<usize> = buttons.iter().filter(|(_, button)| !button.contains("hint:")).map(|(line, _)| *line).collect();
+    let silent: Vec<usize> =
+        buttons.iter().filter(|(_, button)| !button.contains("hint:")).map(|(line, _)| *line).collect();
     assert!(silent.is_empty(), "icon buttons without a hint, by line from SideItem: {silent:?}");
 }
 

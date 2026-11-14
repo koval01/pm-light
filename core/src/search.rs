@@ -153,9 +153,8 @@ fn near_key(word: &str) -> Option<&'static str> {
 }
 
 fn date_of(text: &str) -> Option<u64> {
-    let date = NaiveDate::parse_from_str(text, "%Y-%m-%d")
-        .or_else(|_| NaiveDate::parse_from_str(text, "%d.%m.%Y"))
-        .ok()?;
+    let date =
+        NaiveDate::parse_from_str(text, "%Y-%m-%d").or_else(|_| NaiveDate::parse_from_str(text, "%d.%m.%Y")).ok()?;
     u64::try_from(date.and_hms_opt(0, 0, 0)?.and_utc().timestamp()).ok()
 }
 
@@ -200,7 +199,10 @@ fn slashed(chars: &[char], start: usize) -> (usize, Value) {
     }
     let Some(close) = close else {
         let raw = collect(chars, start, chars.len());
-        return (chars.len(), Value { raw, text: String::new(), part: Part::Wrong, pattern: None, problem: Some(Problem::OpenPattern) });
+        return (
+            chars.len(),
+            Value { raw, text: String::new(), part: Part::Wrong, pattern: None, problem: Some(Problem::OpenPattern) },
+        );
     };
     let mut end = close + 1;
     while chars.get(end).is_some_and(char::is_ascii_alphabetic) {
@@ -210,7 +212,10 @@ fn slashed(chars: &[char], start: usize) -> (usize, Value) {
     let raw = collect(chars, start, end);
     let source = collect(chars, start + 1, close);
     if flags.chars().any(|flag| flag != 'i') {
-        return (end, Value { raw, text: String::new(), part: Part::Wrong, pattern: None, problem: Some(Problem::BadPattern) });
+        return (
+            end,
+            Value { raw, text: String::new(), part: Part::Wrong, pattern: None, problem: Some(Problem::BadPattern) },
+        );
     }
     let pattern = Pattern { source, ignore_case: !flags.is_empty() };
     (end, Value { raw, text: String::new(), part: Part::Pattern, pattern: Some(pattern), problem: None })
@@ -221,7 +226,8 @@ fn value_at(chars: &[char], start: usize) -> (usize, Value) {
         Some('"') => quoted(chars, start),
         Some('/') => slashed(chars, start),
         _ => {
-            let end = (start..chars.len()).find(|at| chars.get(*at).is_none_or(|c| c.is_whitespace())).unwrap_or(chars.len());
+            let end =
+                (start..chars.len()).find(|at| chars.get(*at).is_none_or(|c| c.is_whitespace())).unwrap_or(chars.len());
             let text = collect(chars, start, end);
             (end, Value { raw: text.clone(), text, part: Part::Value, pattern: None, problem: None })
         }
@@ -533,7 +539,13 @@ impl Form {
         if !words.is_empty() {
             parts.push(words.to_string());
         }
-        for (key, value) in [("from", &self.from), ("to", &self.to), ("subject", &self.subject), ("after", &self.after), ("before", &self.before)] {
+        for (key, value) in [
+            ("from", &self.from),
+            ("to", &self.to),
+            ("subject", &self.subject),
+            ("after", &self.after),
+            ("before", &self.before),
+        ] {
             let value = value.trim();
             if !value.is_empty() {
                 parts.push(format!("{key}:{}", as_value(value)));

@@ -30,9 +30,13 @@ fn with_context<T>(
     context: &'static std::thread::LocalKey<RefCell<WebContext>>,
     make: impl FnOnce(WebViewBuilder<'_>) -> T,
 ) -> T {
-    context.with(|context| if let Ok(mut context) = context.try_borrow_mut() { make(WebViewBuilder::new_with_web_context(&mut context)) } else {
-        log::warn!("a webview was made without its data folder");
-        make(WebViewBuilder::new())
+    context.with(|context| {
+        if let Ok(mut context) = context.try_borrow_mut() {
+            make(WebViewBuilder::new_with_web_context(&mut context))
+        } else {
+            log::warn!("a webview was made without its data folder");
+            make(WebViewBuilder::new())
+        }
     })
 }
 
@@ -118,7 +122,11 @@ impl OnePage {
 
     /// Wry writes a protocol of the app's own as an http address on Windows.
     fn origin(&self) -> String {
-        if cfg!(target_os = "windows") { format!("http://{}.page", self.protocol) } else { format!("{}://page", self.protocol) }
+        if cfg!(target_os = "windows") {
+            format!("http://{}.page", self.protocol)
+        } else {
+            format!("{}://page", self.protocol)
+        }
     }
 
     /// Hands the page over, and gives the address to load it from. A new number each time, so that

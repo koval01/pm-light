@@ -20,7 +20,8 @@ const DENSITIES: [&str; 2] = ["look.comfortable", "look.compact"];
 const LAYOUTS: [&str; 2] = ["look.columns", "look.rows"];
 const LIST_STYLES: [&str; 2] = ["look.pages", "look.oneList"];
 const MAIL_TEXTS: [&str; 3] = ["look.small", "look.normal", "look.large"];
-const WEEK_DAYS: [&str; 8] = ["time.weekDefault", "time.day1", "time.day2", "time.day3", "time.day4", "time.day5", "time.day6", "time.day7"];
+const WEEK_DAYS: [&str; 8] =
+    ["time.weekDefault", "time.day1", "time.day2", "time.day3", "time.day4", "time.day5", "time.day6", "time.day7"];
 const CLOCKS: [&str; 3] = ["time.asLanguage", "time.h24", "time.h12"];
 const DATE_SAMPLES: [&str; 3] = ["31/12/2026", "12/31/2026", "2026-12-31"];
 const READ_LIMIT: usize = 5000;
@@ -43,15 +44,30 @@ pub fn appearance(ctx: &Ctx) {
     let zooms: Vec<String> = look::ZOOMS.iter().map(|zoom| format!("{zoom}%")).collect();
     let zoom = look::ZOOMS.iter().position(|zoom| *zoom == chosen.zoom).unwrap_or(1);
     ctx.show(vec![
-        section("", &ctx.say("look.colors"), "", vec![
-            segmented("theme", &ctx.say("settings.theme"), words(ctx, &THEMES), usize::from(chosen.theme)),
-            swatches("palette", &ctx.say("look.palette"), words(ctx, &PALETTES), usize::from(chosen.palette)),
-        ]),
-        section("", &ctx.say("look.sizes"), "", vec![
-            segmented("zoom", &ctx.say("look.zoom"), zooms, zoom),
-            segmented("density", &ctx.say("look.density"), words(ctx, &DENSITIES), usize::from(chosen.compact)),
-            segmented("mail-text", &ctx.say("look.mailText"), words(ctx, &MAIL_TEXTS), usize::from(chosen.mail_text)),
-        ]),
+        section(
+            "",
+            &ctx.say("look.colors"),
+            "",
+            vec![
+                segmented("theme", &ctx.say("settings.theme"), words(ctx, &THEMES), usize::from(chosen.theme)),
+                swatches("palette", &ctx.say("look.palette"), words(ctx, &PALETTES), usize::from(chosen.palette)),
+            ],
+        ),
+        section(
+            "",
+            &ctx.say("look.sizes"),
+            "",
+            vec![
+                segmented("zoom", &ctx.say("look.zoom"), zooms, zoom),
+                segmented("density", &ctx.say("look.density"), words(ctx, &DENSITIES), usize::from(chosen.compact)),
+                segmented(
+                    "mail-text",
+                    &ctx.say("look.mailText"),
+                    words(ctx, &MAIL_TEXTS),
+                    usize::from(chosen.mail_text),
+                ),
+            ],
+        ),
         section("", &ctx.say("look.window"), "", window_rows(ctx, &chosen)),
     ]);
 }
@@ -59,12 +75,22 @@ pub fn appearance(ctx: &Ctx) {
 fn window_rows(ctx: &Ctx, chosen: &preferences::Preferences) -> Vec<crate::SettingsRow> {
     let mut rows = vec![
         segmented("layout", &ctx.say("look.layout"), words(ctx, &LAYOUTS), usize::from(chosen.rows)),
-        segmented("list-style", &ctx.say("look.listStyle"), words(ctx, &LIST_STYLES), usize::from(!crate::list_style::paged())),
+        segmented(
+            "list-style",
+            &ctx.say("look.listStyle"),
+            words(ctx, &LIST_STYLES),
+            usize::from(!crate::list_style::paged()),
+        ),
         switch("close-to-tray", &ctx.say("look.closeToTray"), "", chosen.close_to_tray),
     ];
     // Elsewhere the icon is the only way back to a closed window, and is not offered to be turned off.
     if cfg!(target_os = "macos") {
-        rows.push(switch("menu-bar-icon", &ctx.say("look.menuBarIcon"), &ctx.say("look.menuBarIconHint"), chosen.menu_bar_icon));
+        rows.push(switch(
+            "menu-bar-icon",
+            &ctx.say("look.menuBarIcon"),
+            &ctx.say("look.menuBarIconHint"),
+            chosen.menu_bar_icon,
+        ));
     }
     rows
 }
@@ -121,17 +147,30 @@ pub fn language(ctx: &Ctx) {
         let names = LANGUAGES.map(|(_, key)| ctx.say(key)).to_vec();
         let pick = |options: Vec<String>, chosen: u8| options.get(usize::from(chosen)).cloned().unwrap_or_default();
         let zone = preferences::get().time_zone;
-        let zone = if zone.is_empty() { ctx.say_with("time.zoneSystem", &[("zone", &system_zone())]) } else { zone.replace('_', " ") };
+        let zone = if zone.is_empty() {
+            ctx.say_with("time.zoneSystem", &[("zone", &system_zone())])
+        } else {
+            zone.replace('_', " ")
+        };
         ctx.show(vec![
             plain(vec![segmented("language", &ctx.say("settings.language"), names, selected)]),
-            section("", &ctx.say("time.title"), "", vec![
-                rows::choice("clock", &ctx.say("time.clock"), &pick(words(ctx, &CLOCKS), settings.time_format)),
-                rows::choice("date", &ctx.say("time.date"), &pick(date_options(ctx), settings.date_format)),
-                rows::choice("week", &ctx.say("time.weekStart"), &pick(words(ctx, &WEEK_DAYS), settings.week_start)),
-                rows::choice("zone", &ctx.say("time.zone"), &zone),
-                note(&ctx.say_with("time.now", &[("time", &rows::date_time(timing::now_seconds()))])),
-                hint(&ctx.say("time.where")),
-            ]),
+            section(
+                "",
+                &ctx.say("time.title"),
+                "",
+                vec![
+                    rows::choice("clock", &ctx.say("time.clock"), &pick(words(ctx, &CLOCKS), settings.time_format)),
+                    rows::choice("date", &ctx.say("time.date"), &pick(date_options(ctx), settings.date_format)),
+                    rows::choice(
+                        "week",
+                        &ctx.say("time.weekStart"),
+                        &pick(words(ctx, &WEEK_DAYS), settings.week_start),
+                    ),
+                    rows::choice("zone", &ctx.say("time.zone"), &zone),
+                    note(&ctx.say_with("time.now", &[("time", &rows::date_time(timing::now_seconds()))])),
+                    hint(&ctx.say("time.where")),
+                ],
+            ),
         ]);
     });
 }
@@ -155,7 +194,8 @@ fn times_changed(ctx: &Ctx) {
 fn choose_zone(ctx: &Ctx, app: &App) {
     let ctx = ctx.clone();
     tray::choose(app, &zone_options(&ctx), move |_, chosen| {
-        let zone = chosen.checked_sub(1).and_then(|position| timing::zones().get(position).copied()).unwrap_or_default();
+        let zone =
+            chosen.checked_sub(1).and_then(|position| timing::zones().get(position).copied()).unwrap_or_default();
         timing::set_zone(zone);
         preferences::change(|preferences| preferences.time_zone = zone.to_string());
         times_changed(&ctx);
@@ -178,20 +218,45 @@ fn pick_language(ctx: &Ctx, app: &App, value: i32) {
 
 pub fn application(ctx: &Ctx) {
     let chosen = preferences::get();
-    let mut first = vec![switch("notifications", &ctx.say("settings.notifications"), &ctx.say("settings.notificationsHint"), chosen.notifications)];
+    let mut first = vec![switch(
+        "notifications",
+        &ctx.say("settings.notifications"),
+        &ctx.say("settings.notificationsHint"),
+        chosen.notifications,
+    )];
     if chosen.notifications && crate::notifications::refused_by_the_system() {
         first.push(note(&ctx.say("settings.notificationsRefused")));
         first.push(ghost("system-notifications", &ctx.say("settings.notificationsOpen"), true));
     }
-    first.push(switch("autostart", &ctx.say("settings.autostart"), &ctx.say("settings.autostartHint"), startup::enabled()));
+    first.push(switch(
+        "autostart",
+        &ctx.say("settings.autostart"),
+        &ctx.say("settings.autostartHint"),
+        startup::enabled(),
+    ));
     ctx.show(vec![
         plain(first),
-        section("", &ctx.say("cache.title"), "", vec![switch("mail-on-disk", &ctx.say("cache.keep"), &ctx.say("cache.about"), chosen.mail_on_disk)]),
-        section("", &ctx.say("privacy.screenTitle"), "", vec![
-            switch("hide-private", &ctx.say("privacy.hide"), &ctx.say("privacy.hideHint"), chosen.hide_private),
-            switch("gravatar", &ctx.say("privacy.gravatar"), &ctx.say("privacy.gravatarHint"), chosen.gravatar),
-        ]),
-        section("", &ctx.say("tour.title"), "", vec![note(&ctx.say("tour.about")), ghost("tour", &ctx.say("tour.again"), true)]),
+        section(
+            "",
+            &ctx.say("cache.title"),
+            "",
+            vec![switch("mail-on-disk", &ctx.say("cache.keep"), &ctx.say("cache.about"), chosen.mail_on_disk)],
+        ),
+        section(
+            "",
+            &ctx.say("privacy.screenTitle"),
+            "",
+            vec![
+                switch("hide-private", &ctx.say("privacy.hide"), &ctx.say("privacy.hideHint"), chosen.hide_private),
+                switch("gravatar", &ctx.say("privacy.gravatar"), &ctx.say("privacy.gravatarHint"), chosen.gravatar),
+            ],
+        ),
+        section(
+            "",
+            &ctx.say("tour.title"),
+            "",
+            vec![note(&ctx.say("tour.about")), ghost("tour", &ctx.say("tour.again"), true)],
+        ),
     ]);
 }
 
@@ -201,7 +266,10 @@ pub fn connection(ctx: &Ctx) {
     let service = ctx.service.clone();
     ctx.load(async move { Ok(service.latency().await) }, |ctx, latency: Latency| {
         let shown = |value: Option<u32>| {
-            value.map_or_else(|| ctx.say("connection.noAnswer"), |value| ctx.say_with("connection.milliseconds", &[("value", &value.to_string())]))
+            value.map_or_else(
+                || ctx.say("connection.noAnswer"),
+                |value| ctx.say_with("connection.milliseconds", &[("value", &value.to_string())]),
+            )
         };
         draw_connection(ctx, &shown(latency.proton), &shown(latency.quad9), true);
     });
@@ -225,7 +293,10 @@ fn draw_connection(ctx: &Ctx, proton: &str, quad9: &str, ready: bool) {
         lines.push(rows::fact(&ctx.say("connection.updated"), &app.get_updated()));
     }
     lines.push(rows::button("measure", &ctx.say("connection.measure"), ready));
-    ctx.show(vec![plain(lines), section("tor", &ctx.say("connection.torTitle"), "", super::tor_page::summary(ctx, &app))]);
+    ctx.show(vec![
+        plain(lines),
+        section("tor", &ctx.say("connection.torTitle"), "", super::tor_page::summary(ctx, &app)),
+    ]);
 }
 
 fn journal_rows(ctx: &Ctx) -> Vec<crate::SettingsRow> {
@@ -279,7 +350,8 @@ pub fn keyboard(ctx: &Ctx) {
         let mut lines = vec![switch("shortcuts", &ctx.say("settings.shortcuts"), "", settings.shortcuts)];
         if settings.shortcuts {
             let command = if cfg!(target_os = "macos") { "⌘" } else { "Ctrl" };
-            let (chords, plain_keys): (Vec<_>, Vec<_>) = palette::shortcut_rows(&app).into_iter().partition(|(chord, ..)| *chord);
+            let (chords, plain_keys): (Vec<_>, Vec<_>) =
+                palette::shortcut_rows(&app).into_iter().partition(|(chord, ..)| *chord);
             lines.extend(plain_keys.iter().map(|(_, label, shortcut)| keys(label, shortcut)));
             lines.push(keys(&ctx.say("shortcut.sendMail"), &format!("{command} Enter")));
             lines.push(keys(&ctx.say("shortcut.saveDraft"), &format!("{command} S")));
@@ -293,7 +365,9 @@ pub fn keyboard(ctx: &Ctx) {
 pub fn heard(ctx: &Ctx, tab: &str, id: &str, value: i32) {
     let Some(app) = ctx.app.upgrade() else { return };
     match id {
-        "theme" | "palette" | "zoom" | "density" | "mail-text" | "layout" | "close-to-tray" | "menu-bar-icon" => apply_look(ctx, &app, id, value),
+        "theme" | "palette" | "zoom" | "density" | "mail-text" | "layout" | "close-to-tray" | "menu-bar-icon" => {
+            apply_look(ctx, &app, id, value);
+        }
         "language" => pick_language(ctx, &app, value),
         "clock" => change_time(ctx, &app, TimeSetting::TimeFormat, &words(ctx, &CLOCKS)),
         "date" => change_time(ctx, &app, TimeSetting::DateFormat, &date_options(ctx)),
@@ -313,7 +387,14 @@ pub fn heard(ctx: &Ctx, tab: &str, id: &str, value: i32) {
         "gravatar" => {
             let on = value == 1;
             let say = |key: &str| ctx.say(key);
-            if on && !crate::actions::confirmed(&say("privacy.gravatarTitle"), &say("privacy.gravatarText"), &say("privacy.gravatarYes"), &say("common.cancel")) {
+            if on
+                && !crate::actions::confirmed(
+                    &say("privacy.gravatarTitle"),
+                    &say("privacy.gravatarText"),
+                    &say("privacy.gravatarYes"),
+                    &say("common.cancel"),
+                )
+            {
                 application(ctx);
                 return;
             }

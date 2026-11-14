@@ -6,8 +6,8 @@
 use super::{Error, Form, Part, Result, Service, json, on_worker};
 use crate::import::pgp_mime;
 use rand::RngCore;
-use std::fmt::Write as _;
 use serde::Deserialize;
+use std::fmt::Write as _;
 
 /// As many as Proton takes in one request (`maxImportCount`).
 const AT_ONCE: usize = 10;
@@ -87,7 +87,9 @@ impl Service {
                 let outcome = reply.responses.iter().find(|named| named.name == index.to_string());
                 match outcome {
                     Some(named) if named.response.code == 1000 => ids.push(named.response.message_id.clone()),
-                    Some(named) => return Err(Error::other(format!("import refused with code {}", named.response.code))),
+                    Some(named) => {
+                        return Err(Error::other(format!("import refused with code {}", named.response.code)));
+                    }
                     None => return Err(Error::other("import gave no answer for a message")),
                 }
             }

@@ -1,7 +1,7 @@
 //! What the mailbox screen can ask for. Each action changes `View`, tells the page at once, and then
 //! talks to Proton: if that fails, the server is the truth and the list is read again.
 
-use super::{Error, ListOptions, MessageChanges, MessageMeta, now_seconds, Ordering, Result, Service, Value};
+use super::{Error, ListOptions, MessageChanges, MessageMeta, Ordering, Result, Service, Value, now_seconds};
 use crate::{
     search,
     timing::{self, SnoozeChoice},
@@ -157,9 +157,7 @@ impl Service {
     pub async fn view_open(&self, folder: &str) {
         // Asked of the disk at most once a folder: after that memory holds it.
         let known = self.view.lock().has_shelf(folder);
-        if !known
-            && let Some(list) = self.stored_list(folder).await
-        {
+        if !known && let Some(list) = self.stored_list(folder).await {
             self.view.lock().stock(folder, list);
         }
         let mark = self.view.lock().open(folder);
@@ -257,7 +255,9 @@ impl Service {
         self.open_ahead(ahead);
         let unread = id.as_deref().is_some_and(|id| self.view.lock().row(id).is_some_and(|row| row.unread));
         match id.filter(|_| unread) {
-            Some(id) => self.view_mark(Some(vec![id]), MessageChanges { unread: Some(false), ..Default::default() }).await,
+            Some(id) => {
+                self.view_mark(Some(vec![id]), MessageChanges { unread: Some(false), ..Default::default() }).await
+            }
             None => Ok(()),
         }
     }

@@ -94,7 +94,8 @@ pub const fn can_share() -> bool {
 /// The height the page is drawn at, from what it measured, and whether that cuts it. Nonsense is one line.
 #[must_use]
 pub fn drawn_height(measured: &str) -> (f64, bool) {
-    let height = measured.trim().trim_matches('"').parse::<f64>().ok().filter(|height| height.is_finite() && *height >= 1.0);
+    let height =
+        measured.trim().trim_matches('"').parse::<f64>().ok().filter(|height| height.is_finite() && *height >= 1.0);
     height.map_or((1.0, false), |height| (height.min(TALLEST), height > TALLEST))
 }
 
@@ -181,7 +182,8 @@ pub fn kept_rows(rows: i32, pixels_wide: i32, points_wide: f64, points_high: f64
 #[cfg(any(target_os = "linux", test))]
 #[must_use]
 pub fn rgba_of_argb32(data: &[u8], width: i32, height: i32, stride: i32) -> Option<image::RgbaImage> {
-    let (width, height, stride) = (u32::try_from(width).ok()?, u32::try_from(height).ok()?, usize::try_from(stride).ok()?);
+    let (width, height, stride) =
+        (u32::try_from(width).ok()?, u32::try_from(height).ok()?, usize::try_from(stride).ok()?);
     let row_bytes = usize::try_from(width).ok()?.checked_mul(4)?;
     if width == 0 || height == 0 || stride < row_bytes {
         return None;
@@ -193,7 +195,11 @@ pub fn rgba_of_argb32(data: &[u8], width: i32, height: i32, stride: i32) -> Opti
         let (quads, _) = source.as_chunks::<4>();
         for (pixel, [blue, green, red, alpha]) in row.zip(quads) {
             let straight = |channel: u8| {
-                if *alpha == 0 { 0 } else { u8::try_from((u16::from(channel) * 255 + u16::from(*alpha) / 2) / u16::from(*alpha)).unwrap_or(255) }
+                if *alpha == 0 {
+                    0
+                } else {
+                    u8::try_from((u16::from(channel) * 255 + u16::from(*alpha) / 2) / u16::from(*alpha)).unwrap_or(255)
+                }
             };
             pixel.0 = [straight(*red), straight(*green), straight(*blue), *alpha];
         }
@@ -346,10 +352,8 @@ fn measure(purpose: Purpose) {
 fn sized(height: f64, cut: bool, purpose: Purpose) {
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
-            let _ = view.set_bounds(Rect {
-                position: out_of_sight().into(),
-                size: LogicalSize::new(WIDTH, height).into(),
-            });
+            let _ =
+                view.set_bounds(Rect { position: out_of_sight().into(), size: LogicalSize::new(WIDTH, height).into() });
         }
     });
     Timer::single_shot(SETTLES, move || {

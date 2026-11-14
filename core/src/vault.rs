@@ -73,14 +73,9 @@ pub fn derive_key(password: &str, salt: &[u8]) -> Result<VaultKey> {
 
 pub fn seal(key: &[u8; KEY_BYTES], salt: &[u8], plain: &[u8]) -> Result<Envelope> {
     let nonce: [u8; NONCE_BYTES] = rand::random();
-    let sealed = XChaCha20Poly1305::new(<&Key>::from(key))
-        .encrypt(&XNonce::from(nonce), plain)
-        .map_err(Error::crypto)?;
-    Ok(Envelope {
-        salt: STANDARD.encode(salt),
-        nonce: STANDARD.encode(nonce),
-        sealed: STANDARD.encode(sealed),
-    })
+    let sealed =
+        XChaCha20Poly1305::new(<&Key>::from(key)).encrypt(&XNonce::from(nonce), plain).map_err(Error::crypto)?;
+    Ok(Envelope { salt: STANDARD.encode(salt), nonce: STANDARD.encode(nonce), sealed: STANDARD.encode(sealed) })
 }
 
 /// A wrong key and a tampered envelope look the same, and neither reveals anything.

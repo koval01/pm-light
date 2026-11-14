@@ -111,8 +111,12 @@ mod system {
         // Safety: an `Imp` is only a pointer, and the runtime calls it with the types given below.
         let (open_urls, reopen) = unsafe {
             (
-                transmute::<unsafe extern "C-unwind" fn(*mut AnyObject, Sel, *mut AnyObject, *mut NSArray<NSURL>), Imp>(open_urls),
-                transmute::<unsafe extern "C-unwind" fn(*mut AnyObject, Sel, *mut AnyObject, Bool) -> Bool, Imp>(reopen),
+                transmute::<unsafe extern "C-unwind" fn(*mut AnyObject, Sel, *mut AnyObject, *mut NSArray<NSURL>), Imp>(
+                    open_urls,
+                ),
+                transmute::<unsafe extern "C-unwind" fn(*mut AnyObject, Sel, *mut AnyObject, Bool) -> Bool, Imp>(
+                    reopen,
+                ),
             )
         };
         add(class, sel!(application:openURLs:), open_urls, "v@:@@");

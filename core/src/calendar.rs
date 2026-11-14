@@ -46,7 +46,8 @@ impl Picking {
     /// Goes through the months without touching what is chosen.
     pub fn step_month(&mut self, delta: i32) {
         let months = Months::new(delta.unsigned_abs());
-        let moved = if delta < 0 { self.month.checked_sub_months(months) } else { self.month.checked_add_months(months) };
+        let moved =
+            if delta < 0 { self.month.checked_sub_months(months) } else { self.month.checked_add_months(months) };
         self.month = moved.unwrap_or(self.month);
     }
 

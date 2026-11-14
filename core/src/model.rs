@@ -4,7 +4,6 @@ use crate::{crypto::SignatureStatus, details::MessageDetails};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-
 mod protection;
 pub use protection::*;
 
@@ -257,8 +256,7 @@ impl MailProtection {
         for image in &mut self.images {
             image.threat = image.pixel || !image.tracker.is_empty();
         }
-        self.threats =
-            self.images.iter().filter(|image| image.threat).count() + self.links.len() + self.removed.len();
+        self.threats = self.images.iter().filter(|image| image.threat).count() + self.links.len() + self.removed.len();
     }
 }
 

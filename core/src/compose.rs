@@ -1,6 +1,7 @@
 //! Everything about a message being written, except the typing. The interface holds the state, and
 //! Rust fills it in, checks it and turns it into what Proton receives.
 
+use crate::pattern::Pattern;
 use crate::{
     error::{Error, Result},
     html::for_editor,
@@ -8,7 +9,6 @@ use crate::{
     text::{escape, plaintext_to_html},
 };
 use lol_html::{RewriteStrSettings, element, html_content::ContentType, rewrite_str};
-use crate::pattern::Pattern;
 use serde::{Deserialize, Serialize};
 use std::cell::Cell;
 
@@ -169,7 +169,8 @@ pub fn domain_of(address: &str) -> Option<String> {
 /// Proton's own prefixes, plus "Fwd:" so that other clients' forwards do not stack.
 fn prefixed(prefix: &str, subject: &str) -> String {
     let lower = subject.trim().to_lowercase();
-    let known = if prefix == "Fw" { lower.starts_with("fw:") || lower.starts_with("fwd:") } else { lower.starts_with("re:") };
+    let known =
+        if prefix == "Fw" { lower.starts_with("fw:") || lower.starts_with("fwd:") } else { lower.starts_with("re:") };
     if known { subject.to_string() } else { format!("{prefix}: {subject}") }
 }
 
@@ -210,10 +211,7 @@ fn forwarded(m: &Message, labels: &ComposeLabels) -> String {
 
 #[must_use]
 pub fn signature_for<'a>(own: &'a [OwnAddress], email: Option<&str>) -> &'a str {
-    own.iter()
-        .find(|a| Some(a.email.as_str()) == email)
-        .or_else(|| own.first())
-        .map_or("", |a| a.signature.as_str())
+    own.iter().find(|a| Some(a.email.as_str()) == email).or_else(|| own.first()).map_or("", |a| a.signature.as_str())
 }
 
 /// Under the address's own signature with a line between, as Proton's client writes it. The words
@@ -348,7 +346,13 @@ pub fn compose_prepared(to: &[String], subject: &str, body: &str) -> ComposeStat
     }
 }
 
-fn outgoing(state: &ComposeState, to: Vec<String>, cc: Vec<String>, bcc: Vec<String>, options: SendOptions) -> Outgoing {
+fn outgoing(
+    state: &ComposeState,
+    to: Vec<String>,
+    cc: Vec<String>,
+    bcc: Vec<String>,
+    options: SendOptions,
+) -> Outgoing {
     Outgoing {
         draft_id: state.draft_id.clone(),
         from: state.from.clone(),

@@ -24,7 +24,8 @@ fn the_tour_shows_every_mail_folder_letter_and_settings_page() {
 fn settings_pages_follow_one_another() {
     // Leaving a settings page for another keeps settings open: only the last one closes them.
     let all = steps(3);
-    let pages: Vec<usize> = all.iter().enumerate().filter(|(_, step)| matches!(step, Step::Settings(_))).map(|(at, _)| at).collect();
+    let pages: Vec<usize> =
+        all.iter().enumerate().filter(|(_, step)| matches!(step, Step::Settings(_))).map(|(at, _)| at).collect();
     let (Some(first), Some(last)) = (pages.first(), pages.last()) else { panic!("no settings pages") };
     assert_eq!(last - first + 1, pages.len());
 }
