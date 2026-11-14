@@ -52,9 +52,26 @@ impl RequestLog {
         Self { started: Instant::now(), asked: Mutex::new(Vec::new()) }
     }
 
+    /// Records a request. One asked again within `REPEAT_WITHIN` says so in the journal at once, so that what the app
+    /// did just then shows beside it.
     pub fn record(&self, method: &str, path: &str, refused: bool) {
-        let at = self.started.elapsed();
-        self.asked.lock().push(Asked { at, method: method.to_string(), path: path.to_string(), refused });
+        if let Some(gap) = self.note(self.started.elapsed(), method, path, refused) {
+            log::debug!("{method} {}: asked again after {} ms", clean_path(path), gap.as_millis());
+        }
+    }
+
+    /// How long ago the same request was asked, when that was within `REPEAT_WITHIN`.
+    fn note(&self, at: Duration, method: &str, path: &str, refused: bool) -> Option<Duration> {
+        let mut asked = self.asked.lock();
+        let gap = asked
+            .iter()
+            .rev()
+            .take_while(|earlier| at.saturating_sub(earlier.at) < REPEAT_WITHIN)
+            .find(|earlier| earlier.method == method && earlier.path == path)
+            .map(|earlier| at.saturating_sub(earlier.at));
+        asked.push(Asked { at, method: method.to_string(), path: path.to_string(), refused });
+        drop(asked);
+        gap
     }
 
     #[must_use]

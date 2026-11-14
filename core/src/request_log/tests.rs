@@ -52,3 +52,18 @@ fn a_log_records_what_it_is_told() {
     let summary = log.summary();
     assert_eq!((summary.total, summary.refused), (2, 1));
 }
+
+#[test]
+fn a_repeat_is_named_when_it_is_asked() {
+    let (log, ms) = (RequestLog::new(), Duration::from_millis);
+    let (one, other) =
+        ("/mail/v4/conversations/AbCdEfGhIjKlMnOpQrStUv==", "/mail/v4/conversations/ZyXwVuTsRqPoNmLkJiHgFe==");
+    assert_eq!(log.note(ms(0), "GET", one, false), None);
+    assert_eq!(log.note(ms(300), "GET", other, false), None, "another conversation is no repeat");
+    assert_eq!(log.note(ms(400), "PUT", one, false), None, "another method is no repeat");
+    assert_eq!(log.note(ms(700), "GET", one, false), Some(ms(700)));
+    assert_eq!(log.note(ms(900), "GET", one, false), Some(ms(200)), "the nearest earlier one counts");
+    assert_eq!(log.note(ms(1900), "GET", one, false), None, "a second later is no repeat");
+    // The summary counts what the journal was told.
+    assert_eq!(log.summary().repeats, [("GET /mail/v4/conversations/{id}".to_string(), 2)]);
+}
