@@ -60,9 +60,6 @@ jobs:
         env:
           LIVE_SESSION: ${{ secrets.LIVE_SESSION }}
           WAY: ${{ matrix.way }}
-          # An X11 error is reported when it happens, not some calls later: the journal's last line then names the
-          # step that caused it. GTK ends the program over one with no word of the app's own.
-          GDK_SYNCHRONIZE: "1"
         run: |
           # shellcheck disable=SC2016 # expanded by the inner shell, inside its own D-Bus session
           dbus-run-session -- bash -c '
