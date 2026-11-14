@@ -17,7 +17,6 @@ tor-proto = { version = "0.48", features = ["stream-ctrl"] }
 tor-netdir = { version = "0.48", features = ["geoip"] }
 tor-geoip = "0.48"
 tor-linkspec = "0.48"
-tor-dirmgr = "0.48"
 tor-rtcompat = { version = "0.48", features = ["tokio", "rustls"] }
 # Tor's directory is compressed with xz. Built in: a library from Homebrew is on no one else's machine, and a signed
 # program refuses to load one signed by someone else.
@@ -70,3 +69,8 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [lints]
 workspace = true
+
+# Named only to set features, which no `use` shows: liblzma's `static`, which builds xz in, and tracing's `log`, which
+# hands Tor's events to the journal. cargo-shear, which looks for uses in the code, cannot see why they are here.
+[package.metadata.cargo-shear]
+ignored = ["liblzma", "tracing"]

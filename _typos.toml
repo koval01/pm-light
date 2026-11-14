@@ -1,0 +1,26 @@
+# What `typos` (.github/workflows/quality.yml) reads, and words it takes for slips that are not.
+[files]
+# Translations are German and Russian; the components list, keys, test vectors and vendored crates are not ours to
+# spell; the test mail is in German on purpose.
+extend-exclude = ["app/lang/", "app/components/", "vendor/", "*.asc", "*.pem", "test_vectors.json", "app/examples/live_tidy/corpus.rs"]
+
+[default]
+# Base64 and base64url, as keys, their ids and signatures are written: letters, but no words.
+extend-ignore-re = ["[A-Za-z0-9+/_-]{40,}={0,2}"]
+
+[default.extend-words]
+# Slips on purpose, in tests: a verification code one letter off, and a misspelt search the app corrects.
+abd = "abd"
+fron = "fron"
+# PDF's FlateDecode compression.
+flate = "flate"
+# A WebP chunk, ALPH, kept when metadata is taken out.
+alph = "alph"
+# Part of a tracker's parameter names, oly_enc_id and oly_anon_id, which links lose.
+oly = "oly"
+# Automattic, which runs Gravatar.
+automattic = "automattic"
+
+[default.extend-identifiers]
+# "café" cut at its accent, in tests of text in other scripts.
+caf = "caf"
