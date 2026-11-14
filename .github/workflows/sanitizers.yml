@@ -1,9 +1,9 @@
-# Memory errors and undefined behaviour that tests alone would pass over. AddressSanitizer watches every read and
-# write of the core's tests, with LeakSanitizer after them, and of the app's tests on Linux and macOS, which aim at the
-# app's `unsafe` calls into the systems: hostile PDFs, pasteboards, process numbers that do not exist, zoom. Miri runs
-# the core's pure code, where no system call stands in its way. A build for them takes `--cfg checked_memory`, which
-# swaps mimalloc for the system's allocator, whose every block the sanitizer sees. They need a nightly compiler; the
-# app itself never does.
+# Memory errors, undefined behaviour and hostile input that ordinary tests would pass over. AddressSanitizer watches
+# every read and write of the core's tests, with LeakSanitizer after them, and of the app's tests on Linux and macOS,
+# which aim at the app's `unsafe` calls into the systems: hostile PDFs, pasteboards, process numbers that do not exist,
+# zoom. Miri runs the core's pure code, where no system call stands in its way, and the hostile mail runs sealed in a
+# container. A build for the sanitizer takes `--cfg checked_memory`, which swaps mimalloc for the system's allocator,
+# whose every block it sees. They need a nightly compiler; the app itself never does.
 name: Sanitizers
 
 on:
@@ -45,7 +45,8 @@ jobs:
         env:
           RUSTFLAGS: -Zsanitizer=address --cfg checked_memory
           RUSTDOCFLAGS: -Zsanitizer=address --cfg checked_memory
-          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1
+          # The one-definition check stops in SQLite's C, which arti builds in; everything else stays on.
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=0
         run: cargo +nightly test --locked -Zbuild-std -p proton-core --lib --target x86_64-unknown-linux-gnu
 
   app:
@@ -77,13 +78,27 @@ jobs:
           shared-key: sanitizer-app
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # Leaks are not asked about here: GTK's and AppKit's own would bury ours, and macOS has no leak checker.
+      # Leaks are not asked about here: GTK's and AppKit's own would bury ours, and macOS has no leak checker. On macOS
+      # nothing is stripped as dead: the linker took away code the sanitizer's initializers point at, in tor-hsclient.
       - name: Tests
         env:
-          RUSTFLAGS: -Zsanitizer=address --cfg checked_memory
-          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1
+          RUSTFLAGS: -Zsanitizer=address --cfg checked_memory ${{ runner.os == 'macOS' && '-Clink-dead-code' || '' }}
+          ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1:detect_odr_violation=0
           TARGET: ${{ matrix.target }}
         run: cargo +nightly test --locked -p proton-mail-light --bins --test zoom --target "$TARGET"
+
+  # The hostile mail, HTML, CSS and files, which never run on a machine of a person: built with network, then run
+  # in a container with none, a read-only file system, no capabilities and hard limits (scripts/attacks.sh).
+  attacks:
+    name: Hostile input in a sealed container
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Attacks
+        run: scripts/attacks.sh
 
   miri:
     name: Core's pure code under Miri
@@ -103,10 +118,12 @@ jobs:
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
       # Mail parsing, cleaning, search, seals and the rest that never leaves the process. Time and the system's
-      # randomness are let in, which some of them read.
+      # randomness are let in, which some of them read. Tree Borrows, the newer model of which references may do what:
+      # under the older Stacked Borrows, servo_arc, under lol_html's selectors, breaks a rule on a zero-sized retag
+      # (docs/SECURITY.md).
       - name: Tests
         env:
-          MIRIFLAGS: -Zmiri-disable-isolation
+          MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-tree-borrows
         run: |
           cargo +nightly miri test --locked -p proton-core --lib -- \
             html:: mime:: search:: seal:: text:: safety:: file_kind:: sieve:: mailto:: vcard:: eml:: calendar:: \

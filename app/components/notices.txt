@@ -883,7 +883,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-== ammonia 4.2.4, anstyle 1.0.14, crc32fast 1.5.3, ctor 0.10.1, derive_builder 0.20.2, derive_builder_core 0.20.2, derive_builder_core_fork_arti 0.11.2, derive_builder_fork_arti 0.11.2, derive_builder_macro 0.20.2, derive_builder_macro_fork_arti 0.11.2, dpi 0.1.2, dtor 0.8.1, fallible-iterator 0.3.0, fallible-streaming-iterator 0.1.9, foreign-types 0.5.0, foreign-types-macros 0.2.4, foreign-types-shared 0.3.1, hex 0.4.3, humantime 2.4.0, notify-rust 4.18.2, quick-error 2.0.1, serde_spanned 0.6.9, toml 0.8.2, toml_edit 0.19.15, toml_edit 0.20.2, winapi 0.3.9, winit 0.30.13
+== ammonia 4.2.5, anstyle 1.0.14, crc32fast 1.5.3, ctor 0.10.1, derive_builder 0.20.2, derive_builder_core 0.20.2, derive_builder_core_fork_arti 0.11.2, derive_builder_fork_arti 0.11.2, derive_builder_macro 0.20.2, derive_builder_macro_fork_arti 0.11.2, dpi 0.1.2, dtor 0.8.1, fallible-iterator 0.3.0, fallible-streaming-iterator 0.1.9, foreign-types 0.5.0, foreign-types-macros 0.2.4, foreign-types-shared 0.3.1, hex 0.4.3, humantime 2.4.0, notify-rust 4.18.2, quick-error 2.0.1, serde_spanned 0.6.9, toml 0.8.2, toml_edit 0.19.15, toml_edit 0.20.2, winapi 0.3.9, winit 0.30.13
 
 Apache License
                            Version 2.0, January 2004
@@ -1087,7 +1087,7 @@ Apache License
    See the License for the specific language governing permissions and
    limitations under the License.
 
-== ammonia 4.2.4
+== ammonia 4.2.5
 
 Copyright (c) 2015-2022 The ammonia Developers
 

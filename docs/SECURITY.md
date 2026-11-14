@@ -202,6 +202,10 @@ with no sanitizer in front of them.
 
 ## Known limits
 
+- **`servo_arc` under Stacked Borrows.** Miri (`.github/workflows/sanitizers.yml`) finds `servo_arc` 0.4.3, which
+  `lol_html`'s CSS selectors use when the mail is cleaned, writing through a reference made for zero bytes, which the
+  older Stacked Borrows model forbids and Miri itself calls experimental. The check runs under Tree Borrows, the newer
+  model. The code is not this app's, and has no newer version to take.
 - **Page scripts on Linux.** Elsewhere a page's JavaScript is off entirely, and the app's own calls run in a world of
   their own. WebKitGTK's switch for that stops the app's calls too, so on Linux only the scripts of the markup are
   turned off, right after the webview is made. Until then, and always, the page's policy (`default-src 'none'`)

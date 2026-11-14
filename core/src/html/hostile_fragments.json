@@ -52,4 +52,13 @@
 "'",
 "&lt;",
 "<!--",
-"-->"]
+"-->",
+"<math><mi><svg><style><img src=x onerror=alert(1)></style></svg></mi></math>",
+"<math><mi><svg><title><img src=x onerror=alert(1)></title></svg></mi></math>",
+"<math><mo><svg><xmp><img src=x onerror=alert(1)></xmp></svg></mo></math>",
+"<math><mtext><svg><noscript><img src=x onerror=alert(1)></noscript></svg></mtext></math>",
+"<math><ms><svg><textarea><img src=x onerror=alert(1)></textarea></svg></ms></math>",
+"<svg><foreignObject><math><mi><style><img src=x onerror=alert(1)></style></mi></math></foreignObject></svg>",
+"<svg><foreignObject><style><img src=x onerror=alert(1)></style></foreignObject></svg>",
+"<mi><svg><style><img src=x onerror=alert(1)></style></svg></mi>",
+"<mn><svg><iframe><img src=x onerror=alert(1)></iframe></svg></mn>"]
