@@ -19,7 +19,6 @@ use std::{
 };
 use wry::{
     Rect, WebView,
-    dpi::{LogicalPosition, LogicalSize},
     http::{Request, Response, StatusCode, header},
 };
 
@@ -141,12 +140,14 @@ fn answer(served: &Served, request: &Request<Vec<u8>>) -> Response<Cow<'static, 
 /// The toolkit's lengths grow with the zoom, and the system's do not.
 fn bounds(window: &PreviewWindow) -> Rect {
     let zoom = look::zoom();
-    Rect {
-        position: LogicalPosition::new(f64::from(window.get_page_x()) * zoom, f64::from(window.get_page_y()) * zoom)
-            .into(),
-        size: LogicalSize::new(f64::from(window.get_page_width()) * zoom, f64::from(window.get_page_height()) * zoom)
-            .into(),
-    }
+    let length = |value: f32| f64::from(value) * zoom;
+    crate::webviews::area(
+        "a preview",
+        length(window.get_page_x()),
+        length(window.get_page_y()),
+        length(window.get_page_width()),
+        length(window.get_page_height()),
+    )
 }
 
 fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<WebView> {

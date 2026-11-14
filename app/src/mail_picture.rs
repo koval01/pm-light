@@ -12,10 +12,7 @@ use proton_core::{
 };
 use slint::{ComponentHandle, Timer};
 use std::{cell::RefCell, path::PathBuf, sync::Arc, time::Duration};
-use wry::{
-    PageLoadEvent, Rect, WebView,
-    dpi::{LogicalPosition, LogicalSize},
-};
+use wry::{PageLoadEvent, Rect, WebView, dpi::LogicalPosition};
 
 pub mod check;
 #[cfg(target_os = "macos")]
@@ -218,6 +215,12 @@ fn out_of_sight() -> LogicalPosition<f64> {
     if system::DRAWS_HIDDEN { LogicalPosition::new(0.0, 0.0) } else { LogicalPosition::new(-(WIDTH + 64.0), 0.0) }
 }
 
+/// The page's place, `height` tall, where no one sees it.
+fn area(height: f64) -> Rect {
+    let at = out_of_sight();
+    crate::webviews::area("the mail picture", at.x, at.y, WIDTH, height)
+}
+
 fn go_away() {
     VIEW.with_borrow_mut(|view| drop(view.take()));
 }
@@ -299,7 +302,7 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
             })
             .with_html(print_view::page())
             .with_incognito(true)
-            .with_bounds(Rect { position: out_of_sight().into(), size: LogicalSize::new(WIDTH, 1.0).into() })
+            .with_bounds(area(1.0))
             .with_visible(!system::DRAWS_HIDDEN)
             .build_as_child(&app.window().window_handle())
     });
@@ -352,8 +355,7 @@ fn measure(purpose: Purpose) {
 fn sized(height: f64, cut: bool, purpose: Purpose) {
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
-            let _ =
-                view.set_bounds(Rect { position: out_of_sight().into(), size: LogicalSize::new(WIDTH, height).into() });
+            let _ = view.set_bounds(area(height));
         }
     });
     Timer::single_shot(SETTLES, move || {

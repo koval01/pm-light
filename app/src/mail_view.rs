@@ -8,10 +8,7 @@ use std::{
     cell::{Cell, RefCell},
     time::Duration,
 };
-use wry::{
-    PageLoadEvent, Rect, WebView, WebViewBuilder,
-    dpi::{LogicalPosition, LogicalSize},
-};
+use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder};
 
 /// Run by this app, never by the mail: a fixed-width newsletter shrinks to the pane as it would on
 /// a phone. Scripts in the mail itself stay off.
@@ -192,10 +189,9 @@ fn document(number: u64, html: &str) -> String {
 /// The toolkit's lengths grow with the zoom, and the system's do not.
 fn bounds(app: &App) -> Rect {
     let zoom = crate::look::zoom();
-    Rect {
-        position: LogicalPosition::new(f64::from(app.get_body_x()) * zoom, f64::from(app.get_body_y()) * zoom).into(),
-        size: LogicalSize::new(f64::from(app.get_body_width()) * zoom, f64::from(app.get_body_height()) * zoom).into(),
-    }
+    let length = |value: f32| f64::from(value) * zoom;
+    let (x, y) = (length(app.get_body_x()), length(app.get_body_y()));
+    crate::webviews::area("a mail", x, y, length(app.get_body_width()), length(app.get_body_height()))
 }
 
 /// Hostile mail may yet crash the engine's process. Loading it again would only crash it again, so

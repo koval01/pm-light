@@ -6,10 +6,7 @@ use crate::{App, Auth};
 use slint::ComponentHandle;
 use std::cell::RefCell;
 use url::Url;
-use wry::{
-    PageLoadEvent, ProxyConfig, ProxyEndpoint, Rect, WebView, WebViewBuilder,
-    dpi::{LogicalPosition, LogicalSize},
-};
+use wry::{PageLoadEvent, ProxyConfig, ProxyEndpoint, Rect, WebView, WebViewBuilder};
 
 const PAGE_HOST: &str = "verify.proton.me";
 const OUTCOME_SCHEME: &str = "proton-mail-light-verify";
@@ -94,10 +91,13 @@ thread_local! {
 
 fn bounds(app: &App) -> Rect {
     let auth = app.global::<Auth>();
-    Rect {
-        position: LogicalPosition::new(f64::from(auth.get_verify_x()), f64::from(auth.get_verify_y())).into(),
-        size: LogicalSize::new(f64::from(auth.get_verify_width()), f64::from(auth.get_verify_height())).into(),
-    }
+    crate::webviews::area(
+        "the verification page",
+        f64::from(auth.get_verify_x()),
+        f64::from(auth.get_verify_y()),
+        f64::from(auth.get_verify_width()),
+        f64::from(auth.get_verify_height()),
+    )
 }
 
 /// `report` gets the outcome on the window's thread, however the page ended.

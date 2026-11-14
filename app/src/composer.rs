@@ -19,11 +19,7 @@ use rand::RngCore;
 use rfd::FileDialog;
 use slint::{ComponentHandle, ModelRc, Timer, TimerMode, VecModel};
 use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc, time::Duration};
-use wry::{
-    DragDropEvent, Rect, WebView,
-    dpi::{LogicalPosition, LogicalSize},
-    http::Request,
-};
+use wry::{DragDropEvent, Rect, WebView, http::Request};
 
 const AUTOSAVE: Duration = Duration::from_millis(2500);
 const WIDTH: f32 = 720.0;
@@ -120,10 +116,13 @@ fn page(area: &str, dark: bool) -> String {
 }
 
 fn bounds(window: &ComposeWindow) -> Rect {
-    Rect {
-        position: LogicalPosition::new(f64::from(window.get_body_x()), f64::from(window.get_body_y())).into(),
-        size: LogicalSize::new(f64::from(window.get_body_width()), f64::from(window.get_body_height())).into(),
-    }
+    crate::webviews::area(
+        "the editor",
+        f64::from(window.get_body_x()),
+        f64::from(window.get_body_y()),
+        f64::from(window.get_body_width()),
+        f64::from(window.get_body_height()),
+    )
 }
 
 /// The editor's page, over a protocol: a reply quoting a mail with its pictures can pass the 2 MB

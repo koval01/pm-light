@@ -13,7 +13,8 @@
 use parking_lot::Mutex;
 use std::{borrow::Cow, cell::RefCell, path::PathBuf, sync::Arc};
 use wry::{
-    WebContext, WebViewBuilder,
+    Rect, WebContext, WebViewBuilder,
+    dpi::{LogicalPosition, LogicalSize},
     http::{Request, Response, StatusCode, header},
 };
 
@@ -80,6 +81,40 @@ pub fn scripts_settled(view: &wry::WebView) {
 
 #[cfg(not(target_os = "linux"))]
 pub const fn scripts_settled(_view: &wry::WebView) {}
+
+/// The most a webview spans each way, in logical pixels. X11 keeps a window's size in 16 bits, so a larger one
+/// would wrap, and twice this still fits at a scale of two.
+const LARGEST: f64 = 16_384.0;
+
+/// Webviews whose last place had no room, so that the journal says so once and not on every frame of a move.
+static SHRUNK: Mutex<Vec<&'static str>> = Mutex::new(Vec::new());
+
+/// Notes whether `what` has room now, and answers whether it has just lost it.
+fn newly_squeezed(what: &'static str, squeezed: bool) -> bool {
+    let mut shrunk = SHRUNK.lock();
+    let known = shrunk.contains(&what);
+    if squeezed && !known {
+        shrunk.push(what);
+    } else if !squeezed && known {
+        shrunk.retain(|other| *other != what);
+    }
+    drop(shrunk);
+    squeezed && !known
+}
+
+/// Where a webview sits, at least a pixel each way. X11 refuses a window with no width or height, and GTK ends
+/// the program over it, with a `BadValue` on `CreateWindow`: wry makes such a window for every webview, of the
+/// size it is given. A layout not yet measured, or a pane squeezed to nothing, gives just that. `what` is a fixed
+/// word for the journal.
+pub fn area(what: &'static str, x: f64, y: f64, width: f64, height: f64) -> Rect {
+    let room = |length: f64| if length.is_nan() { 1.0 } else { length.clamp(1.0, LARGEST) };
+    let (fitted_width, fitted_height) = (room(width), room(height));
+    let squeezed = width.is_nan() || height.is_nan() || width < 1.0 || height < 1.0;
+    if newly_squeezed(what, squeezed) {
+        log::debug!("the webview for {what} was given {width:.1} by {height:.1}, and takes a pixel at least");
+    }
+    Rect { position: LogicalPosition::new(x, y).into(), size: LogicalSize::new(fitted_width, fitted_height).into() }
+}
 
 /// For Proton's verification page.
 pub fn proton<T>(make: impl FnOnce(WebViewBuilder<'_>) -> T) -> T {

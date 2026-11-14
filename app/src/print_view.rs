@@ -6,10 +6,7 @@ use crate::{App, mail_view};
 use proton_core::print::PrintDocument;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{cell::RefCell, time::Duration};
-use wry::{
-    PageLoadEvent, Rect, WebView,
-    dpi::{LogicalPosition, LogicalSize},
-};
+use wry::{PageLoadEvent, WebView};
 
 const POLICY: &str = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:";
 /// As in the reader: a mail's `:host` lands on an inner element, and nothing of it reaches the marks.
@@ -132,10 +129,7 @@ pub fn print(app: &App, prepared: PrintDocument) {
             })
             .with_html(page())
             .with_incognito(true)
-            .with_bounds(Rect {
-                position: LogicalPosition::new(0.0, 0.0).into(),
-                size: LogicalSize::new(1.0, 1.0).into(),
-            })
+            .with_bounds(crate::webviews::area("printing", 0.0, 0.0, 1.0, 1.0))
             .with_visible(false)
             .build_as_child(&app.window().window_handle())
     });

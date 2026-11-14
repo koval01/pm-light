@@ -236,6 +236,10 @@ screen, and it never touches the real Keychain entries.
   them and hands its events on every 16 ms. wry needs its `x11` feature for a webview in the window, or refuses every
   one. WebKitGTK's switch for page scripts also stops the app's calls into the page: `webviews::PageScriptsOff`.
   A hidden WebKitGTK page is never laid out, so the mail picture's page is shown past the window's edge.
+- **A webview with no size on X11.** wry makes an X window of the size a webview is given, and X11 refuses one with no
+  width or height: GTK then ends the program, with a `BadValue` on `CreateWindow` and no panic to contain. A layout
+  not yet measured gives just that. Every webview takes its place from `webviews::area`, a pixel at least, which says
+  in the journal which one had no room; `app/tests/structure.rs` keeps every other place from building one.
 - **A build script runs on the building machine.** `cfg(windows)` in `build.rs` asks about that machine, not the one the
   program is for: read `CARGO_CFG_TARGET_OS`.
 - **WebView2 and `with_html`.** `NavigateToString` takes 2 MB at most. Pages that can grow (a mail, the editor) come from

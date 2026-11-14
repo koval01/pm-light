@@ -20,7 +20,7 @@ const STILL_LONG: &[(&str, usize)] = &[
     ("core/src/search.rs", 578),
     ("core/src/model.rs", 572),
     ("app/src/settings/mail_pages.rs", 560),
-    ("app/src/mail_view.rs", 529),
+    ("app/src/mail_view.rs", 525),
 ];
 
 /// The files where `unsafe` has been read and each block says why it is sound. The core has none, and forbids it.
@@ -144,4 +144,23 @@ fn unsafe_stays_where_it_was_read() {
 fn the_core_forbids_unsafe() {
     let core = fs::read_to_string(root().join("core/src/lib.rs")).expect("the core");
     assert!(core.contains("#![cfg_attr(not(test), forbid(unsafe_code))]"), "the core forbids unsafe code");
+}
+
+/// X11 refuses a window with no size, and GTK ends the program over it. `webviews::area` gives every webview a
+/// pixel at least, so a webview's place is made there and nowhere else.
+#[test]
+fn every_webview_takes_its_place_from_one_function() {
+    let mut elsewhere = Vec::new();
+    for (name, text) in sources().expect("the sources") {
+        if is_test_file(&name) || name == "app/src/webviews.rs" {
+            continue;
+        }
+        for (number, line) in text.lines().enumerate() {
+            // A `Rect` built in place, not a function that hands one back.
+            if line.contains("Rect {") && !line.contains("-> Rect {") {
+                elsewhere.push(format!("{name}:{}", number + 1));
+            }
+        }
+    }
+    assert!(elsewhere.is_empty(), "a webview's place is made outside webviews::area: {elsewhere:?}");
 }
