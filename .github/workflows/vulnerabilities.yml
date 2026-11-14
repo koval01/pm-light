@@ -1,0 +1,58 @@
+# Two more eyes on vulnerabilities, each another engine than the checks before them, both writing to the repository's
+# Security tab. OSV-Scanner reads every lockfile against OSV, which joins RustSec with GitHub's advisories and more:
+# cargo-deny knows RustSec alone, and some advisories reach GitHub first. Advisories that cannot be fixed here are
+# listed with their reasons in osv-scanner.toml, and a new one fails the run. Semgrep reads the code and the workflows
+# with its rules for Rust, for security audits, for secrets and for GitHub Actions, beside CodeQL's.
+name: Vulnerabilities
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # OSV every four hours, and Semgrep, whose rules change less often than advisories, once a day at the first.
+  schedule:
+    - cron: "17 4 * * *"
+    - cron: "17 0,8,12,16,20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vulnerabilities-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  osv:
+    name: Dependencies (OSV-Scanner)
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+
+  semgrep:
+    name: Code and workflows (Semgrep)
+    if: github.event_name != 'schedule' || github.event.schedule == '17 4 * * *'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    container:
+      image: semgrep/semgrep:1.183.0@sha256:2e45517a85e13a9cca14a2a00df6bb48affd66b8ebfae1b0991cd57578362fb0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The vendored crates are another project's code, and the components list is generated.
+      - name: Scan
+        run: |
+          semgrep scan --metrics=off --sarif --output semgrep.sarif \
+            --config p/rust --config p/security-audit --config p/secrets --config p/github-actions \
+            --exclude vendor --exclude app/components
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        if: ${{ !cancelled() }}
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep

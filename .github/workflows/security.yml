@@ -1,14 +1,16 @@
-# Checks that need no build, on cheap runners: the dependencies against RustSec and the licences and sources in
-# deny.toml, every commit for secrets, and the workflows themselves for the mistakes that let a stranger in. Weekly
-# too, since a new advisory needs no new code. Pull requests also get GitHub's dependency review.
+# Checks that need no build, on cheap runners: the dependencies against RustSec, the licences and sources in
+# deny.toml and what code that runs at build time may carry, every commit for secrets, and the workflows themselves for
+# the mistakes that let a stranger in. Every four hours too, since a new advisory needs no new code. Pull requests also
+# get GitHub's dependency review.
 name: Security
 
 on:
   push:
     branches: [main]
   pull_request:
+  # Every four hours: an advisory needs no new code, and a failed scheduled run reaches the owner by mail.
   schedule:
-    - cron: "41 5 * * *"
+    - cron: "41 */4 * * *"
   workflow_dispatch:
 
 permissions:

@@ -171,6 +171,24 @@ written into the code go through `pattern.rs`, which matches nothing rather than
 GitHub's CodeQL scans the Rust code and the workflows on every push and weekly. Each finding below has a test that
 fails on the old code.
 
+Beside them, on every push and on a timetable, all in CI:
+
+- **Advisories, every four hours.** `cargo deny` against RustSec, and OSV-Scanner against OSV, which joins RustSec
+  with GitHub's advisories and others; both read `Cargo.lock`, and a new advisory fails the run, which GitHub mails
+  to the owner. Advisories that cannot be fixed here are listed with their reasons in `deny.toml` and
+  `osv-scanner.toml`. Many advisory feeds are sold to companies only: what reaches these open ones is known here
+  within hours, and not before.
+- **Code that runs at build time.** A poisoned release strikes first in a build script or a procedural macro, before
+  anyone names it. Only the crates in `deny.toml` may have a build script, and every program and script such code
+  carries is pinned by its path and SHA-256, the Windows import libraries aside: one more, or one changed, stops the
+  build until someone has read it.
+- **Semgrep**, once a day and on every push, with its rules for Rust, security audits, secrets and GitHub Actions,
+  as a second engine beside CodeQL. Its findings go to the Security tab.
+- **Sanitizers and Miri** (`sanitizers.yml`): AddressSanitizer over the core's tests with LeakSanitizer, and over the
+  app's tests that strike its `unsafe` calls; Miri over the core's pure code; and `scripts/attacks.sh`, the hostile
+  input above, sealed in a container.
+- **Fuzzing** of what strangers send (`fuzz/`), a minute a target on every push and ten minutes daily.
+
 ## Findings of the audit
 
 All are fixed unless listed under [Known limits](#known-limits).
