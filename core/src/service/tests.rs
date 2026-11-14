@@ -1001,3 +1001,31 @@ fn a_gravatar_address_is_the_hash_of_the_address() {
         assert_eq!(super::images::gravatar_url(nothing), None, "{nothing:?}");
     }
 }
+
+/// A settings page shows the account and its storage, both read from the user: asked together, Proton is asked once.
+#[test]
+fn the_account_and_its_storage_asked_together_read_the_user_once() {
+    let server = serve(|path, _| {
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        Some(match path {
+            "/core/v4/users" => {
+                (200, r#"{"Code":1000,"User":{"Name":"n","UsedSpace":5,"MaxSpace":10,"Subscribed":0}}"#)
+            }
+            _ => (200, r#"{"Code":1000,"UserSettings":{}}"#),
+        })
+    });
+    let (_, store) = signed_in();
+    let service = Service::new(&server.base, store, Box::new(|_| {})).unwrap();
+    service.client.set_session(Some(Session {
+        uid: "uid".into(),
+        access_token: "access".into(),
+        refresh_token: "refresh-token".into(),
+        password_mode: 1,
+    }));
+    let (account, storage) = runtime().block_on(async { futures::join!(service.account(), service.storage()) });
+    assert!(account.is_ok(), "{:?}", account.err());
+    let storage = storage.unwrap();
+    assert_eq!((storage.used, storage.max), (5, 10));
+    let users = server.seen.lock().iter().filter(|path| *path == "/core/v4/users").count();
+    assert_eq!(users, 1, "the user was read twice: {:?}", server.seen.lock());
+}

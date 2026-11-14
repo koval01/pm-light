@@ -48,9 +48,9 @@ fn open(service: &Arc<Service>, app: &App) {
     log::info!("the account panel opened");
     let (service, weak) = (service.clone(), app.as_weak());
     tokio::spawn(async move {
-        let account = service.account().await;
-        let wording = service.clone();
-        let storage = service.storage().await.ok();
+        // Asked together, the user both read is fetched once.
+        let (account, storage) = futures::join!(service.account(), service.storage());
+        let (wording, storage) = (service.clone(), storage.ok());
         let _ = weak.upgrade_in_event_loop(move |app| {
             let Ok(account) = account else {
                 log::warn!("the account panel: the account did not load");

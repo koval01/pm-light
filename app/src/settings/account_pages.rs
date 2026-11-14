@@ -45,9 +45,10 @@ pub fn storage_text(ctx: &Ctx, storage: &Storage) -> String {
 
 pub fn overview(ctx: &Ctx) {
     let service = ctx.service.clone();
+    // Asked together, the user both read is fetched once (`client/together.rs`).
     let task = async move {
-        let account = service.account().await?;
-        Ok((account, service.storage().await.ok()))
+        let (account, storage) = futures::join!(service.account(), service.storage());
+        Ok((account?, storage.ok()))
     };
     ctx.load(task, |ctx, (account, storage): (Account, Option<Storage>)| {
         let plan = plan_text(ctx, &account);
@@ -81,8 +82,8 @@ fn plan_section(ctx: &Ctx, billing: &Billing, storage: Option<&Storage>) -> Sett
 pub fn subscription(ctx: &Ctx) {
     let service = ctx.service.clone();
     let task = async move {
-        let billing = service.billing().await?;
-        Ok((billing, service.storage().await.ok(), service.user_choices().await?))
+        let (billing, storage, choices) = futures::join!(service.billing(), service.storage(), service.user_choices());
+        Ok((billing?, storage.ok(), choices?))
     };
     ctx.load(task, |ctx, (billing, storage, choices): (Billing, Option<Storage>, UserChoices)| {
         let mut sections = vec![plan_section(ctx, &billing, storage.as_ref())];
