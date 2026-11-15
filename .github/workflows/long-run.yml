@@ -7,6 +7,9 @@
 #   only Proton, Quad9 and Gravatar when turned on, through Tor only Tor's relays, and no lookup on port 53 at all
 #   (scripts/connections.py).
 #
+# - beside it, WebKitGTK alone is shown a link it may not follow, and pressed on it by a real pointer, to see what it
+#   sends over the network (scripts/link-preconnect.py): a mail's links are no different.
+#
 # Nothing of the account changes: a check refuses every request but a read, and refuses what would wait on a person.
 # Started by hand, and once a week. The logs and the report hold numbers, owners and paths without ids only.
 name: Long run
@@ -32,6 +35,31 @@ env:
   MINUTES: ${{ inputs.minutes || '60' }}
 
 jobs:
+  link:
+    name: WebKitGTK and a link it may not follow
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: WebKitGTK, its introspection and a virtual screen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gir1.2-webkit2-4.1 python3-gi xvfb xdotool strace
+      - name: Hover, press and click
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 -nolisten tcp > /dev/null 2>&1 &
+          export DISPLAY=:99
+          sleep 1
+          for variant in hover press click click-self click-no-preconnect; do
+            # Every connection of WebKit's processes, with the name of the process making it, as in the long run.
+            strace -f -qq -Y -s 0 -e trace=connect -o "trace-$variant.txt" \
+              python3 -I scripts/link-preconnect.py "$variant" || echo "$variant: the script failed"
+            grep -E 'sin_port=htons' "trace-$variant.txt" | grep -v 'htons(53)' | sed -E 's/^[0-9]+//; s/\(.*//' \
+              | sort | uniq -c | sed "s/^/  $variant: connects by /" || true
+          done
+
   linux:
     name: Linux, ${{ matrix.way }}, every connection traced
     environment: live-account
@@ -80,14 +108,16 @@ jobs:
             # only pointers where addresses stand: strace runs as root, and the app as this user (-u). getsockname
             # names the ports the app holds itself, such as its Tor door, which its own clients reach. A single -q keeps
             # how each process ended, and a signal that ended one: the app can say nothing of a crash itself.
-            sudo -E strace -u "$USER" -f -q -s 0 -e trace=connect,sendto,sendmsg,getsockname \
+            # -tt and -Y put the time of day and the name of the process on each call, to be read beside the
+            # journal and the clicks.
+            sudo -E strace -u "$USER" -f -q -tt -Y -s 0 -e trace=connect,sendto,sendmsg,getsockname \
               -o target/debug/connections.trace \
               env HOME="$HOME" target/debug/proton-mail-light "--check-account=$note" "--soak-minutes=$MINUTES" \
               "--soak-seed=$seed" $tor > target/debug/account.log 2>&1 &
             app=$!
             for _ in $(seq 1 600); do [ -f "$note.txt" ] && break; sleep 1; done
             if [ -f "$note.txt" ] && ! grep -qx "failed" "$note.txt"; then
-              scripts/random-clicks.sh "$MINUTES" "$seed" &
+              scripts/random-clicks.sh "$MINUTES" "$seed" target/debug/clicks.log &
               for _ in $(seq 1 $(((MINUTES + 15) * 60))); do
                 [ -f "$note.done" ] && break
                 ps -p "$app" > /dev/null || { echo "::error::the app ended before the run did"; break; }
@@ -126,6 +156,7 @@ jobs:
             target/debug/account.soak
             target/debug/account.log
             target/debug/connections.trace
+            target/debug/clicks.log
 
   others:
     name: ${{ matrix.os }}, the app's own actions

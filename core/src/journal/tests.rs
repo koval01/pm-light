@@ -230,3 +230,12 @@ fn the_same_record_never_seals_the_same_way() {
     assert!(!first.is_empty());
     assert_ne!(first, second, "each record has a nonce of its own");
 }
+
+#[test]
+fn the_echo_tells_the_time_of_day_in_utc() {
+    assert_eq!(time_of_day(0), "00:00:00.000");
+    assert_eq!(time_of_day(1_794_681_924_007), "18:45:24.007");
+    assert_eq!(time_of_day(86_399_999), "23:59:59.999");
+    assert_eq!(time_of_day(86_400_000), "00:00:00.000", "a new day starts again");
+    assert_eq!(time_of_day(u64::MAX).len(), 12, "the far future still fits");
+}

@@ -20,6 +20,8 @@ alph = "alph"
 oly = "oly"
 # Automattic, which runs Gravatar.
 automattic = "automattic"
+# GObject introspection, as in Debian's gir1.2-webkit2-4.1.
+gir = "gir"
 
 [default.extend-identifiers]
 # "café" cut at its accent, in tests of text in other scripts.

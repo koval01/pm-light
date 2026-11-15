@@ -81,6 +81,14 @@ fn now_millis() -> u64 {
         .map_or(0, |elapsed| u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX))
 }
 
+/// The time of day in UTC, to the millisecond, as the echo shows it: a check's trace of the system's calls carries
+/// the same clock, and the two are read side by side.
+fn time_of_day(millis: u64) -> String {
+    let (seconds, rest) = (millis / 1000, millis % 1000);
+    let of_day = seconds % 86_400;
+    format!("{:02}:{:02}:{:02}.{rest:03}", of_day / 3600, of_day / 60 % 60, of_day % 60)
+}
+
 const fn hour_of(millis: u64) -> u64 {
     millis / 3_600_000
 }
@@ -140,7 +148,8 @@ impl Log for Logger {
         }
         let text = clip(&record.args().to_string());
         if cfg!(debug_assertions) || *ECHO {
-            let _ = writeln!(std::io::stderr().lock(), "{} {}: {text}", record.level(), record.target());
+            let at = time_of_day(now_millis());
+            let _ = writeln!(std::io::stderr().lock(), "{at} {} {}: {text}", record.level(), record.target());
         }
         let entry = Record {
             time: now_millis(),

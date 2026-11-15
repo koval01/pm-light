@@ -9,7 +9,7 @@ set -euo pipefail
 log=$1
 lines=${2:-60}
 [ -f "$log" ] || { echo "no log at $log"; exit 0; }
-grep -E "^(INFO|WARN|ERROR|DEBUG) " "$log" | cut -c1-200 | tail -n "$lines" || true
+grep -E "^([0-9:.]+ )?(INFO|WARN|ERROR|DEBUG) " "$log" | cut -c1-200 | tail -n "$lines" || true
 if grep -q "Proton answered 401" "$log"; then
     echo "::error::Proton refused the session handed to CI: it has expired, and a check may not renew it. Hand it over again with scripts/live-session.sh on the Mac where the app is signed in."
 fi
