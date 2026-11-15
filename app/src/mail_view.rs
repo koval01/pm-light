@@ -413,6 +413,11 @@ pub fn place(app: &App) {
     }
 }
 
+/// Whether a page is on screen now: made, meant to be seen, drawn whole and with nothing over it. For checks.
+pub fn on_screen() -> bool {
+    VIEW.with_borrow(Option::is_some) && SHOWN.get() && !WAITING.get() && COVERS.get() == 0
+}
+
 /// The webview sits above everything the toolkit draws, so a panel over the mail means hiding it.
 pub fn set_visible(visible: bool) {
     WAITING.set(false);

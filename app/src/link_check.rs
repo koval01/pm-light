@@ -31,12 +31,15 @@ pub fn page(port: u16) -> String {
     proton_core::html::protect(&raw).html
 }
 
-/// The middle of the mail's body, in the window's own pixels, as CI's pointer needs it.
-fn middle_of_body(app: &App) -> (u32, u32) {
+/// The mail's body on the window, in the window's own pixels: left, top, width and height.
+fn body(app: &App) -> [u32; 4] {
     let scale = app.window().scale_factor() * crate::numbers::scale(crate::look::zoom());
-    let middle = |start: f32, length: f32| crate::numbers::pixels((start + length / 2.0) * scale);
-    (middle(app.get_body_x(), app.get_body_width()), middle(app.get_body_y(), app.get_body_height()))
+    let pixels = |length: f32| crate::numbers::pixels(length * scale);
+    [pixels(app.get_body_x()), pixels(app.get_body_y()), pixels(app.get_body_width()), pixels(app.get_body_height())]
 }
+
+/// Room enough to press a link in the middle of.
+const ROOM: u32 = 40;
 
 thread_local! {
     static WAITING: Timer = Timer::default();
@@ -54,9 +57,17 @@ pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
     let then = std::cell::Cell::new(Some(then));
     Timer::single_shot(DRAWN, move || {
         let Some(app) = weak.upgrade() else { return };
-        let (x, y) = middle_of_body(&app);
-        let _ = std::fs::write(with_end(&note, ".link"), format!("{x} {y}\n"));
-        log::info!("the link check: the body's middle is at {x} by {y}, waiting for the press");
+        let [left, top, width, height] = body(&app);
+        let shown = crate::mail_view::on_screen();
+        log::info!("the link check: the body is {width} by {height} at {left}, {top}; the page on screen: {shown}");
+        if shown && width >= ROOM && height >= ROOM {
+            let (x, y) = (left + width / 2, top + height / 2);
+            let _ = std::fs::write(with_end(&note, ".link"), format!("{x} {y}\n"));
+            log::info!("the link check: waiting for the press at {x} by {y}");
+        } else {
+            let _ = std::fs::write(with_end(&note, ".link"), "nowhere\n");
+            log::warn!("the link check: nothing to press");
+        }
         let (started, weak, then) = (std::time::Instant::now(), app.as_weak(), std::cell::Cell::new(then.take()));
         WAITING.with(|waiting| {
             waiting.start(TimerMode::Repeated, LOOK, move || {
