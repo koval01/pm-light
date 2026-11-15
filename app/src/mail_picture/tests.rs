@@ -55,9 +55,15 @@ fn a_shared_file_names_nothing_of_the_mail() {
     assert_eq!(SHARED_NAME, "mail.png");
 }
 
+/// AppKit converts a pasteboard's types through caches of its own that are not safe across threads: the two
+/// pasteboard tests, run side by side, crashed it now and then. The app uses a pasteboard on the main thread only.
+#[cfg(target_os = "macos")]
+static PASTEBOARDS: parking_lot::Mutex<()> = parking_lot::Mutex::new(());
+
 #[cfg(target_os = "macos")]
 #[test]
 fn a_picture_on_a_pasteboard_reads_back_as_png_and_as_tiff() {
+    let _one_at_a_time = PASTEBOARDS.lock();
     let mut png = Vec::new();
     image::RgbaImage::from_pixel(3, 2, image::Rgba([10, 20, 30, 255]))
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
@@ -187,6 +193,7 @@ fn drawing_again_and_again_is_the_same_picture() {
 #[cfg(target_os = "macos")]
 #[test]
 fn a_pasteboard_takes_nothing_one_byte_and_much() {
+    let _one_at_a_time = PASTEBOARDS.lock();
     for size in [0_usize, 1, 3, 4096, 20 * 1024 * 1024] {
         let bytes: Vec<u8> = (0..size).map(|index| u8::try_from(index % 251).unwrap_or(0)).collect();
         let read = macos::put_and_read_back(&bytes).map(|(read, _)| read);
