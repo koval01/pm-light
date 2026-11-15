@@ -244,6 +244,12 @@ screen, and it never touches the real Keychain entries.
   in, which takes its children along the same way: fields go in the order they are written, and `main` lets every
   webview go before the main window. `app/tests/structure.rs` holds both. `GDK_SYNCHRONIZE=1` hides the race: check
   without it.
+- **A clicked link connects by itself.** WebKit connects to a clicked link's address before the app's navigation
+  handler has said no (`LinkPreconnect`, `HTMLAnchorElement::handleClick`); hovering and pressing do not. Every page of
+  the app goes to the door to nowhere (`webviews::page`, `nowhere.rs`), and on macOS the switch is off too. wry on
+  Linux shows the navigation handler no link that asks for a window of its own, and every link of a mail does:
+  the mail view hands those to the browser in its new-window handler. `scripts/link-preconnect.py` shows WebKitGTK's
+  part alone, and the long run presses a made-up link in the real app (`link_check.rs`).
 - **A webview with no size on X11.** wry makes an X window of the size a webview is given, and X11 refuses one with no
   width or height: GTK then ends the program, with a `BadValue` on `CreateWindow` and no panic to contain. A layout
   not yet measured gives just that. Every webview takes its place from `webviews::area`, a pixel at least, which says

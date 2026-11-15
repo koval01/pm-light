@@ -150,7 +150,10 @@ pub fn finish(png: &[u8], width: u32, height: u32) {
     note(path.clone(), &report(folders, rows, width, height));
     if let Some(app) = crate::actions::main_window() {
         match crate::soak::minutes() {
-            Some(minutes) => crate::soak::start(&app, path, minutes),
+            Some(minutes) => {
+                let note = path.clone();
+                crate::link_check::run(&app, path, move |app| crate::soak::start(app, note, minutes));
+            }
             None => crate::screen_tour::start(&app, path),
         }
     }

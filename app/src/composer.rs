@@ -3,7 +3,7 @@
 //! here can run in it, by the nonce in its policy, and all it can do is hand text back to Rust.
 
 use crate::{
-    ComposeWindow, FileRow, Say, actions, mail_view, modal, moment_picker,
+    ComposeWindow, FileRow, Say, actions, modal, moment_picker,
     recipients::{self, BCC, CC, People, TO},
     tray, view,
 };
@@ -795,7 +795,7 @@ fn open_page(service: &Arc<Service>, window: ComposeWindow, body: &str, begins_a
     PAGE_NUMBER.set(number);
     let address = SERVED.serve(number, body.to_string());
     let built = crate::webviews::page(|builder| {
-        mail_view::keep_to_drawing(builder)
+        crate::switches::keep_to_drawing(builder)
             // The page carries its own policy, with the nonce of its one script.
             .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, None))
             .with_url(&address)

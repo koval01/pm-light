@@ -13,7 +13,7 @@
 use parking_lot::Mutex;
 use std::{borrow::Cow, cell::RefCell, path::PathBuf, sync::Arc};
 use wry::{
-    Rect, WebContext, WebViewBuilder,
+    NewWindowResponse, ProxyConfig, ProxyEndpoint, Rect, WebContext, WebViewBuilder,
     dpi::{LogicalPosition, LogicalSize},
     http::{Request, Response, StatusCode, header},
 };
@@ -41,9 +41,36 @@ fn with_context<T>(
     })
 }
 
-/// For the app's own pages: mail, the editor, previews and printouts.
+/// For the app's own pages: mail, the editor, previews and printouts. None of them needs the network, so each is cut off
+/// from it: every connection it makes goes to the door to nowhere (`nowhere.rs`), and it opens no window. A page that
+/// hands its links to the browser says so after this, in `make`.
 pub fn page<T>(make: impl FnOnce(WebViewBuilder<'_>) -> T) -> T {
-    with_context(&PAGES, make)
+    with_context(&PAGES, |builder| make(cut_off(builder)))
+}
+
+fn cut_off(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
+    let builder = builder.with_new_window_req_handler(|_, _| NewWindowResponse::Deny);
+    let Some(door) = crate::nowhere::door().filter(|_| proxies_taken()) else { return builder };
+    let endpoint = ProxyEndpoint { host: door.ip().to_string(), port: door.port().to_string() };
+    builder.with_proxy_config(ProxyConfig::Socks5(endpoint))
+}
+
+/// WebKit on macOS takes a proxy from macOS 14 on. Before it, a mail's page has only its own switches against
+/// reaching out (`switches::keep_to_drawing`), and the journal says so once.
+#[cfg(target_os = "macos")]
+fn proxies_taken() -> bool {
+    use objc2_foundation::NSProcessInfo;
+    static SAID: std::sync::Once = std::sync::Once::new();
+    let taken = NSProcessInfo::processInfo().operatingSystemVersion().majorVersion >= 14;
+    if !taken {
+        SAID.call_once(|| log::info!("the app's pages go without the door to nowhere: macOS before 14 takes no proxy"));
+    }
+    taken
+}
+
+#[cfg(not(target_os = "macos"))]
+const fn proxies_taken() -> bool {
+    true
 }
 
 /// The page's own scripts off. Elsewhere that is all of JavaScript, and the app's calls into the page, which fit a mail

@@ -286,7 +286,7 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
     reached("making the page");
     let weak = app.as_weak();
     let built = crate::webviews::page(|builder| {
-        crate::mail_view::keep_to_drawing(builder)
+        crate::switches::keep_to_drawing(builder)
             .page_scripts_off()
             .with_navigation_handler(|url| print_view::own_page(&url))
             .with_on_page_load_handler(move |event, _| {

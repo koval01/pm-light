@@ -20,7 +20,6 @@ const STILL_LONG: &[(&str, usize)] = &[
     ("core/src/search.rs", 578),
     ("core/src/model.rs", 572),
     ("app/src/settings/mail_pages.rs", 560),
-    ("app/src/mail_view.rs", 525),
 ];
 
 /// The files where `unsafe` has been read and each block says why it is sound. The core has none, and forbids it.
@@ -37,6 +36,7 @@ const UNSAFE_READ: &[&str] = &[
     "app/src/print_view.rs",
     "app/src/protection.rs",
     "app/src/session.rs",
+    "app/src/switches.rs",
     "app/src/tray.rs",
 ];
 

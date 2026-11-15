@@ -50,6 +50,12 @@ What this client defends against, how, and what it does not. It records the find
   written to disk. The few lines that fit its height and scroll it are run by the program, not by the page. Canvas, WebGPU, the page cache and the GPU process are off too, which also leaves less
   of WebKit to attack. The switches for those are private, so each is checked for and a system without them only
   uses more memory: the policy above does not depend on them.
+- **The app's pages have no network.** A mail, the editor, previews and printouts get what they show over protocols of
+  the app's own. WebKit still connected by itself to a clicked link's address, before the app said no to going there
+  (`LinkPreconnect`), and that went around Tor and Quad9. Every connection of those pages now goes, as to a SOCKS
+  proxy, to the door to nowhere (`nowhere.rs`), which closes it unread, so no name is looked up and nothing leaves;
+  macOS takes such a proxy from version 14 on, and before it only `LinkPreconnect` off stands in the way. A link that
+  asks for a window of its own goes to the browser's way out, as any other, and no window opens.
 - **The account password in settings.** The way back into an account, the second factor and Sentinel ask for it. The
   person types it into a card on the page, it goes through SRP with `ServerProof` checked, and it is not kept: it is
   zeroed after the call and the field goes when the page is drawn again. The raised scope is dropped with
@@ -193,8 +199,10 @@ Beside them, on every push and on a timetable, all in CI:
   processes make is traced. Directly only Proton, Quad9 and, when turned on, Gravatar may be reached; through Tor only
   Tor's relays; and a lookup on port 53 is a leak either way. On the machine itself only the app's own Tor door may
   be reached, a loopback port the trace shows one of the app's sockets holding; any other local port is another
-  program. `connections.py --self-test` proves these rules on made-up traces in every check. A check changes nothing
-  of the account: the core refuses every request but a read.
+  program. `connections.py --self-test` proves these rules on made-up traces in every check. Before the random use, a
+  made-up mail that is one link is pressed by a real pointer on Linux, and nothing may reach the port it points at
+  (`link_check.rs`); beside it, WebKitGTK alone is shown the same press (`scripts/link-preconnect.py`). A check changes
+  nothing of the account: the core refuses every request but a read.
 
 ## Findings of the audit
 
@@ -202,6 +210,7 @@ All are fixed unless listed under [Known limits](#known-limits).
 
 | Severity | Finding                                                                                                | Fix                                                     |
 | -------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| High     | A clicked link in a mail made WebKit connect to its address before the app said no, around Tor and Quad9 (`LinkPreconnect`; found by the long run's trace on Linux) | The app's pages go to the door to nowhere; LinkPreconnect off on macOS; a link's window goes to the browser |
 | High     | Removing a CSS comment rebuilt `</style>` and let markup out of the sanitizer                          | Comments become a space; `<` is escaped in style blocks |
 | High     | Replying or forwarding put a mail's `<style>`, ids and classes into the app's own document             | `for_editor`, and containment on the editor             |
 | High     | A header name with a Kelvin sign, or a type with a multi-byte character at byte 6, panicked on slicing | Checked cuts; clippy denies string slicing              |

@@ -9,8 +9,10 @@ port. Nothing leaves the machine.
     python3 -I scripts/link-preconnect.py <variant>
 
 Variants: hover, press (held, let go elsewhere), click (target _blank), click-self (no target), click-no-preconnect
-(target _blank, WebKit's LinkPreconnect feature off). Needs a display (Xvfb), xdotool and WebKitGTK's introspection
-(gir1.2-webkit2-4.1, python3-gi). Prints one line: the variant, the navigations refused, the connections received.
+(target _blank, WebKit's LinkPreconnect feature off), click-door (target _blank, every connection sent as to a SOCKS
+proxy to a second counting port that closes it, as the app's door to nowhere does: app/src/nowhere.rs). Needs a display (Xvfb), xdotool and WebKitGTK's introspection
+(gir1.2-webkit2-4.1, python3-gi). Prints one line: the variant, the navigations refused, the connections received,
+and for click-door those the door received.
 """
 
 import socket
@@ -24,7 +26,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("WebKit2", "4.1")
 from gi.repository import GLib, Gtk, WebKit2  # noqa: E402
 
-VARIANTS = ("hover", "press", "click", "click-self", "click-no-preconnect")
+VARIANTS = ("hover", "press", "click", "click-self", "click-no-preconnect", "click-door")
 WIDTH, HEIGHT = 600, 400
 SETTLE_MS = 3000
 
@@ -59,12 +61,15 @@ def main():
     if variant not in VARIANTS:
         print(f"one of {', '.join(VARIANTS)}", file=sys.stderr)
         return 2
-    counter = Counter()
+    counter, door = Counter(), Counter()
     refused = []
     window = Gtk.Window()
     window.set_default_size(WIDTH, HEIGHT)
     window.move(0, 0)
     view = WebKit2.WebView()
+    if variant == "click-door":
+        proxy = WebKit2.NetworkProxySettings.new(f"socks5://127.0.0.1:{door.port}", None)
+        view.get_website_data_manager().set_network_proxy_settings(WebKit2.NetworkProxyMode.CUSTOM, proxy)
     settings = view.get_settings()
     turned_off = "no feature to turn off"
     if variant == "click-no-preconnect":
@@ -113,6 +118,7 @@ def main():
         print(
             f"{variant}: WebKitGTK {webkit_version()}, {turned_off}, "
             f"navigations refused {len(refused)}, connections to the link's port {counter.count}"
+            + (f", connections to the door {door.count}" if variant == "click-door" else "")
         )
         Gtk.main_quit()
         return False

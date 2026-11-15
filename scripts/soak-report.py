@@ -1,6 +1,7 @@
-"""Judges what the long run wrote (app/src/soak.rs): memory that keeps growing, a flood of requests, and the same
-request asked again within a second. Prints the figures and stops the run on what is clearly wrong; what is only
-worth a look becomes a warning on the run's page. Numbers and paths without ids only.
+"""Judges what the long run wrote (app/src/soak.rs): memory that keeps growing, a flood of requests, the same
+request asked again within a second, and connections of the app's pages stopped at the door to nowhere. Prints the
+figures and stops the run on what is clearly wrong; what is only worth a look becomes a warning on the run's page.
+Numbers and paths without ids only.
 
     python3 -I scripts/soak-report.py <file>.soak
 """
@@ -60,6 +61,10 @@ def main():
         problems.append(f"{repeats} requests asked again within a second")
     elif repeats:
         warnings.append(f"{repeats} requests asked again within a second")
+    # A page of the app reached for the network on its own, and the door to nowhere stopped it (app/src/nowhere.rs).
+    turned_away = int(values.get("turned away at the door to nowhere", ["0"])[0])
+    if turned_away:
+        warnings.append(f"{turned_away} connections of the app's pages were turned away at the door to nowhere")
     for warning in warnings:
         print(f"::warning::{warning}")
     for problem in problems:

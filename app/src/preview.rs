@@ -158,7 +158,7 @@ fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<crate::
     // Video and sound need the engine's media process, which mail has no use for.
     let moving = matches!(shown, Shown::Video(_) | Shown::Audio(_) | Shown::Pdf);
     let built = crate::webviews::page(|builder| {
-        let builder = if moving { builder } else { mail_view::keep_to_drawing(builder) };
+        let builder = if moving { builder } else { crate::switches::keep_to_drawing(builder) };
         builder
             .page_scripts_off()
             .with_background_color((panel.red(), panel.green(), panel.blue(), panel.alpha()))

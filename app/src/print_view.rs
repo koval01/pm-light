@@ -1,8 +1,8 @@
 //! Sends a prepared document to the system's print panel. It gets a webview of its own, out of sight,
 //! which goes as soon as the panel closes: a mail may be plain text, or several, with no page to print.
 
+use crate::App;
 use crate::webviews::PageScriptsOff as _;
-use crate::{App, mail_view};
 use proton_core::print::PrintDocument;
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{cell::RefCell, time::Duration};
@@ -114,7 +114,7 @@ pub fn print(app: &App, prepared: PrintDocument) {
     go_away();
     let weak = app.as_weak();
     let built = crate::webviews::page(|builder| {
-        mail_view::keep_to_drawing(builder)
+        crate::switches::keep_to_drawing(builder)
             .page_scripts_off()
             .with_navigation_handler(|url| own_page(&url))
             .with_on_page_load_handler(move |event, _| {

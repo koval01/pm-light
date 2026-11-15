@@ -307,8 +307,11 @@ fn report(soak: &Soak) -> String {
     let summary = soak.requests.summary();
     let _ = writeln!(
         text,
-        "requests={}\nrefused={}\nmost in a minute={}",
-        summary.total, summary.refused, summary.most_in_a_minute
+        "requests={}\nrefused={}\nmost in a minute={}\nturned away at the door to nowhere={}",
+        summary.total,
+        summary.refused,
+        summary.most_in_a_minute,
+        crate::nowhere::turned_away()
     );
     for (kind, count) in &summary.by_kind {
         let _ = writeln!(text, "asked {kind}={count}");

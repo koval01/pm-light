@@ -280,10 +280,16 @@ pub fn show(app: &App, html: &str) {
             return;
         }
         let built = crate::webviews::page(|builder| {
-            when_the_page_dies(keep_to_drawing(builder))
+            when_the_page_dies(crate::switches::keep_to_drawing(builder))
                 .page_scripts_off()
                 .with_background_color(behind_the_page(app))
                 .with_navigation_handler(|url| own_page(&url))
+                // Every link of a mail opens a window of its own (`target="_blank"`, core/src/html.rs), which wry on
+                // Linux never shows the navigation handler: the link goes the same way here, and no window opens.
+                .with_new_window_req_handler(|url, _| {
+                    own_page(&url);
+                    wry::NewWindowResponse::Deny
+                })
                 .with_on_page_load_handler(|event, _| {
                     if matches!(event, PageLoadEvent::Finished) {
                         let _ = slint::invoke_from_event_loop(fit_then_reveal);
@@ -310,84 +316,6 @@ pub fn show(app: &App, html: &str) {
             }
         }
     });
-}
-
-/// A mail is a page to draw once: no scripts, no canvas, no video, no history to go back through,
-/// and nothing kept on disk. WebKit reads these before the page exists, so they cannot be changed on
-/// a page already made. Drawing itself stays WebKit's own, on the GPU: the memory that saves is not
-/// worth a page that can come late. The switches are not public: each is asked about first, and
-/// without them a mail is still drawn.
-#[cfg(target_os = "macos")]
-pub fn keep_to_drawing(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
-    const NOT_NEEDED: [&str; 6] = [
-        "UseGPUProcessForCanvasRenderingEnabled",
-        "UseGPUProcessForMediaEnabled",
-        "UseGPUProcessForWebGLEnabled",
-        "UsesBackForwardCache",
-        "WebGPUEnabled",
-        "CacheAPIEnabled",
-    ];
-    with_features_off(builder, &NOT_NEEDED)
-}
-
-/// For Proton's verification page, which runs its own scripts. WebRTC can send UDP to any server past the proxy,
-/// and with it the real address Tor hides, so a peer connection cannot be made at all.
-#[cfg(target_os = "macos")]
-pub fn without_peer_connections(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
-    with_features_off(builder, &PEER_CONNECTIONS)
-}
-
-#[cfg(target_os = "macos")]
-const PEER_CONNECTIONS: [&str; 3] =
-    ["PeerConnectionEnabled", "WebRTCPlatformTCPSocketsEnabled", "WebRTCPlatformUDPSocketsEnabled"];
-
-/// WebKitGTK has WebRTC off unless asked; WebView2 gets it from its environment's arguments, in `verify.rs`.
-#[cfg(not(target_os = "macos"))]
-pub const fn without_peer_connections(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
-    builder
-}
-
-/// A configuration with nothing kept on disk and the named features of WebKit off. The switches are private: each
-/// is asked about first, and one that is missing is passed over.
-#[cfg(target_os = "macos")]
-fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBuilder<'a> {
-    use objc2::{
-        MainThreadMarker, msg_send,
-        rc::Retained,
-        runtime::{AnyClass, AnyObject, Bool},
-        sel,
-    };
-    use objc2_foundation::{NSArray, NSString};
-    use objc2_web_kit::{WKWebViewConfiguration, WKWebsiteDataStore};
-    use wry::WebViewBuilderExtMacos;
-
-    let Some(marker) = MainThreadMarker::new() else { return builder };
-    let Some(kind) = AnyClass::get(c"WKPreferences") else { return builder };
-    // Safety: each private selector is asked about before it is sent, and the rest is public.
-    unsafe {
-        let configuration = WKWebViewConfiguration::new(marker);
-        configuration.setWebsiteDataStore(&WKWebsiteDataStore::nonPersistentDataStore(marker));
-        let preferences = configuration.preferences();
-        let listed: Bool = msg_send![kind, respondsToSelector: sel!(_features)];
-        let settable: Bool = msg_send![&*preferences, respondsToSelector: sel!(_setEnabled:forFeature:)];
-        // Private calls may answer nothing in another version of WebKit: that is a feature left as it is, never a
-        // panic, which a result that cannot be nothing would be.
-        let features: Option<Retained<NSArray<AnyObject>>> =
-            if listed.as_bool() && settable.as_bool() { msg_send![kind, _features] } else { None };
-        for feature in features.iter().flat_map(|features| features.iter()) {
-            let key: Option<Retained<NSString>> = msg_send![&*feature, key];
-            if let Some(key) = key.filter(|key| off.contains(&key.to_string().as_str())) {
-                let _: () = msg_send![&*preferences, _setEnabled: false, forFeature: &*feature];
-                log::debug!("a WebKit feature turned off: {key}");
-            }
-        }
-        builder.with_webview_configuration(configuration)
-    }
-}
-
-#[cfg(not(target_os = "macos"))]
-pub const fn keep_to_drawing(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
-    builder
 }
 
 /// In drafts there are no reply buttons, so the page reaches the panel's lower right corner and would

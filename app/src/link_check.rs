@@ -1,0 +1,84 @@
+//! `--soak-link-port=<port>`: before the long run's own actions, a made-up mail that is one long link is shown in the
+//! real mail view, and CI presses it with a real pointer (`.github/workflows/long-run.yml`). The link points at a
+//! port on CI's machine that counts the connections it gets, and goes through `html::protect` as every mail's link
+//! does, so it asks for a window of its own. The press must reach the way to the browser (refused in a check, which
+//! the journal names), and nothing may reach the port: WebKit connected to a clicked link's address on its own before
+//! the app said no, and that went around Tor (`nowhere.rs`). The app writes where the mail's body is on its window to
+//! `<note>.link`, and goes on once CI writes `<note>.link-done`, or after two minutes.
+
+use crate::App;
+use slint::{ComponentHandle, Timer, TimerMode};
+use std::{fmt::Write as _, path::PathBuf, time::Duration};
+
+const PORT: &str = "--soak-link-port=";
+/// The made-up mail is drawn and fitted by then.
+const DRAWN: Duration = Duration::from_secs(3);
+const LOOK: Duration = Duration::from_millis(500);
+const LONGEST: Duration = Duration::from_secs(120);
+
+/// The port asked for, when this long run checks a link first.
+pub fn port_in(mut arguments: impl Iterator<Item = String>) -> Option<u16> {
+    arguments.find_map(|argument| argument.strip_prefix(PORT)?.parse().ok()).filter(|port| *port != 0)
+}
+
+/// A mail that is a link and nothing else, long enough to fill the body, cleaned as a mail from anyone would be.
+pub fn page(port: u16) -> String {
+    let mut words = String::new();
+    for _ in 0..400 {
+        let _ = write!(words, "a link to a port that counts ");
+    }
+    let raw = format!("<p><a href=\"http://127.0.0.1:{port}/link-check\">{words}</a></p>");
+    proton_core::html::protect(&raw).html
+}
+
+/// The middle of the mail's body, in the window's own pixels, as CI's pointer needs it.
+fn middle_of_body(app: &App) -> (u32, u32) {
+    let scale = app.window().scale_factor() * crate::numbers::scale(crate::look::zoom());
+    let middle = |start: f32, length: f32| crate::numbers::pixels((start + length / 2.0) * scale);
+    (middle(app.get_body_x(), app.get_body_width()), middle(app.get_body_y(), app.get_body_height()))
+}
+
+thread_local! {
+    static WAITING: Timer = Timer::default();
+}
+
+/// Shows the link, says where it is, and runs `then` once CI has pressed it, or when it waited long enough.
+pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
+    let Some(port) = port_in(std::env::args().skip(1)) else {
+        then(app);
+        return;
+    };
+    log::info!("the link check: a mail that is one link, shown");
+    crate::mail_view::show_finished(app, &page(port));
+    let (weak, done) = (app.as_weak(), with_end(&note, ".link-done"));
+    let then = std::cell::Cell::new(Some(then));
+    Timer::single_shot(DRAWN, move || {
+        let Some(app) = weak.upgrade() else { return };
+        let (x, y) = middle_of_body(&app);
+        let _ = std::fs::write(with_end(&note, ".link"), format!("{x} {y}\n"));
+        log::info!("the link check: the body's middle is at {x} by {y}, waiting for the press");
+        let (started, weak, then) = (std::time::Instant::now(), app.as_weak(), std::cell::Cell::new(then.take()));
+        WAITING.with(|waiting| {
+            waiting.start(TimerMode::Repeated, LOOK, move || {
+                let pressed = done.exists();
+                if !pressed && started.elapsed() < LONGEST {
+                    return;
+                }
+                log::info!("the link check: {}", if pressed { "pressed" } else { "no press came" });
+                WAITING.with(Timer::stop);
+                if let (Some(app), Some(then)) = (weak.upgrade(), then.take()) {
+                    then(&app);
+                }
+            });
+        });
+    });
+}
+
+fn with_end(note: &std::path::Path, end: &str) -> PathBuf {
+    let mut path = note.as_os_str().to_owned();
+    path.push(end);
+    PathBuf::from(path)
+}
+
+#[cfg(test)]
+mod tests;

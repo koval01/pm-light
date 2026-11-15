@@ -171,7 +171,7 @@ pub fn close() {
 fn through_tor(builder: WebViewBuilder<'_>, door: Option<std::net::SocketAddr>) -> WebViewBuilder<'_> {
     let Some(door) = door else { return builder };
     let endpoint = ProxyEndpoint { host: door.ip().to_string(), port: door.port().to_string() };
-    let builder = crate::mail_view::without_peer_connections(builder).with_proxy_config(ProxyConfig::Socks5(endpoint));
+    let builder = crate::switches::without_peer_connections(builder).with_proxy_config(ProxyConfig::Socks5(endpoint));
     windows_without_webrtc(builder, door)
 }
 
