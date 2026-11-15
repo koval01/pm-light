@@ -57,50 +57,76 @@ pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
     let then = std::cell::Cell::new(Some(then));
     Timer::single_shot(DRAWN, move || {
         let Some(app) = weak.upgrade() else { return };
-        let [left, top, width, height] = body(&app);
-        let shown = crate::mail_view::on_screen();
-        log::info!("the link check: the body is {width} by {height} at {left}, {top}; the page on screen: {shown}");
-        compare_and_tell(&app);
-        if shown && width >= ROOM && height >= ROOM {
-            let (x, y) = (left + width / 2, top + height / 2);
-            let _ = std::fs::write(with_end(&note, ".link"), format!("{x} {y}\n"));
-            log::info!("the link check: waiting for the press at {x} by {y}");
-        } else {
-            let _ = std::fs::write(with_end(&note, ".link"), "nowhere\n");
-            log::warn!("the link check: nothing to press");
-        }
-        let (started, weak, then) = (std::time::Instant::now(), app.as_weak(), std::cell::Cell::new(then.take()));
-        WAITING.with(|waiting| {
-            waiting.start(TimerMode::Repeated, LOOK, move || {
-                let pressed = done.exists();
-                if !pressed && started.elapsed() < LONGEST {
-                    return;
-                }
-                log::info!("the link check: {}", if pressed { "pressed" } else { "no press came" });
-                WAITING.with(Timer::stop);
-                if let (Some(app), Some(then)) = (weak.upgrade(), then.take()) {
-                    then(&app);
-                }
-            });
+        let then = then.take();
+        try_resizes(&app, 0, Box::new(move |app| ready_for_press(app, &note, done, then)));
+    });
+}
+
+/// Says where to press, and runs `then` once CI has pressed it, or when it waited long enough.
+fn ready_for_press(app: &App, note: &std::path::Path, done: PathBuf, then: Option<impl FnOnce(&App) + 'static>) {
+    let [left, top, width, height] = body(app);
+    let shown = crate::mail_view::on_screen();
+    log::info!("the link check: the body is {width} by {height} at {left}, {top}; the page on screen: {shown}");
+    if shown && width >= ROOM && height >= ROOM {
+        let (x, y) = (left + width / 2, top + height / 2);
+        let _ = std::fs::write(with_end(note, ".link"), format!("{x} {y}\n"));
+        log::info!("the link check: waiting for the press at {x} by {y}");
+    } else {
+        let _ = std::fs::write(with_end(note, ".link"), "nowhere\n");
+        log::warn!("the link check: nothing to press");
+    }
+    let (started, weak, then) = (std::time::Instant::now(), app.as_weak(), std::cell::Cell::new(then));
+    WAITING.with(|waiting| {
+        waiting.start(TimerMode::Repeated, LOOK, move || {
+            let pressed = done.exists();
+            if !pressed && started.elapsed() < LONGEST {
+                return;
+            }
+            log::info!("the link check: {}", if pressed { "pressed" } else { "no press came" });
+            WAITING.with(Timer::stop);
+            if let (Some(app), Some(then)) = (weak.upgrade(), then.take()) {
+                then(&app);
+            }
         });
     });
 }
 
-/// Says in the journal what size WebKit laid the page out at beside the size of its place, in logical pixels, and if
-/// they differ, gives GTK's window the size of the place and says the same again a second later.
-fn compare_and_tell(app: &App) {
+/// The place of the page, in logical pixels.
+fn place(app: &App) -> (i32, i32) {
     let zoom = crate::numbers::scale(crate::look::zoom());
     let logical = |length: f32| i32::try_from(crate::numbers::pixels(length * zoom)).unwrap_or(i32::MAX);
-    let place = (logical(app.get_body_width()), logical(app.get_body_height()));
-    let Some(Some(laid)) = crate::mail_view::with_page(crate::webviews::laid_out) else { return };
-    log::info!("the link check: the page is laid out {} by {}, its place {} by {}", laid.0, laid.1, place.0, place.1);
-    if laid == place {
+    (logical(app.get_body_width()), logical(app.get_body_height()))
+}
+
+/// Says in the journal GTK's sizes of the page's window and of the page beside its place.
+fn measure(app: &App, after: &str) -> bool {
+    let place = place(app);
+    let Some(Some([window, laid])) = crate::mail_view::with_page(crate::webviews::laid_out) else { return true };
+    log::info!(
+        "the link check, {after}: the window is {} by {}, the page laid out {} by {}, its place {} by {}",
+        window.0,
+        window.1,
+        laid.0,
+        laid.1,
+        place.0,
+        place.1
+    );
+    laid == place
+}
+
+/// Tries each way of giving GTK the size, a second apart, measuring after each, then goes on with `then`.
+fn try_resizes(app: &App, step: usize, then: Box<dyn FnOnce(&App)>) {
+    let fits = measure(app, crate::webviews::RESIZES.get(step.wrapping_sub(1)).map_or("as made", |(name, _)| *name));
+    let Some((_, resize)) = crate::webviews::RESIZES.get(step).filter(|_| !fits) else {
+        then(app);
         return;
-    }
-    crate::mail_view::with_page(|view| crate::webviews::tell_gtk_the_size(view, place.0, place.1));
+    };
+    let place = place(app);
+    crate::mail_view::with_page(|view| resize(view, place.0, place.1));
+    let weak = app.as_weak();
     Timer::single_shot(Duration::from_secs(1), move || {
-        if let Some(Some(again)) = crate::mail_view::with_page(crate::webviews::laid_out) {
-            log::info!("the link check: told GTK the size, the page is laid out {} by {}", again.0, again.1);
+        if let Some(app) = weak.upgrade() {
+            try_resizes(&app, step + 1, then);
         }
     });
 }

@@ -185,33 +185,52 @@ fn lift_x11_trap(what: &'static str) {
     }
 }
 
-/// The size WebKit laid the page out at, in logical pixels, where the system lets the app ask: on Linux, GTK's
-/// allocation of the page, which a check compares with the window wry gave it.
+/// GTK's sizes, in logical pixels, of the window wry puts a page in and of the page, where the system lets the app
+/// ask: on Linux. A check compares them with the place the page was given.
 #[cfg(target_os = "linux")]
-pub fn laid_out(view: &wry::WebView) -> Option<(i32, i32)> {
+pub fn laid_out(view: &wry::WebView) -> Option<[(i32, i32); 2]> {
     use gtk::prelude::WidgetExt as _;
     use wry::WebViewExtUnix as _;
     let page = view.webview();
-    Some((page.allocated_width(), page.allocated_height()))
+    let window = page.toplevel()?;
+    Some([(window.allocated_width(), window.allocated_height()), (page.allocated_width(), page.allocated_height())])
 }
 
 #[cfg(not(target_os = "linux"))]
-pub const fn laid_out(_view: &wry::WebView) -> Option<(i32, i32)> {
+pub const fn laid_out(_view: &wry::WebView) -> Option<[(i32, i32); 2]> {
     None
 }
 
-/// Gives GTK's own window, which wry puts the page in, the size its X11 window has, in GTK's own way.
+/// A way to give a page the size of its place, with a fixed word for the journal.
+pub type Resize = (&'static str, fn(&wry::WebView, i32, i32));
+
+/// Ways to give GTK the size of a page's place, each its own way, for a check to try one after another and measure.
 #[cfg(target_os = "linux")]
-pub fn tell_gtk_the_size(view: &wry::WebView, width: i32, height: i32) {
-    use gtk::prelude::{Cast as _, GtkWindowExt as _, WidgetExt as _};
-    use wry::WebViewExtUnix as _;
-    if let Some(window) = view.webview().toplevel().and_then(|top| top.downcast::<gtk::Window>().ok()) {
-        window.resize(width.max(1), height.max(1));
-    }
-}
+pub const RESIZES: [Resize; 3] = [
+    ("resizing GTK's window", |view, width, height| {
+        use gtk::prelude::{Cast as _, GtkWindowExt as _, WidgetExt as _};
+        use wry::WebViewExtUnix as _;
+        if let Some(window) = view.webview().toplevel().and_then(|top| top.downcast::<gtk::Window>().ok()) {
+            window.resize(width, height);
+        }
+    }),
+    ("allocating the page itself", |view, width, height| {
+        use gtk::prelude::WidgetExt as _;
+        use wry::WebViewExtUnix as _;
+        view.webview().size_allocate(&gtk::Allocation::new(0, 0, width, height));
+    }),
+    ("asking the window for the size", |view, width, height| {
+        use gtk::prelude::WidgetExt as _;
+        use wry::WebViewExtUnix as _;
+        if let Some(window) = view.webview().toplevel() {
+            window.set_size_request(width, height);
+            window.queue_resize();
+        }
+    }),
+];
 
 #[cfg(not(target_os = "linux"))]
-pub const fn tell_gtk_the_size(_view: &wry::WebView, _width: i32, _height: i32) {}
+pub const RESIZES: [Resize; 0] = [];
 
 /// Notes whether `what` has room now, and answers whether it has just lost it.
 fn newly_squeezed(what: &'static str, squeezed: bool) -> bool {
