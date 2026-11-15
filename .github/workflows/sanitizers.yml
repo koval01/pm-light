@@ -17,9 +17,10 @@ on:
 permissions:
   contents: read
 
+# One run per branch: Miri takes an hour and more, and runs of pushes that came after one another held every runner.
 concurrency:
-  group: sanitizers-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: sanitizers-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
