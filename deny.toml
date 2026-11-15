@@ -220,15 +220,15 @@ allow = [
 [[bans.build.bypass]]
 crate = "webview2-com-sys"
 allow = [
-    { path = "arm64/WebView2Loader.dll", checksum = "df5816669f5123595c475d97929240d7d0e04f0bdc7dbe18af1dda42348b73a6" },
+    { path = "arm64/WebView2Loader.dll", checksum = "a0de1844933a10c898f833771a85f0ab9a0e3c745d4715f63d2d9730f9416025" },
     { path = "arm64/WebView2Loader.dll.lib", checksum = "d70271daa44507865ca0696cd1c1ede5e58e694eec74cb2d06e17dbbe205e9a2" },
-    { path = "arm64/WebView2LoaderStatic.lib", checksum = "506ffde430bee7f91f2ce1a078effb5289b7cec3b0c7283647f0842def524ab4" },
-    { path = "x64/WebView2Loader.dll", checksum = "8427b1fc58ec707813e5c0a51eb5d69397bb333250a7b891be4d3b123f1e0f1c" },
+    { path = "arm64/WebView2LoaderStatic.lib", checksum = "4a1ca4b518337c508aa0d778b220c6e59558fce21f4fd0d79a6ea944dd9d5208" },
+    { path = "x64/WebView2Loader.dll", checksum = "86545b66cdb0603bc26b626fb9ad610cb6e71f28d468f5ea66df23b03dda96d5" },
     { path = "x64/WebView2Loader.dll.lib", checksum = "bfc8ccaaa056be95243a5b66a827e5849d2bb39676fca4dcc2053796d8e15c6d" },
-    { path = "x64/WebView2LoaderStatic.lib", checksum = "0659b741bde6348d4c4a6ec4ceb9af50e3d0048ed9cd3c8659bccbb61fde55ee" },
-    { path = "x86/WebView2Loader.dll", checksum = "44ab92c2246ebfb5f98aa5726626fb44beb61543f2ef1803338af9fd295e63f0" },
+    { path = "x64/WebView2LoaderStatic.lib", checksum = "89c6b872783b8f6c3cedbff618adb42082d455c615453ae10cfc753f1e8f25d8" },
+    { path = "x86/WebView2Loader.dll", checksum = "161dc6673084a31f64670ace8e61cb0e1b55af815b6c7c8217a0cdd8503454e2" },
     { path = "x86/WebView2Loader.dll.lib", checksum = "a3ec0ee539d58fe72391f2e89cb814f96fab721c6d8d30953d152ea95dffad49" },
-    { path = "x86/WebView2LoaderStatic.lib", checksum = "6649ce9ca24e7a5693ee54178f42e0378004ce537d82d15354e6c9adb467bc16" },
+    { path = "x86/WebView2LoaderStatic.lib", checksum = "0513f7e61304321f2d91e1851475be07e091042aa3640597e660608f72521e6c" },
 ]
 
 [[bans.build.bypass]]

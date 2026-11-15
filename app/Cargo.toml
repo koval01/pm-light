@@ -47,7 +47,7 @@ sys-locale = "0.3"
 tray-icon = "0.24"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 # `x11`: on Linux a webview inside the window needs it, and without it every webview is refused.
-wry = { version = "0.54", default-features = false, features = ["os-webview", "protocol", "drag-drop", "mac-proxy", "x11"] }
+wry = { version = "0.57", default-features = false, features = ["os-webview", "mac-proxy", "x11"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
@@ -65,14 +65,16 @@ xattr = "1"
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_DataExchange", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Memory", "Win32_System_Ole", "Win32_System_ErrorReporting", "Win32_System_ProcessStatus", "Win32_System_Registry", "Win32_System_SystemServices", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }
 # The same version wry uses: to read an HRESULT out of its errors for the journal, and to draw a mail as a picture.
-webview2-com = "0.38"
+webview2-com = "0.39"
 # The same version webview2-com uses, for the strings its calls take.
-windows-core = "0.61"
+windows-core = "0.62"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # The same versions wry uses, to draw a mail as a picture and put it on the clipboard.
 gtk = "0.18"
 webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }
+# The same version wry uses, for GDK's own trap of X11 errors while a webview goes (webviews.rs).
+gdkx11 = "0.18"
 
 [lints]
 workspace = true
