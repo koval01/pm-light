@@ -30,6 +30,8 @@ thread_local! {
     static VIEW: RefCell<Option<Held>> = const { RefCell::new(None) };
     /// The page goes on screen when it is done, so nobody watches it being drawn.
     static WAITING: Cell<bool> = const { Cell::new(false) };
+    /// WebKit is to be started ahead, once the mail's pane has room for it.
+    static WARM_LATER: Cell<bool> = const { Cell::new(false) };
     static PATIENCE: Timer = Timer::default();
     /// Numbers the pages, so that one that finishes late cannot be taken for the one awaited. The
     /// number travels as the page's title, which cleaned mail has no way to set.
@@ -401,6 +403,9 @@ pub fn zoom_to(zoom: f64) {
 
 /// Called on every frame of a move, and only a new width needs the page measured again.
 pub fn place(app: &App) {
+    if WARM_LATER.get() && has_room(app) {
+        warm_up(app);
+    }
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
             let _ = view.set_bounds(bounds(app));
@@ -445,14 +450,30 @@ pub fn destroy() {
     drop(VIEW.take());
 }
 
-/// Starts WebKit before it is needed, so that the first mail opens like any other.
+/// Starts WebKit before it is needed, so that the first mail opens like any other. Not before the mail's pane has
+/// room: with no mail open it has none, and a page made a pixel wide under Tor, where the mailbox comes late, stayed
+/// black on Linux once it grew. It is made as soon as the pane has room.
 pub fn warm_up(app: &App) {
-    if VIEW.with_borrow(Option::is_none) {
-        WAITING.set(true);
-        show(app, "");
-        WAITING.set(false);
+    if VIEW.with_borrow(Option::is_some) {
+        return;
     }
+    if !has_room(app) {
+        WARM_LATER.set(true);
+        log::debug!("the mail's page waits for room before it is made");
+        return;
+    }
+    WARM_LATER.set(false);
+    WAITING.set(true);
+    show(app, "");
+    WAITING.set(false);
 }
+
+/// Whether the mail's pane has room for a page, in the toolkit's lengths.
+fn has_room(app: &App) -> bool {
+    app.get_body_width() >= ROOM && app.get_body_height() >= ROOM
+}
+
+const ROOM: f32 = 32.0;
 
 #[cfg(test)]
 mod tests;
