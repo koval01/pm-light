@@ -1,7 +1,10 @@
 """Every connection the app and its webviews' processes made, from a trace by `strace -f`, and whom each belongs to.
 
 Directly, the app may reach Proton, Quad9 and, when it is turned on, Gravatar, and nothing else. Through Tor it may
-reach Tor's relays and nothing else: a connection to Proton or Quad9 then went around Tor. Any lookup on port 53 went
+reach Tor's relays and nothing else: a connection to Proton or Quad9 then went around Tor. Tor's relays are those
+Onionoo lists now, and the fallback directories arti carries built in (tor-dircommon's data/fallback_dirs.rs, given with
+--fallbacks), which it asks for the network's directory at the start: one may have left the network since arti's
+release, and still be the address and port it was built with. Any lookup on port 53 went
 around Quad9's DNS over HTTPS. The owner of an address comes from RIPEstat, and Tor's relays from Onionoo, both open.
 Prints a table by owner, and stops the run on anything not allowed.
 
@@ -9,7 +12,7 @@ On this machine the app may reach only itself: under Tor its clients and its web
 the loopback interface. A port is the app's own when the trace shows one of its sockets holding it (`getsockname`,
 which the app calls on the door it opens); any other local port is another program, and stops the run.
 
-    python3 -I scripts/connections.py <trace> --way direct|tor [--gravatar]
+    python3 -I scripts/connections.py <trace> --way direct|tor [--gravatar] [--fallbacks <fallback_dirs.rs>]
     python3 -I scripts/connections.py --self-test
 
 The self-test proves the rules on made-up traces, with no network, and runs before every real check.
@@ -77,6 +80,27 @@ def holder(address, asns):
     return asns[number]
 
 
+FALLBACK = re.compile(r'"\[?([0-9a-fA-F:.]+?)\]?:(\d+)"')
+
+
+def fallbacks_of_text(text):
+    found = set()
+    for host, port in FALLBACK.findall(text):
+        try:
+            found.add((ipaddress.ip_address(host), int(port)))
+        except ValueError:
+            continue
+    return found
+
+
+def fallbacks(path):
+    """The address and port of each fallback directory arti was built with."""
+    if not path:
+        return set()
+    with open(path, encoding="utf-8") as source:
+        return fallbacks_of_text(source.read())
+
+
 def relays():
     answer = fetch("https://onionoo.torproject.org/details?type=relay&fields=or_addresses,dir_address")
     known = set()
@@ -95,7 +119,7 @@ def owner_of(name):
     return None
 
 
-def judge(found, own, way, allowed, tor, name_of):
+def judge(found, own, way, allowed, tor, name_of, built_in=frozenset()):
     """A table of whom the connections reached, by owner and verdict, and what is not allowed."""
     table, problems = defaultdict(lambda: [0, set()]), []
     for address, ports in sorted(found.items(), key=lambda item: (item[0].version, item[0])):
@@ -108,11 +132,13 @@ def judge(found, own, way, allowed, tor, name_of):
             others = ports - own if address.is_loopback else ports
             if others - {53}:
                 problems.append(f"a connection to {address} on this machine, ports {sorted(others)}, not the app's own")
+        elif way == "tor" and address in tor:
+            name, verdict = "a Tor relay", "allowed"
+        elif way == "tor" and all((address, port) in built_in for port in ports):
+            name, verdict = "a fallback directory built into arti", "allowed"
         elif way == "tor":
-            name = "a Tor relay" if address in tor else name_of(address)
-            verdict = "allowed" if address in tor else "around Tor"
-            if address not in tor:
-                problems.append(f"{address} ({name}), not a Tor relay: it went around Tor")
+            name, verdict = name_of(address), "around Tor"
+            problems.append(f"{address} ({name}), not a Tor relay: it went around Tor")
         else:
             name = name_of(address)
             owner = owner_of(name)
@@ -147,7 +173,7 @@ def self_test():
         'inet_pton(AF_INET6, "::1", &sin6_addr), sin6_scope_id=0}, [128 => 28]) = 0'
     )
     resumed = '5169  <... getsockname resumed>{sa_family=AF_INET, sin_port=htons(39071), sin_addr=inet_addr("127.0.0.1")}, [128 => 16]) = 0'
-    relay, proton, google, gravatar = "95.216.10.20", "185.70.42.37", "142.250.0.1", "192.0.73.2"
+    relay, proton, google, gravatar, fallback = "95.216.10.20", "185.70.42.37", "142.250.0.1", "192.0.73.2", "91.39.70.41"
     owners = {proton: "AS62371 PROTON Proton AG", google: "AS15169 GOOGLE", gravatar: "AS2635 AUTOMATTIC"}
     cases = [
         ("the app's own door, held and reached", [held(39071), reached(39071)], "tor", False, "own"),
@@ -161,6 +187,8 @@ def self_test():
         ("a lookup to a server's port 53", [reached(53, proton, "sendto")], "direct", False, "allowed"),
         ("the home network", [reached(80, "192.168.1.1")], "direct", False, "local"),
         ("a Tor relay", [reached(9001, relay)], "tor", False, "allowed"),
+        ("a fallback directory built into arti", [reached(9001, fallback)], "tor", False, "allowed"),
+        ("a fallback directory's address on another port", [reached(443, fallback)], "tor", False, "around Tor"),
         ("Proton reached around Tor", [reached(443, proton)], "tor", False, "around Tor"),
         ("Proton reached directly", [reached(443, proton)], "direct", False, "allowed"),
         ("someone else reached directly", [reached(443, google)], "direct", False, "not allowed"),
@@ -173,15 +201,20 @@ def self_test():
         "a door held in a call resumed later",
         "the own door over IPv6",
         "a Tor relay",
+        "a fallback directory built into arti",
         "Proton reached directly",
         "Gravatar while it is on",
     }
     tor = {ipaddress.ip_address(relay)}
+    built_in = fallbacks_of_text('"91.39.70.41:9001",\n"[2600:3c06::2000:c9ff:fe82:3b43]:443"')
+    if (ipaddress.ip_address(fallback), 9001) not in built_in or len(built_in) != 2:
+        print(f"::error::self-test: the fallback list was misread: {sorted(built_in)}")
+        return 1
     failed = 0
     for title, lines, way, gravatar, verdict in cases:
         found, own = destinations(lines)
         allowed = {PROTON, QUAD9} | ({GRAVATAR} if gravatar else set())
-        table, problems = judge(found, own, way, allowed, tor, lambda address: owners.get(str(address), "nobody known"))
+        table, problems = judge(found, own, way, allowed, tor, lambda address: owners.get(str(address), "nobody"), built_in)
         verdicts = {given for _, given in table}
         if not found or bool(problems) == (title in passing) or verdicts != {verdict}:
             failed += 1
@@ -195,6 +228,7 @@ def main():
     parser.add_argument("trace", nargs="?")
     parser.add_argument("--way", choices=["direct", "tor"])
     parser.add_argument("--gravatar", action="store_true")
+    parser.add_argument("--fallbacks")
     parser.add_argument("--self-test", action="store_true")
     arguments = parser.parse_args()
     if arguments.self_test:
@@ -206,7 +240,10 @@ def main():
     allowed = {PROTON, QUAD9} | ({GRAVATAR} if arguments.gravatar else set())
     tor = relays() if arguments.way == "tor" else set()
     asns = {}
-    table, problems = judge(found, own, arguments.way, allowed, tor, lambda address: holder(address, asns))
+    built_in = fallbacks(arguments.fallbacks) if arguments.way == "tor" else set()
+    if arguments.way == "tor" and not built_in:
+        print("::warning::no fallback directories of arti given: one of them may read as a way around Tor")
+    table, problems = judge(found, own, arguments.way, allowed, tor, lambda address: holder(address, asns), built_in)
     print(f"{len(found)} addresses reached, the way {arguments.way}; the app's own ports here: {sorted(own)}")
     for (name, verdict), (count, ports) in sorted(table.items()):
         print(f"  {verdict:<12} {name}: {count} addresses, ports {sorted(ports)}")
