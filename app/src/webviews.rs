@@ -146,11 +146,12 @@ fn x11_display() -> Option<gdkx11::X11Display> {
 /// asked to answer everything before the trap comes off.
 #[cfg(target_os = "linux")]
 fn lift_x11_trap(what: &'static str) {
+    use gtk::prelude::Cast as _;
     let Some(display) = x11_display() else { return };
     while gtk::events_pending() {
         gtk::main_iteration_do(false);
     }
-    display.sync();
+    display.upcast_ref::<gtk::gdk::Display>().sync();
     let refused = display.error_trap_pop();
     if refused != 0 {
         log::info!("X11 refused a call while the webview for {what} went: error {refused}, after the window was gone");
