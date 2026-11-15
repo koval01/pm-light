@@ -125,7 +125,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [calendar, eml, keymap, mailto, mapping, mime, pattern, ranking, safety, search, seal, sieve, text, vcard]
+        # The seal is left out: not one of its sixteen tests, which sign and check signatures, ended within 85 minutes.
+        module: [calendar, eml, keymap, mailto, mapping, mime, pattern, ranking, safety, search, sieve, text, vcard]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -139,18 +140,19 @@ jobs:
           shared-key: miri
           cache-on-failure: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # The core's own logic that never leaves the process: mail parsing, search, seals, filters, addresses and the
+      # The core's own logic that never leaves the process: mail parsing, search, filters, addresses and the
       # rest. Time and the system's randomness are let in, which some of them read. Tree Borrows, the newer model of
       # which references may do what: under the older Stacked Borrows, servo_arc, under lol_html's selectors, breaks a
       # rule on a zero-sized retag (docs/SECURITY.md). Decoding real pictures (file_kind, image_metadata, scan) and
       # cleaning large HTML ran a runner out after forty minutes at Miri's pace, a thousand times slower than a build:
       # those run under AddressSanitizer above and in the fuzzers instead. So do the flood of ten thousand parts, half a
-      # second in a build and not done after fifty minutes under Miri, and the seal's decompression bomb, which fills
-      # memory up to its limit and brought the runner down. Every other test here takes under 0.03 s in a build.
+      # second in a build and not done after fifty minutes under Miri, and five thousand nested parts, written out again
+      # for each level and not done after an hour.
       - name: Tests
         env:
           MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-tree-borrows
           MODULE: ${{ matrix.module }}
         run: |
           cargo +nightly miri test --locked -p proton-core --lib -- "$MODULE::" \
-            --skip mime::tests::a_flood_of_parts_is_cut_off --skip seal::tests::a_decompression_bomb_stops_at_the_limit
+            --skip mime::tests::a_flood_of_parts_is_cut_off \
+            --skip mime::tests::nesting_past_the_limit_stops_instead_of_overflowing_the_stack
