@@ -117,18 +117,15 @@ jobs:
         run: scripts/attacks.sh
 
   miri:
-    name: Core's pure code under Miri, ${{ matrix.part }}
+    name: Core's pure code under Miri, ${{ matrix.module }}
     runs-on: ubuntu-24.04
+    # A job of its own for each module: two halves ran into a two-hour limit, still passing test after test, and a
+    # module that is slow under Miri now shows by its name.
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      # Two halves side by side: one ran a runner past ninety minutes.
       matrix:
-        include:
-          - part: reading mail
-            modules: "calendar:: eml:: keymap:: mailto:: mapping:: mime:: pattern::"
-          - part: searching and sealing
-            modules: "ranking:: safety:: search:: seal:: sieve:: text:: vcard::"
+        module: [calendar, eml, keymap, mailto, mapping, mime, pattern, ranking, safety, search, seal, sieve, text, vcard]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -153,8 +150,7 @@ jobs:
       - name: Tests
         env:
           MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-tree-borrows
-          MODULES: ${{ matrix.modules }}
+          MODULE: ${{ matrix.module }}
         run: |
-          read -ra modules <<< "$MODULES"
-          cargo +nightly miri test --locked -p proton-core --lib -- "${modules[@]}" \
+          cargo +nightly miri test --locked -p proton-core --lib -- "$MODULE::" \
             --skip mime::tests::a_flood_of_parts_is_cut_off --skip seal::tests::a_decompression_bomb_stops_at_the_limit
