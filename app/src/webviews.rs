@@ -89,19 +89,20 @@ const LARGEST: f64 = 16_384.0;
 /// Webviews whose last place had no room, so that the journal says so once and not on every frame of a move.
 static SHRUNK: Mutex<Vec<&'static str>> = Mutex::new(Vec::new());
 
-/// A webview the app keeps, which says in the journal when it goes. On Linux it takes its GTK widgets down first.
-/// wry destroys their X11 window before them, so the server takes theirs along, and GTK, destroying those again in its
-/// loop, gets a `BadWindow` on `DestroyWindow` and ends the program. Every webview kept is one of these
-/// (`app/tests/structure.rs`), so that none goes the other way.
+/// A webview the app keeps, which says in the journal when it goes. On Linux it goes inside GDK's own trap for X11
+/// errors: wry destroys its X11 window under GTK's widgets, and GTK, destroying theirs again in its loop, is refused
+/// with a `BadWindow` on `DestroyWindow`, which GDK otherwise ends the program over. A refusal is written down, not
+/// hidden. Every webview kept is one of these (`app/tests/structure.rs`).
 pub struct Held {
     view: wry::WebView,
-    what: &'static str,
+    /// Goes after `view`, since fields go in the order they are written: it lifts the trap once the view is gone.
+    gone: Gone,
 }
 
 impl Held {
     /// `what` is a fixed word for the journal.
     pub const fn new(what: &'static str, view: wry::WebView) -> Self {
-        Self { view, what }
+        Self { view, gone: Gone { what } }
     }
 }
 
@@ -115,21 +116,44 @@ impl std::ops::Deref for Held {
 
 impl Drop for Held {
     fn drop(&mut self) {
-        log::debug!("the webview for {} goes", self.what);
+        log::debug!("the webview for {} goes", self.gone.what);
         #[cfg(target_os = "linux")]
-        take_down_widgets(&self.view);
+        if let Some(display) = x11_display() {
+            display.error_trap_push();
+        }
     }
 }
 
-/// Closes the GTK window wry put the page in, and runs GTK's loop until it is gone, while its X11 parent still exists.
+struct Gone {
+    what: &'static str,
+}
+
+impl Drop for Gone {
+    fn drop(&mut self) {
+        #[cfg(target_os = "linux")]
+        lift_x11_trap(self.what);
+        log::debug!("the webview for {} is gone", self.what);
+    }
+}
+
 #[cfg(target_os = "linux")]
-fn take_down_widgets(view: &wry::WebView) {
-    use gtk::prelude::{Cast as _, GtkWindowExt as _, WidgetExt as _};
-    use wry::WebViewExtUnix as _;
-    let Some(window) = view.webview().toplevel().and_then(|top| top.downcast::<gtk::Window>().ok()) else { return };
-    window.close();
+fn x11_display() -> Option<gdkx11::X11Display> {
+    use gtk::prelude::Cast as _;
+    gtk::gdk::Display::default()?.downcast::<gdkx11::X11Display>().ok()
+}
+
+/// GTK's loop runs first, so that what GTK does about the webview going happens inside the trap, and the server is
+/// asked to answer everything before the trap comes off.
+#[cfg(target_os = "linux")]
+fn lift_x11_trap(what: &'static str) {
+    let Some(display) = x11_display() else { return };
     while gtk::events_pending() {
         gtk::main_iteration_do(false);
+    }
+    display.sync();
+    let refused = display.error_trap_pop();
+    if refused != 0 {
+        log::info!("X11 refused a call while the webview for {what} went: error {refused}, after the window was gone");
     }
 }
 
