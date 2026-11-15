@@ -108,6 +108,11 @@ mod system {
     /// program, which is the program itself from the Dock, and the terminal when started from one,
     /// so the name is checked too: a terminal may be responsible for much more.
     pub fn used() -> Option<u64> {
+        Some(counted()?.into_iter().filter_map(footprint).sum())
+    }
+
+    /// The processes `used` adds up: this one, and WebKit's that it is responsible for.
+    pub(super) fn counted() -> Option<Vec<i32>> {
         let own = i32::try_from(process::id()).ok()?;
         // Safety: takes a number and only reads system state.
         let responsible = |pid: i32| unsafe { responsibility_get_pid_responsible_for_pid(pid) };
@@ -117,8 +122,7 @@ mod system {
         // Safety: the buffer holds `size` bytes, and the call writes no more.
         let count = unsafe { proc_listallpids(pids.as_mut_ptr().cast(), size) };
         pids.truncate(usize::try_from(count).ok()?);
-        let related = pids.into_iter().filter(|pid| *pid == own || (responsible(*pid) == ours && is_webkit(*pid)));
-        Some(related.filter_map(footprint).sum())
+        Some(pids.into_iter().filter(|pid| *pid == own || (responsible(*pid) == ours && is_webkit(*pid))).collect())
     }
 }
 

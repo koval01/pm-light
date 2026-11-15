@@ -56,12 +56,14 @@ mod macos {
         assert!(!is_webkit(own), "the test is no WebKit process");
     }
 
+    /// Which processes are counted, not how much: the other tests of this program take and give back tens of MB
+    /// meanwhile, and a figure compared with one taken earlier failed on CI for that alone.
     #[test]
     fn the_whole_figure_holds_this_process_and_stays_steady_when_asked_often() {
         let own = i32::try_from(process::id()).unwrap_or(0);
-        let alone = footprint(own).unwrap_or(0);
         for _ in 0..200 {
-            assert!(used().is_some_and(|bytes| bytes >= alone / 2), "the process itself went missing");
+            assert!(counted().is_some_and(|pids| pids.contains(&own)), "the process itself went missing");
+            assert!(used().is_some_and(|bytes| bytes > 0), "no figure");
         }
     }
 }
