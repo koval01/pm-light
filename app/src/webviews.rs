@@ -185,6 +185,34 @@ fn lift_x11_trap(what: &'static str) {
     }
 }
 
+/// The size WebKit laid the page out at, in logical pixels, where the system lets the app ask: on Linux, GTK's
+/// allocation of the page, which a check compares with the window wry gave it.
+#[cfg(target_os = "linux")]
+pub fn laid_out(view: &wry::WebView) -> Option<(i32, i32)> {
+    use gtk::prelude::WidgetExt as _;
+    use wry::WebViewExtUnix as _;
+    let page = view.webview();
+    Some((page.allocated_width(), page.allocated_height()))
+}
+
+#[cfg(not(target_os = "linux"))]
+pub const fn laid_out(_view: &wry::WebView) -> Option<(i32, i32)> {
+    None
+}
+
+/// Gives GTK's own window, which wry puts the page in, the size its X11 window has, in GTK's own way.
+#[cfg(target_os = "linux")]
+pub fn tell_gtk_the_size(view: &wry::WebView, width: i32, height: i32) {
+    use gtk::prelude::{Cast as _, GtkWindowExt as _, WidgetExt as _};
+    use wry::WebViewExtUnix as _;
+    if let Some(window) = view.webview().toplevel().and_then(|top| top.downcast::<gtk::Window>().ok()) {
+        window.resize(width.max(1), height.max(1));
+    }
+}
+
+#[cfg(not(target_os = "linux"))]
+pub const fn tell_gtk_the_size(_view: &wry::WebView, _width: i32, _height: i32) {}
+
 /// Notes whether `what` has room now, and answers whether it has just lost it.
 fn newly_squeezed(what: &'static str, squeezed: bool) -> bool {
     let mut shrunk = SHRUNK.lock();

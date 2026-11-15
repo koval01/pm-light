@@ -60,6 +60,7 @@ pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
         let [left, top, width, height] = body(&app);
         let shown = crate::mail_view::on_screen();
         log::info!("the link check: the body is {width} by {height} at {left}, {top}; the page on screen: {shown}");
+        compare_and_tell(&app);
         if shown && width >= ROOM && height >= ROOM {
             let (x, y) = (left + width / 2, top + height / 2);
             let _ = std::fs::write(with_end(&note, ".link"), format!("{x} {y}\n"));
@@ -82,6 +83,25 @@ pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
                 }
             });
         });
+    });
+}
+
+/// Says in the journal what size WebKit laid the page out at beside the size of its place, in logical pixels, and if
+/// they differ, gives GTK's window the size of the place and says the same again a second later.
+fn compare_and_tell(app: &App) {
+    let zoom = crate::numbers::scale(crate::look::zoom());
+    let logical = |length: f32| i32::try_from(crate::numbers::pixels(length * zoom)).unwrap_or(i32::MAX);
+    let place = (logical(app.get_body_width()), logical(app.get_body_height()));
+    let Some(Some(laid)) = crate::mail_view::with_page(crate::webviews::laid_out) else { return };
+    log::info!("the link check: the page is laid out {} by {}, its place {} by {}", laid.0, laid.1, place.0, place.1);
+    if laid == place {
+        return;
+    }
+    crate::mail_view::with_page(|view| crate::webviews::tell_gtk_the_size(view, place.0, place.1));
+    Timer::single_shot(Duration::from_secs(1), move || {
+        if let Some(Some(again)) = crate::mail_view::with_page(crate::webviews::laid_out) {
+            log::info!("the link check: told GTK the size, the page is laid out {} by {}", again.0, again.1);
+        }
     });
 }
 

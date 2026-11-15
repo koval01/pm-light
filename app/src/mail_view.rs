@@ -418,6 +418,11 @@ pub fn place(app: &App) {
     }
 }
 
+/// Runs `with` on the mail's page, if there is one. For checks.
+pub fn with_page<T>(with: impl FnOnce(&WebView) -> T) -> Option<T> {
+    VIEW.with_borrow(|view| view.as_deref().map(with))
+}
+
 /// Whether a page is on screen now: made, meant to be seen, drawn whole and with nothing over it. For checks.
 pub fn on_screen() -> bool {
     VIEW.with_borrow(Option::is_some) && SHOWN.get() && !WAITING.get() && COVERS.get() == 0
