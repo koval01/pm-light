@@ -156,7 +156,8 @@ fn a_hostile_pattern_is_refused_not_run() {
     let nested = parse("/(a+)+$/").query;
     let started = std::time::Instant::now();
     assert!(!nested.matches(&row(&format!("{}!", "a".repeat(5000)), "x@y.org", 0)));
-    assert!(started.elapsed() < std::time::Duration::from_millis(200));
+    // Speed is measured by a build only: Miri runs everything a thousand times slower, and checks the rest.
+    assert!(cfg!(miri) || started.elapsed() < std::time::Duration::from_millis(200));
 }
 
 #[test]
