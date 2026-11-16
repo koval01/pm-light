@@ -24,7 +24,7 @@ liblzma = { version = "0.4", features = ["static"] }
 # Hands Tor's `tracing` events on to `log`, and so to the journal.
 tracing = { version = "0.1", features = ["log"] }
 ammonia = "4"
-argon2 = "0.5"
+argon2 = "0.6"
 log = { version = "0.4", features = ["std"] }
 base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
