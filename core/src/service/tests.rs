@@ -1029,3 +1029,82 @@ fn the_account_and_its_storage_asked_together_read_the_user_once() {
     let users = server.seen.lock().iter().filter(|path| *path == "/core/v4/users").count();
     assert_eq!(users, 1, "the user was read twice: {:?}", server.seen.lock());
 }
+
+/// Proton for a conversation `c0` of the inbox, which opens its message `m0`. Anything else it refuses, as it refuses a
+/// message id it does not know: a conversation's.
+fn a_conversation_answer(path: &str) -> (u16, &'static str) {
+    if path.starts_with("/mail/v4/conversations/c0") {
+        (200, r#"{"Code":1000,"Messages":[{"ID":"m0","LabelIDs":["0"],"Time":1}]}"#)
+    } else if path.starts_with("/mail/v4/messages/m0") {
+        (200, A_PLAIN_MESSAGE)
+    } else {
+        (422, r#"{"Code":2501,"Error":"Message does not exist"}"#)
+    }
+}
+
+/// The view on `folder`, holding one conversation of two messages.
+fn shows_a_conversation(service: &Service, folder: &str, id: &str) {
+    let mut row = a_kept_message(id).meta.clone();
+    row.messages = 2;
+    let mut view = service.view.lock();
+    let mark = view.open(folder);
+    assert!(view.loaded(mark, vec![row]));
+    drop(view);
+}
+
+#[test]
+fn a_row_settled_while_shown_opens_its_conversation_after_the_person_left_the_folder() {
+    let server = serve(|path, _| Some(a_conversation_answer(path)));
+    let (service, _) = mailbox_at(&server.base);
+    shows_a_conversation(&service, "inbox", "c0");
+    let row = service.row_opens("c0");
+    assert_eq!(row, mailbox::RowOpens { id: "c0".into(), conversation_in: Some("inbox".into()) });
+    service.view.lock().open("archive");
+    // Asked only now, the row is not in the view, and its id would be taken for a message's.
+    assert_eq!(service.row_opens("c0").conversation_in, None);
+    let working = service;
+    let opened = finishes(async move { working.message_of(row).await.ok() });
+    assert_eq!(opened.as_deref(), Some("m0"));
+    let seen = server.seen.lock().clone();
+    assert!(!seen.iter().any(|path| path.starts_with("/mail/v4/messages/c0")), "{seen:?}");
+}
+
+#[test]
+fn a_message_row_opens_itself_without_asking() {
+    let server = script(&[]);
+    let (service, _) = mailbox_at(&server.base);
+    let mut row = a_kept_message("m1").meta.clone();
+    row.messages = 0;
+    let mark = service.view.lock().open("inbox");
+    assert!(service.view.lock().loaded(mark, vec![row]));
+    let row = service.row_opens("m1");
+    assert_eq!(row.conversation_in, None);
+    let working = service;
+    assert_eq!(finishes(async move { working.message_of(row).await.ok() }).as_deref(), Some("m1"));
+    assert!(server.seen.lock().is_empty());
+}
+
+/// On one thread the reads cannot begin before the folder changes, as they could not on a busy machine either: what
+/// they open was settled when they were asked for.
+#[test]
+fn a_read_ahead_begun_in_a_folder_reads_its_conversation_after_the_person_left() {
+    let server = serve(|path, _| Some(a_conversation_answer(path)));
+    let (service, _) = mailbox_at(&server.base);
+    shows_a_conversation(&service, "inbox", "c0");
+    let (done, finished) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        runtime.block_on(async move {
+            service.open_ahead(vec!["c0".to_string()]);
+            service.view.lock().open("archive");
+            while service.opening_ahead.load(std::sync::atomic::Ordering::Relaxed) {
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+        });
+        let _ = done.send(());
+    });
+    finished.recv_timeout(std::time::Duration::from_secs(10)).expect("it froze");
+    let seen = server.seen.lock().clone();
+    assert!(seen.iter().any(|path| path.starts_with("/mail/v4/messages/m0")), "{seen:?}");
+    assert!(!seen.iter().any(|path| path.starts_with("/mail/v4/messages/c0")), "{seen:?}");
+}

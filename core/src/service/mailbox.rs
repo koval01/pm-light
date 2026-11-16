@@ -23,6 +23,13 @@ pub struct Listed {
     pub total: Option<u64>,
 }
 
+/// A row of the view, and the folder it was shown in when it is a conversation's, which chooses its message.
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct RowOpens {
+    pub(super) id: String,
+    pub(super) conversation_in: Option<String>,
+}
+
 impl Service {
     pub async fn folders(&self) -> Result<Vec<Folder>> {
         let fetch = |kind: &'static str, kind_id: u8| async move {
@@ -282,15 +289,25 @@ impl Service {
         on_worker(move || Ok(store.get(LIST, &wanted))).await.ok()?
     }
 
-    /// Reads mail before the click, so that the click costs nothing. Fetching a message marks
-    /// nothing as read and loads nothing remote: only the person's own actions do that.
     /// The message a row opens. Only a conversation has to ask, and it asks once.
     pub async fn message_of_row(&self, id: &str) -> Result<String> {
-        if !self.is_conversation_row(id) {
-            return Ok(id.to_string());
-        }
-        let thread = self.thread(id).await?;
-        let folder = self.view.lock().folder.clone();
+        let row = self.row_opens(id);
+        self.message_of(row).await
+    }
+
+    /// What a row opens, settled while the row is in the view. Read later, after the person went to another folder,
+    /// a conversation's row was taken for a message, and its id was asked for as one, which Proton refuses.
+    pub(super) fn row_opens(&self, id: &str) -> RowOpens {
+        let (conversation, folder) = {
+            let view = self.view.lock();
+            (view.row(id).is_some_and(|row| row.messages > 0), view.folder.clone())
+        };
+        RowOpens { id: id.to_string(), conversation_in: conversation.then_some(folder) }
+    }
+
+    pub(super) async fn message_of(&self, row: RowOpens) -> Result<String> {
+        let Some(folder) = row.conversation_in else { return Ok(row.id) };
+        let thread = self.thread(&row.id).await?;
         api::message_to_open(&thread, &folder).ok_or_else(|| Error::other("An empty conversation"))
     }
 
@@ -302,6 +319,8 @@ impl Service {
         self.view.lock().row(id).is_some()
     }
 
+    /// Reads mail before the click, so that the click costs nothing. Fetching a message marks
+    /// nothing as read and loads nothing remote: only the person's own actions do that.
     pub(super) fn open_ahead(&self, ids: Vec<String>) {
         let Some(me) = self.me.upgrade() else { return };
         let wanted: Vec<String> = {
@@ -311,14 +330,16 @@ impl Service {
         if wanted.is_empty() || self.opening_ahead.swap(true, Ordering::Relaxed) {
             return;
         }
+        // Settled now, while the rows are in the view: the reads come later, perhaps in another folder.
+        let wanted: Vec<RowOpens> = wanted.iter().map(|id| self.row_opens(id)).collect();
         tokio::spawn(async move {
             log::debug!("reading {} messages ahead", wanted.len());
             let reads: Vec<_> = wanted
                 .into_iter()
-                .map(|id| {
+                .map(|row| {
                     let me = me.clone();
                     async move {
-                        let Ok(id) = me.message_of_row(&id).await else { return false };
+                        let Ok(id) = me.message_of(row).await else { return false };
                         me.message(&id).await.is_ok()
                     }
                 })
