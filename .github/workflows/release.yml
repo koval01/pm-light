@@ -89,9 +89,11 @@ jobs:
           An unofficial Proton Mail desktop client, written in Rust. It is not affiliated with Proton AG. What changed is in
           [CHANGELOG.md](https://github.com/koval01/pm-light/blob/main/CHANGELOG.md).
 
-          The programs are not signed by Apple or Microsoft, and the macOS one is not notarized: the system warns
-          before the first start. Compare a download with `SHA256SUMS`, or check where it was built with
-          `gh attestation verify <file> --repo koval01/pm-light`, before running it.
+          The macOS program is for Apple Silicon, the Windows and Linux ones for x64. They are not signed by Apple or
+          Microsoft, and the macOS one is not notarized: the system stops the first start. How to start one anyway, or
+          build it from source if it will not run, is in the
+          [README](https://github.com/koval01/pm-light#downloads). Compare a download with `SHA256SUMS`, or check
+          where it was built with `gh attestation verify <file> --repo koval01/pm-light`, before running it.
           NOTES
           flags=(--repo "$GITHUB_REPOSITORY" --title "$TAG" --notes-file notes.md --generate-notes --verify-tag)
           if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi

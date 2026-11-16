@@ -34,6 +34,20 @@ This is Proton's private, undocumented API. It can change at any time, and using
 Proton's terms and lead to temporary account restrictions (code 2028). Use it only on accounts you own, preferably
 a test one.
 
+## Downloads
+
+A [release](https://github.com/koval01/pm-light/releases) carries the program for macOS (Apple Silicon), Windows and
+Linux (x64), built by CI from the tagged commit, with `SHA256SUMS` and a provenance that
+`gh attestation verify <file> --repo koval01/pm-light` checks. The programs are not signed by Apple or Microsoft, and
+the macOS one is not notarized, so the system stops the first start:
+
+- **macOS:** open System Settings, Privacy & Security, and choose Open Anyway for Proton Mail Light. Or take the
+  download's quarantine mark off: `xattr -dr com.apple.quarantine "/Applications/Proton Mail Light.app"`.
+- **Windows:** SmartScreen warns of an unknown publisher: More info, then Run anyway.
+- **Linux:** unpack, and start `proton-mail-light`; the libraries it needs are listed below.
+
+If a program will not start on your system, build it from source as below: it is the same code.
+
 ## Running
 
 Building takes [Rust](https://rustup.rs); the version is pinned in `rust-toolchain.toml` and installs itself. On Linux
