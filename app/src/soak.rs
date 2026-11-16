@@ -11,7 +11,7 @@
 use crate::{App, Settings, Theme, composer, contacts, look, memory, palette, preferences, settings, view};
 use proton_core::{Service, model::MessageMeta, request_log::RequestLog};
 use rand::{Rng, SeedableRng, rngs::StdRng, seq::SliceRandom};
-use slint::{ComponentHandle, LogicalSize, Timer, TimerMode, Weak};
+use slint::{ComponentHandle, LogicalSize, Model, Timer, TimerMode, Weak};
 use std::{
     cell::RefCell,
     collections::BTreeMap,
@@ -102,7 +102,7 @@ struct Soak {
     until: Instant,
     started: Instant,
     taken: BTreeMap<Action, u64>,
-    memory: Vec<u64>,
+    memory: Vec<memory::Parts>,
     requests: Arc<RequestLog>,
     note: PathBuf,
     /// Something open that the next action puts away first: a letter, settings, a preview, the palette, contacts.
@@ -162,10 +162,16 @@ fn next_after_a_while() {
 fn measure() {
     SOAK.with_borrow_mut(|soak| {
         if let Some(soak) = soak {
-            let megabytes = memory::settled_megabytes().unwrap_or(0);
-            soak.memory.push(megabytes);
+            let parts = memory::settled_parts().unwrap_or(memory::Parts { megabytes: 0, own_megabytes: 0, processes: 0 });
+            soak.memory.push(parts);
             let asked = soak.requests.summary().total;
-            log::info!("the long run: minute {}, {megabytes} MB, {asked} requests so far", soak.memory.len());
+            log::info!(
+                "the long run: minute {}, {} MB, {} MB of it the program's own, in {} processes, {asked} requests so far",
+                soak.memory.len(),
+                parts.megabytes,
+                parts.own_megabytes,
+                parts.processes
+            );
         }
     });
 }
@@ -213,14 +219,16 @@ fn perform(service: &Arc<Service>, app: &App, rows: &[MessageMeta], action: Acti
     let window = app.window();
     match action {
         Action::OpenMail => {
-            let at = usize::try_from(pick % u64::try_from(rows.len().max(1)).unwrap_or(1)).unwrap_or(0);
-            if let Some(row) = rows.get(at) {
-                // The rows are the inbox's. A person opens a mail from the list shown, and goes to the inbox only from
-                // another folder: opening it again each time read the list again, which counted as a repeat.
-                if app.get_folder_id() != "inbox" {
-                    app.invoke_open_folder("inbox".into());
-                }
-                view::open_mail(service, &app.as_weak(), row.id.clone());
+            // A person opens a mail from the list shown, as a click does, and with none shown goes to the inbox. A row
+            // of the inbox seen at the start, opened while a search or another folder was shown, asked Proton for a
+            // message by a conversation's id.
+            let shown = app.get_rows();
+            let count = u64::try_from(shown.row_count()).unwrap_or(0);
+            let row = usize::try_from(pick.checked_rem(count).unwrap_or(0)).ok().and_then(|at| shown.row_data(at));
+            match row {
+                Some(row) => app.invoke_open_mail(row.id),
+                None if app.get_folder_id() != "inbox" => app.invoke_open_folder("inbox".into()),
+                None => {}
             }
         }
         Action::Step => view::step(service, &app.as_weak(), if pick.is_multiple_of(2) { 1 } else { -1 }),
@@ -306,8 +314,11 @@ fn report(soak: &Soak) -> String {
     for (action, count) in &soak.taken {
         let _ = writeln!(text, "action {action:?}={count}");
     }
-    let figures: Vec<String> = soak.memory.iter().map(u64::to_string).collect();
-    let _ = writeln!(text, "memory MB={}", figures.join(","));
+    let _ = writeln!(text, "memory MB={}", joined(&soak.memory, |parts| parts.megabytes.to_string()));
+    // The program's own part, and how many processes the figure adds up: a leak in the program grows the first, a
+    // webview that is never let go the second.
+    let _ = writeln!(text, "own memory MB={}", joined(&soak.memory, |parts| parts.own_megabytes.to_string()));
+    let _ = writeln!(text, "processes={}", joined(&soak.memory, |parts| parts.processes.to_string()));
     let summary = soak.requests.summary();
     let _ = writeln!(
         text,
@@ -324,6 +335,10 @@ fn report(soak: &Soak) -> String {
         let _ = writeln!(text, "repeated {kind}={count}");
     }
     text
+}
+
+fn joined(memory: &[memory::Parts], figure: impl Fn(&memory::Parts) -> String) -> String {
+    memory.iter().map(figure).collect::<Vec<_>>().join(",")
 }
 
 fn finish() {
