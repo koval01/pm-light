@@ -48,3 +48,11 @@ fn every_connection_turned_away_is_counted() {
     }
     assert!(turned_away() >= before + 3, "{} turned away, {before} before", turned_away());
 }
+
+#[test]
+fn the_journal_hears_of_the_first_and_then_ten_times_fewer() {
+    let said: Vec<u64> = (0..=10_001).filter(|count| worth_saying(*count)).collect();
+    assert_eq!(said, [1, 10, 100, 1_000, 10_000]);
+    assert!(worth_saying(10_000_000_000_000_000_000));
+    assert!(!worth_saying(u64::MAX));
+}

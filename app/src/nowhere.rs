@@ -51,8 +51,17 @@ fn turn_away(listener: &TcpListener) {
         let Ok(stream) = stream else { continue };
         drop(stream);
         let count = TURNED_AWAY.fetch_add(1, Ordering::Relaxed) + 1;
-        log::info!("a page's connection was turned away at the door to nowhere: {count} so far");
+        // WebView2's own browser reaches out on its own about once every two seconds: the journal says the 1st, the
+        // 10th, the 100th and so on, and the long run's report gives the count.
+        if worth_saying(count) {
+            log::info!("a page's connection was turned away at the door to nowhere: {count} so far");
+        }
     }
+}
+
+/// One, ten, a hundred and so on.
+const fn worth_saying(count: u64) -> bool {
+    count > 0 && 10_u64.pow(count.ilog10()) == count
 }
 
 #[cfg(test)]
