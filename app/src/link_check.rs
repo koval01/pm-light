@@ -42,6 +42,7 @@ fn body(app: &App) -> [u32; 4] {
 const ROOM: u32 = 40;
 
 thread_local! {
+    static SETTLING: Timer = Timer::default();
     static WAITING: Timer = Timer::default();
 }
 
@@ -51,6 +52,25 @@ pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
         then(app);
         return;
     };
+    // The first mail may still be on its way, through Tor most of all, and would take the link's place once it came.
+    let (weak, started) = (app.as_weak(), std::time::Instant::now());
+    let (note, then) = (std::cell::Cell::new(Some(note)), std::cell::Cell::new(Some(then)));
+    SETTLING.with(|settling| {
+        settling.start(TimerMode::Repeated, LOOK, move || {
+            let Some(app) = weak.upgrade() else { return };
+            if app.get_opening() && started.elapsed() < LONGEST {
+                return;
+            }
+            SETTLING.with(Timer::stop);
+            if let (Some(note), Some(then)) = (note.take(), then.take()) {
+                show_link(&app, port, note, then);
+            }
+        });
+    });
+}
+
+/// Shows the link, says where it is, and runs `then` once CI has pressed it.
+fn show_link(app: &App, port: u16, note: PathBuf, then: impl FnOnce(&App) + 'static) {
     log::info!("the link check: a mail that is one link, shown");
     crate::mail_view::show_finished(app, &page(port));
     let (weak, done) = (app.as_weak(), with_end(&note, ".link-done"));
