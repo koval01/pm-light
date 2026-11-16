@@ -6,7 +6,7 @@ A fixed vulnerability is always listed, with its advisory.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-11-09
+## [0.1.0] - 2026-11-16
 
 The first release. The builds are not signed by Apple or Microsoft, and the macOS one is not notarized.
 
@@ -25,8 +25,11 @@ The first release. The builds are not signed by Apple or Microsoft, and the macO
 ### Security
 
 - Mail is cleaned in Rust before a webview with scripts off and no network shows it; remote images come only through
-  Proton's proxy, when asked for.
+  Proton's proxy, when asked for. Every connection of the app's pages goes to a door that closes it, so a clicked link
+  reaches nothing until the browser opens it: WebKit would otherwise connect to it early, around Tor.
 - Only Proton's own TLS keys are accepted, names are looked up only through Quad9 over DoH, and redirects are refused.
+- An hour of random use on macOS, Windows and Linux, with every connection traced on Linux, reaches only Proton and
+  Quad9, or through Tor only Tor's relays and directories.
 
 [Unreleased]: https://github.com/koval01/pm-light/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/koval01/pm-light/releases/tag/v0.1.0
