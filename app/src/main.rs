@@ -56,6 +56,7 @@ mod toasts;
 mod tor_link;
 mod tour;
 mod tray;
+mod undo_send;
 mod verify;
 mod view;
 mod webviews;
@@ -249,7 +250,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     connect_list(&service, &app);
     search::connect(&service, &app);
     keyboard::connect(&service, &app);
-    view::connect_undo(&service, &app);
+    undo_send::connect(&service, &app);
     settings::connect(&service, &app);
     folder_names::connect(&service, &app);
     connect_reading(&service, &app);

@@ -971,48 +971,8 @@ pub fn failed_toast(app: &Weak<App>) {
     let _ = app.upgrade_in_event_loop(|app| app.set_toast(crate::toasts::FAILED));
 }
 
-/// The compose window has closed: say what became of the message, and show the list as it is now.
-static UNDOABLE: Mutex<Option<String>> = Mutex::new(None);
 static KNOWN_TRACKERS: LazyLock<Mutex<HashMap<String, HashMap<String, String>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
-
-/// The message went out, and can still be called back for a moment.
-pub fn offer_undo(id: String, seconds: u64) {
-    *UNDOABLE.lock() = Some(id);
-    let _ = slint::invoke_from_event_loop(move || {
-        if let Some(app) = actions::main_window() {
-            app.set_undo_seconds(i32::try_from(seconds).unwrap_or(0));
-        }
-    });
-}
-
-fn undo_send(service: &Arc<Service>, app: &App) {
-    app.set_undo_seconds(0);
-    let Some(id) = UNDOABLE.lock().take() else { return };
-    let (service, weak, labels) = (service.clone(), app.as_weak(), composer::labels(app));
-    tokio::spawn(async move {
-        if service.cancel_send(&id).await.is_err() {
-            failed_toast(&weak);
-            return;
-        }
-        let (drafting, opening) = (service.clone(), weak.clone());
-        let _ = slint::invoke_from_event_loop(move || composer::start_draft(&drafting, &opening, id, labels));
-        service.view_reload().await;
-    });
-}
-
-pub fn connect_undo(service: &Arc<Service>, app: &App) {
-    let (service, weak) = (service.clone(), app.as_weak());
-    app.on_undo_send(move || {
-        if let Some(app) = weak.upgrade() {
-            undo_send(&service, &app);
-        }
-    });
-}
-
-pub fn after_compose(notice: i32) {
-    actions::after_compose(notice);
-}
 
 /// The open message, for what is asked of it later.
 static OPEN: Mutex<Option<Arc<Message>>> = Mutex::new(None);

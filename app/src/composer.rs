@@ -368,7 +368,7 @@ fn finish(notice: i32) {
     let _ = slint::invoke_from_event_loop(move || {
         put_down(OPEN.take());
         *DRAFT.lock() = None;
-        view::after_compose(notice);
+        actions::after_compose(notice);
     });
 }
 
@@ -505,7 +505,7 @@ fn send(service: &Arc<Service>) {
         match service.send_composed(&state, options).await {
             Ok(id) if delay > 0 && !scheduled => {
                 finish(0);
-                view::offer_undo(id, delay);
+                crate::undo_send::offer(id, delay);
             }
             Ok(_) => {
                 let what = if scheduled { "scheduled" } else { "sent" };

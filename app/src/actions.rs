@@ -59,6 +59,7 @@ pub fn connect(service: &Arc<Service>, app: &App) {
     });
 }
 
+/// The compose window has closed: say what became of the message, and show the list as it is now.
 pub fn after_compose(notice: i32) {
     let Some(service) = SERVICE.get().cloned() else { return };
     if notice != 0 {
