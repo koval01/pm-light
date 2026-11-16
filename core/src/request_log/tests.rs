@@ -60,10 +60,35 @@ fn a_repeat_is_named_when_it_is_asked() {
         ("/mail/v4/conversations/AbCdEfGhIjKlMnOpQrStUv==", "/mail/v4/conversations/ZyXwVuTsRqPoNmLkJiHgFe==");
     assert_eq!(log.note(ms(0), "GET", one, false), None);
     assert_eq!(log.note(ms(300), "GET", other, false), None, "another conversation is no repeat");
-    assert_eq!(log.note(ms(400), "PUT", one, false), None, "another method is no repeat");
     assert_eq!(log.note(ms(700), "GET", one, false), Some(ms(700)));
     assert_eq!(log.note(ms(900), "GET", one, false), Some(ms(200)), "the nearest earlier one counts");
+    assert_eq!(log.note(ms(950), "PUT", one, false), None, "another method is no repeat");
     assert_eq!(log.note(ms(1900), "GET", one, false), None, "a second later is no repeat");
     // The summary counts what the journal was told.
     assert_eq!(log.summary().repeats, [("GET /mail/v4/conversations/{id}".to_string(), 2)]);
+}
+
+#[test]
+fn a_read_after_a_change_is_no_repeat_and_a_change_twice_is() {
+    let list = "/mail/v4/conversations?Page=0";
+    let summary = summarize(&[
+        asked(0.0, "GET", list),
+        asked(0.2, "PUT", "/mail/v4/conversations/read"),
+        asked(0.4, "GET", list),
+        asked(0.5, "GET", list),
+        asked(2.0, "PUT", "/mail/v4/conversations/read"),
+        asked(2.3, "PUT", "/mail/v4/conversations/read"),
+    ]);
+    // The read after the change asks anew; the one right after it, with nothing between, repeats it; so does the change.
+    assert_eq!(
+        summary.repeats,
+        vec![("GET /mail/v4/conversations".to_string(), 1), ("PUT /mail/v4/conversations/read".to_string(), 1)]
+    );
+    let (log, ms) = (RequestLog::new(), Duration::from_millis);
+    assert_eq!(log.note(ms(0), "GET", list, false), None);
+    assert_eq!(log.note(ms(200), "PUT", "/mail/v4/conversations/read", true), None);
+    assert_eq!(log.note(ms(400), "GET", list, false), None, "a read after a change was named a repeat");
+    assert_eq!(log.note(ms(500), "GET", list, false), Some(ms(100)));
+    assert_eq!(log.note(ms(2000), "PUT", "/mail/v4/conversations/read", true), None);
+    assert_eq!(log.note(ms(2300), "PUT", "/mail/v4/conversations/read", true), Some(ms(300)), "a change twice");
 }

@@ -1,8 +1,9 @@
 //! Every request to Proton while a check watches the app.
 //!
-//! What was asked how often, the most in any minute, and the same request asked again within a second, which a
-//! well-behaved client never does. Paths are kept as `journal::clean_path` writes them, ids and names taken out, so
-//! that the summary can be shown anywhere; the whole path stays in memory only, to tell a repeat from another request.
+//! What was asked how often, the most in any minute, and the same request asked again within a second with no change
+//! asked between, which a well-behaved client never does: a read after a change asks what the change made. Paths are
+//! kept as `journal::clean_path` writes them, ids and names taken out, so that the summary can be shown anywhere; the
+//! whole path stays in memory only, to tell a repeat from another request.
 
 use crate::journal::clean_path;
 use parking_lot::Mutex;
@@ -11,8 +12,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-/// Asked again this soon, the same request is a repeat.
+/// Asked again this soon, with no change asked between, the same request is a repeat.
 pub const REPEAT_WITHIN: Duration = Duration::from_secs(1);
+const READ: &str = "GET";
 const MINUTE: Duration = Duration::from_secs(60);
 
 struct Asked {
@@ -63,10 +65,13 @@ impl RequestLog {
     /// How long ago the same request was asked, when that was within `REPEAT_WITHIN`.
     fn note(&self, at: Duration, method: &str, path: &str, refused: bool) -> Option<Duration> {
         let mut asked = self.asked.lock();
+        let read = method == READ;
         let gap = asked
             .iter()
             .rev()
             .take_while(|earlier| at.saturating_sub(earlier.at) < REPEAT_WITHIN)
+            // A read after a change asks what the change made: the one before it is no answer to that.
+            .take_while(|earlier| !read || earlier.method == READ)
             .find(|earlier| earlier.method == method && earlier.path == path)
             .map(|earlier| at.saturating_sub(earlier.at));
         asked.push(Asked { at, method: method.to_string(), path: path.to_string(), refused });
@@ -88,11 +93,20 @@ fn summarize(asked: &[Asked]) -> RequestSummary {
     let mut by_kind: BTreeMap<String, usize> = BTreeMap::new();
     let mut repeats: BTreeMap<String, usize> = BTreeMap::new();
     let mut last_seen: HashMap<(&str, &str), Duration> = HashMap::new();
+    let mut last_change: Option<Duration> = None;
     for request in asked {
         *by_kind.entry(kind(request)).or_default() += 1;
         let key = (request.method.as_str(), request.path.as_str());
-        if last_seen.get(&key).is_some_and(|before| request.at.saturating_sub(*before) < REPEAT_WITHIN) {
+        let read = request.method == READ;
+        // A read after a change asks what the change made: the one before it is no answer to that.
+        let repeated = last_seen.get(&key).is_some_and(|before| {
+            request.at.saturating_sub(*before) < REPEAT_WITHIN && !(read && last_change.is_some_and(|at| at >= *before))
+        });
+        if repeated {
             *repeats.entry(kind(request)).or_default() += 1;
+        }
+        if !read {
+            last_change = Some(request.at);
         }
         last_seen.insert(key, request.at);
     }
