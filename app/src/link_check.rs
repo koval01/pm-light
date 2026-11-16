@@ -57,8 +57,10 @@ pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
     let then = std::cell::Cell::new(Some(then));
     Timer::single_shot(DRAWN, move || {
         let Some(app) = weak.upgrade() else { return };
-        let then = then.take();
-        try_resizes(&app, 0, Box::new(move |app| ready_for_press(app, &note, done, then)));
+        if !measure(&app) {
+            log::warn!("the link check: the page is not laid out at its place");
+        }
+        ready_for_press(&app, &note, done, then.take());
     });
 }
 
@@ -98,12 +100,12 @@ fn place(app: &App) -> (i32, i32) {
     (logical(app.get_body_width()), logical(app.get_body_height()))
 }
 
-/// Says in the journal GTK's sizes of the page's window and of the page beside its place.
-fn measure(app: &App, after: &str) -> bool {
+/// Says in the journal GTK's sizes of the page's window and of the page beside its place, and whether they agree.
+fn measure(app: &App) -> bool {
     let place = place(app);
     let Some(Some([window, laid])) = crate::mail_view::with_page(crate::webviews::laid_out) else { return true };
     log::info!(
-        "the link check, {after}: the window is {} by {}, the page laid out {} by {}, its place {} by {}",
+        "the link check: the window is {} by {}, the page laid out {} by {}, its place {} by {}",
         window.0,
         window.1,
         laid.0,
@@ -112,23 +114,6 @@ fn measure(app: &App, after: &str) -> bool {
         place.1
     );
     laid == place
-}
-
-/// Tries each way of giving GTK the size, a second apart, measuring after each, then goes on with `then`.
-fn try_resizes(app: &App, step: usize, then: Box<dyn FnOnce(&App)>) {
-    let fits = measure(app, crate::webviews::RESIZES.get(step.wrapping_sub(1)).map_or("as made", |(name, _)| *name));
-    let Some((_, resize)) = crate::webviews::RESIZES.get(step).filter(|_| !fits) else {
-        then(app);
-        return;
-    };
-    let place = place(app);
-    crate::mail_view::with_page(|view| resize(view, place.0, place.1));
-    let weak = app.as_weak();
-    Timer::single_shot(Duration::from_secs(1), move || {
-        if let Some(app) = weak.upgrade() {
-            try_resizes(&app, step + 1, then);
-        }
-    });
 }
 
 fn with_end(note: &std::path::Path, end: &str) -> PathBuf {

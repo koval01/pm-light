@@ -241,7 +241,7 @@ fn arrived(turn: u64, data: Option<Vec<u8>>) {
 fn place() {
     OPEN.with_borrow(|open| {
         if let Some(Open { window, view: Some(view), .. }) = open {
-            let _ = view.set_bounds(bounds(window));
+            crate::webviews::place_at(view, bounds(window));
         }
     });
 }

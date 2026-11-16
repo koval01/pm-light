@@ -408,7 +408,7 @@ pub fn place(app: &App) {
     }
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
-            let _ = view.set_bounds(bounds(app));
+            crate::webviews::place_at(view, bounds(app));
         }
     });
     let width = app.get_body_width();

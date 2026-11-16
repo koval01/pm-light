@@ -630,7 +630,7 @@ fn connect_fields(window: &ComposeWindow) {
         if let Some(window) = weak.upgrade() {
             OPEN.with_borrow(|open| {
                 if let Some(open) = open {
-                    let _ = open.view.set_bounds(bounds(&window));
+                    crate::webviews::place_at(&open.view, bounds(&window));
                 }
             });
         }

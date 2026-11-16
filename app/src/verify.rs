@@ -155,7 +155,7 @@ pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + Clone + Send + 'st
 pub fn place(app: &App) {
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
-            let _ = view.set_bounds(bounds(app));
+            crate::webviews::place_at(view, bounds(app));
         }
     });
 }

@@ -201,36 +201,20 @@ pub const fn laid_out(_view: &wry::WebView) -> Option<[(i32, i32); 2]> {
     None
 }
 
-/// A way to give a page the size of its place, with a fixed word for the journal.
-pub type Resize = (&'static str, fn(&wry::WebView, i32, i32));
-
-/// Ways to give GTK the size of a page's place, each its own way, for a check to try one after another and measure.
-#[cfg(target_os = "linux")]
-pub const RESIZES: [Resize; 3] = [
-    ("resizing GTK's window", |view, width, height| {
-        use gtk::prelude::{Cast as _, GtkWindowExt as _, WidgetExt as _};
-        use wry::WebViewExtUnix as _;
-        if let Some(window) = view.webview().toplevel().and_then(|top| top.downcast::<gtk::Window>().ok()) {
-            window.resize(width, height);
-        }
-    }),
-    ("allocating the page itself", |view, width, height| {
+/// Moves and sizes a webview. On Linux wry sizes the X11 window but not GTK's window inside it, which keeps the size
+/// the page was made at, and the page with it: a mail shrank to a strip beside black. The page itself is given the
+/// size as well, which the long run's link check measured to take. Every webview is placed through here
+/// (`app/tests/structure.rs`).
+pub fn place_at(view: &wry::WebView, rect: Rect) {
+    let _ = view.set_bounds(rect);
+    #[cfg(target_os = "linux")]
+    {
         use gtk::prelude::WidgetExt as _;
         use wry::WebViewExtUnix as _;
-        view.webview().size_allocate(&gtk::Allocation::new(0, 0, width, height));
-    }),
-    ("asking the window for the size", |view, width, height| {
-        use gtk::prelude::WidgetExt as _;
-        use wry::WebViewExtUnix as _;
-        if let Some(window) = view.webview().toplevel() {
-            window.set_size_request(width, height);
-            window.queue_resize();
-        }
-    }),
-];
-
-#[cfg(not(target_os = "linux"))]
-pub const RESIZES: [Resize; 0] = [];
+        let size: LogicalSize<i32> = rect.size.to_logical(1.0);
+        view.webview().size_allocate(&gtk::Allocation::new(0, 0, size.width.max(1), size.height.max(1)));
+    }
+}
 
 /// Notes whether `what` has room now, and answers whether it has just lost it.
 fn newly_squeezed(what: &'static str, squeezed: bool) -> bool {

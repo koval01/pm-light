@@ -355,7 +355,7 @@ fn measure(purpose: Purpose) {
 fn sized(height: f64, cut: bool, purpose: Purpose) {
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
-            let _ = view.set_bounds(area(height));
+            crate::webviews::place_at(view, area(height));
         }
     });
     Timer::single_shot(SETTLES, move || {

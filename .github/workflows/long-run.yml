@@ -163,6 +163,9 @@ jobs:
             sudo kill "$app" 2>/dev/null || true
             wait "$app" 2>/dev/null || true
             test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }
+            # The page of the made-up mail was not laid out at its place (webviews::place_at).
+            ! grep -q "the page is not laid out at its place" target/debug/account.log \
+              || { echo "::error::the mail page is not laid out at its place"; exit 1; }
             # A clicked link reached the network: WebKit connected to it on its own (app/src/nowhere.rs).
             [ "$(cat target/debug/link.count 2>/dev/null || echo 0)" = 0 ] \
               || { echo "::error::a clicked link in a mail reached its address"; exit 1; }'

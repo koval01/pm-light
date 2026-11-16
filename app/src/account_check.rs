@@ -21,6 +21,8 @@ use std::{
 const ARGUMENT: &str = "--check-account=";
 /// Far longer than a start, a folder and a mail take: past it the note says where the check stopped.
 const PATIENCE: Duration = Duration::from_secs(120);
+/// Through Tor, Proton's onion site took more than a minute to answer a new circuit, and a check gave up on it.
+const PATIENCE_THROUGH_TOR: Duration = Duration::from_secs(300);
 /// Rows read to count the inbox by: enough to tell an empty inbox from a full one.
 const ROWS: u64 = 50;
 
@@ -67,7 +69,8 @@ pub fn begin() {
     let Some(path) = ASKED.get_or_init(|| asked_in(std::env::args().skip(1))).clone() else { return };
     log::info!("an account check asked for");
     WRITE_TO.set(Some(path));
-    slint::Timer::single_shot(PATIENCE, || {
+    let patience = if crate::soak::through_tor() { PATIENCE_THROUGH_TOR } else { PATIENCE };
+    slint::Timer::single_shot(patience, || {
         if let Some(path) = WRITE_TO.take() {
             let stage = if STAGE.get() == "drawing" { mail_picture::stage() } else { STAGE.get() };
             log::warn!("the account check stopped at: {stage}");

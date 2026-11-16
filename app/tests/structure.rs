@@ -223,3 +223,21 @@ fn every_webview_kept_is_held() {
     }
     assert!(bare.is_empty(), "a webview is kept bare, not as webviews::Held: {bare:?}");
 }
+
+/// wry on Linux sizes a webview's X11 window but not GTK's window inside it, and the page stayed at the size it was
+/// made at: `webviews::place_at` sizes the page too, so every webview is placed through it.
+#[test]
+fn every_webview_is_placed_through_one_function() {
+    let mut elsewhere = Vec::new();
+    for (name, text) in sources().expect("the sources") {
+        if is_test_file(&name) || name == "app/src/webviews.rs" {
+            continue;
+        }
+        for (number, line) in text.lines().enumerate() {
+            if line.contains("set_bounds(") {
+                elsewhere.push(format!("{name}:{}", number + 1));
+            }
+        }
+    }
+    assert!(elsewhere.is_empty(), "a webview is placed past webviews::place_at: {elsewhere:?}");
+}
