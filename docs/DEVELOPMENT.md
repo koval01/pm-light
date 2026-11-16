@@ -253,7 +253,8 @@ screen, and it never touches the real Keychain entries.
 - **A webview that does not grow on X11.** wry's `set_bounds` sizes the X11 window but not GTK's window inside it,
   which keeps the size the page was made at, and the page with it: a mail was laid out in a strip, a letter wide under
   Tor, and the rest stayed black. `webviews::place_at` gives the page itself the size too, measured by the long run's
-  link check (`gtk_window_resize` did nothing); `app/tests/structure.rs` keeps every `set_bounds` there. The mail's
+  link check (`gtk_window_resize` did nothing) and holds it there whenever GTK lays the page out again, which a size given once
+  did not survive; `app/tests/structure.rs` keeps every `set_bounds` there. The mail's
   page is also not made ahead of time until its pane has room (`mail_view::warm_up`).
 - **A webview with no size on X11.** wry makes an X window of the size a webview is given, and X11 refuses one with no
   width or height: GTK then ends the program, with a `BadValue` on `CreateWindow` and no panic to contain. A layout

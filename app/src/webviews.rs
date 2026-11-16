@@ -122,15 +122,48 @@ static SHRUNK: Mutex<Vec<&'static str>> = Mutex::new(Vec::new());
 /// hidden. Every webview kept is one of these (`app/tests/structure.rs`).
 pub struct Held {
     view: wry::WebView,
+    /// The size its place has, which the page is held to: see `place_at`.
+    #[cfg(target_os = "linux")]
+    wanted: std::rc::Rc<std::cell::Cell<Option<(i32, i32)>>>,
     /// Goes after `view`, since fields go in the order they are written: it lifts the trap once the view is gone.
     gone: Gone,
 }
 
 impl Held {
     /// `what` is a fixed word for the journal.
-    pub const fn new(what: &'static str, view: wry::WebView) -> Self {
-        Self { view, gone: Gone { what } }
+    #[cfg_attr(
+        not(target_os = "linux"),
+        expect(clippy::missing_const_for_fn, reason = "it holds the page to its place on Linux, which is not const")
+    )]
+    pub fn new(what: &'static str, view: wry::WebView) -> Self {
+        #[cfg(target_os = "linux")]
+        let wanted = hold_to_its_place(&view);
+        Self {
+            view,
+            #[cfg(target_os = "linux")]
+            wanted,
+            gone: Gone { what },
+        }
     }
+}
+
+/// GTK lays the page out again, whenever it chooses, at the size of its own window, which keeps the size the page was
+/// made at. So each time it does, the page is given the size of its place once more.
+#[cfg(target_os = "linux")]
+fn hold_to_its_place(view: &wry::WebView) -> std::rc::Rc<std::cell::Cell<Option<(i32, i32)>>> {
+    use gtk::prelude::{ObjectExt as _, WidgetExt as _};
+    use wry::WebViewExtUnix as _;
+    let wanted = std::rc::Rc::new(std::cell::Cell::new(None));
+    let page = view.webview();
+    if let Some(window) = page.toplevel() {
+        let (page, want) = (page.downgrade(), wanted.clone());
+        window.connect_size_allocate(move |_, _| {
+            if let (Some(page), Some((width, height))) = (page.upgrade(), want.get()) {
+                page.size_allocate(&gtk::Allocation::new(0, 0, width, height));
+            }
+        });
+    }
+    wanted
 }
 
 impl std::ops::Deref for Held {
@@ -203,16 +236,18 @@ pub const fn laid_out(_view: &wry::WebView) -> Option<[(i32, i32); 2]> {
 
 /// Moves and sizes a webview. On Linux wry sizes the X11 window but not GTK's window inside it, which keeps the size
 /// the page was made at, and the page with it: a mail shrank to a strip beside black. The page itself is given the
-/// size as well, which the long run's link check measured to take. Every webview is placed through here
-/// (`app/tests/structure.rs`).
-pub fn place_at(view: &wry::WebView, rect: Rect) {
-    let _ = view.set_bounds(rect);
+/// size as well, and held to it whenever GTK lays it out again (`hold_to_its_place`): given once, it lasted only until
+/// the next page loaded. Every webview is placed through here (`app/tests/structure.rs`).
+pub fn place_at(held: &Held, rect: Rect) {
+    let _ = held.view.set_bounds(rect);
     #[cfg(target_os = "linux")]
     {
         use gtk::prelude::WidgetExt as _;
         use wry::WebViewExtUnix as _;
         let size: LogicalSize<i32> = rect.size.to_logical(1.0);
-        view.webview().size_allocate(&gtk::Allocation::new(0, 0, size.width.max(1), size.height.max(1)));
+        let wanted = (size.width.max(1), size.height.max(1));
+        held.wanted.set(Some(wanted));
+        held.view.webview().size_allocate(&gtk::Allocation::new(0, 0, wanted.0, wanted.1));
     }
 }
 
