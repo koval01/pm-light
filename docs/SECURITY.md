@@ -195,8 +195,8 @@ Beside them, on every push and on a timetable, all in CI:
   input above, sealed in a container.
 - **Fuzzing** of what strangers send (`fuzz/`), a minute a target on every push and ten minutes daily.
 - **The long run** (`long-run.yml`), an hour of random use of the real app on the test account: memory that keeps
-  growing, a flood of requests and repeated ones fail it, and on Linux every connection the app and its webviews'
-  processes make is traced. Directly only Proton, Quad9 and, when turned on, Gravatar may be reached; through Tor only
+  growing, the program's own or with its webviews', a flood of requests and repeated ones fail it, and on Linux every
+  connection the app and its webviews' processes make is traced. Directly only Proton, Quad9 and, when turned on, Gravatar may be reached; through Tor only
   Tor's relays; and a lookup on port 53 is a leak either way. On the machine itself only the app's own Tor door may
   be reached, a loopback port the trace shows one of the app's sockets holding; any other local port is another
   program. `connections.py --self-test` proves these rules on made-up traces in every check. Before the random use, a

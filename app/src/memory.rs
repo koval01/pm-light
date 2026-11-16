@@ -51,6 +51,30 @@ pub fn settled_megabytes() -> Option<u64> {
     system::used().map(megabytes)
 }
 
+/// The figure taken apart, for the long run: all of it, this process's own part, and how many processes it adds up. A
+/// leak in the program grows its own part; a webview's caches grow the rest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Parts {
+    pub megabytes: u64,
+    pub own_megabytes: u64,
+    pub processes: usize,
+}
+
+/// `settled_megabytes`, taken apart.
+pub fn settled_parts() -> Option<Parts> {
+    give_back();
+    give_back_system_heap();
+    let (total, own, processes) = system::parts()?;
+    Some(Parts { megabytes: megabytes(total), own_megabytes: megabytes(own), processes })
+}
+
+/// The whole and this process's part, each process measured once, so the part is never more than the whole.
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+fn added_up<P: PartialEq + Copy>(own: P, measured: &[(P, u64)]) -> Option<(u64, u64, usize)> {
+    let mine = measured.iter().find(|(pid, _)| *pid == own)?.1;
+    Some((measured.iter().map(|(_, bytes)| bytes).sum(), mine, measured.len()))
+}
+
 const fn megabytes(bytes: u64) -> u64 {
     (bytes + BYTES_IN_A_MEGABYTE / 2) / BYTES_IN_A_MEGABYTE
 }
@@ -111,6 +135,14 @@ mod system {
         Some(counted()?.into_iter().filter_map(footprint).sum())
     }
 
+    /// `used`, with this process's own part and how many processes it adds up.
+    pub fn parts() -> Option<(u64, u64, usize)> {
+        let own = i32::try_from(process::id()).ok()?;
+        let measured: Vec<(i32, u64)> =
+            counted()?.into_iter().filter_map(|pid| footprint(pid).map(|bytes| (pid, bytes))).collect();
+        super::added_up(own, &measured)
+    }
+
     /// The processes `used` adds up: this one, and WebKit's that it is responsible for.
     pub(super) fn counted() -> Option<Vec<i32>> {
         let own = i32::try_from(process::id()).ok()?;
@@ -134,6 +166,12 @@ mod system {
     pub fn used() -> Option<u64> {
         let statm = std::fs::read_to_string("/proc/self/statm").ok()?;
         Some(statm.split_whitespace().nth(1)?.parse::<u64>().ok()? * PAGE)
+    }
+
+    /// Only the program is counted here, so it is all of the figure.
+    pub fn parts() -> Option<(u64, u64, usize)> {
+        let used = used()?;
+        Some((used, used, 1))
     }
 }
 
@@ -219,11 +257,25 @@ mod system {
         let total: u64 = pids.into_iter().filter_map(private_working_set).sum();
         (total > 0).then_some(total)
     }
+
+    /// `used`, with this process's own part and how many processes it adds up.
+    pub fn parts() -> Option<(u64, u64, usize)> {
+        let own = process::id();
+        let measured: Vec<(u32, u64)> = super::counted(own, &processes(), |name| name.eq_ignore_ascii_case(WEBVIEW))
+            .into_iter()
+            .filter_map(|pid| private_working_set(pid).map(|bytes| (pid, bytes)))
+            .collect();
+        super::added_up(own, &measured)
+    }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
 mod system {
     pub const fn used() -> Option<u64> {
+        None
+    }
+
+    pub const fn parts() -> Option<(u64, u64, usize)> {
         None
     }
 }

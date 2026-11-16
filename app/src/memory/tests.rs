@@ -39,6 +39,30 @@ fn this_program_is_found_to_use_memory() {
     assert!(system::used().is_some_and(|bytes| bytes > BYTES_IN_A_MEGABYTE));
 }
 
+/// The parts come from one measurement of each process, so this process's part is never more than the whole, even
+/// while the other tests take and give back memory.
+#[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
+#[test]
+fn the_figure_taken_apart_holds_this_process_within_it() {
+    for _ in 0..50 {
+        let parts = settled_parts().expect("the figure taken apart");
+        assert!(parts.own_megabytes > 0, "{parts:?}");
+        assert!(parts.own_megabytes <= parts.megabytes, "{parts:?}");
+        assert!(parts.processes >= 1, "{parts:?}");
+    }
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[test]
+fn the_whole_adds_up_every_process_and_the_part_is_this_one() {
+    assert_eq!(added_up(7, &[(7, 10), (8, 20), (9, 30)]), Some((60, 10, 3)));
+    assert_eq!(added_up(9, &[(7, 10), (8, 20), (9, 30)]), Some((60, 30, 3)));
+    assert_eq!(added_up(7, &[(7, 10)]), Some((10, 10, 1)));
+    // This process could not be measured: no figure, rather than one that says it takes nothing.
+    assert_eq!(added_up(7, &[(8, 20)]), None);
+    assert_eq!(added_up(7, &[]), None);
+}
+
 /// The calls behind `unsafe` on macOS given numbers no process has, and run often, for the address sanitizer to watch.
 #[cfg(target_os = "macos")]
 mod macos {
