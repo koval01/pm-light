@@ -22,10 +22,12 @@ use std::{
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 mod answers;
+mod connection;
 mod kept;
 mod together;
 pub use answers::first_batch_failure;
 use answers::{check, refuses_session, retry_delay};
+pub(crate) use connection::http_client_with;
 use kept::KeptAnswer;
 use together::Together;
 
@@ -42,8 +44,6 @@ const CODE_HUMAN_VERIFICATION: i64 = 9001;
 const DEFAULT_RETRY_SECONDS: f64 = 10.0;
 const MAX_RETRY_SECONDS: f64 = 30.0;
 const REFRESH_PATH: &str = "/auth/v4/refresh";
-const KEEP_ALIVE: Duration = Duration::from_secs(25);
-const KEEP_ALIVE_WAIT: Duration = Duration::from_secs(10);
 /// A refusal is asked again before anything is deleted, so that a slip on Proton's side costs a
 /// moment and not a sign-in.
 const REFUSAL_RECHECK: Duration = Duration::from_millis(if cfg!(test) { 200 } else { 10_000 });
@@ -139,7 +139,6 @@ fn random_hex() -> String {
     crate::hex(&bytes)
 }
 
-/// With a proxy, every connection goes through it and nothing is looked up here; with none, Quad9 looks names up.
 /// Proton answered in `took`. Through Tor, slow answers lead to asking Quad9, over its own circuit, whether the network
 /// works: if it does, the circuit to Proton is the slow part, and new circuits are built.
 fn heard_back(transport: &Transport, took: Duration) {
@@ -151,34 +150,6 @@ fn heard_back(transport: &Transport, took: Duration) {
         let quad9_took = matches!(answered, Ok(Ok(()))).then(|| started.elapsed());
         tor.judge(quad9_took);
     });
-}
-
-pub(crate) fn http_client_with(
-    base: &str,
-    tls: rustls::ClientConfig,
-    proxy: Option<&str>,
-    dns: &Arc<Quad9>,
-) -> Result<reqwest::Client> {
-    let builder = reqwest::Client::builder()
-        .user_agent(user_agent())
-        .timeout(Duration::from_secs(120))
-        .use_preconfigured_tls(tls)
-        .https_only(base.starts_with("https:"))
-        // A dead connection is found in seconds, and not by every request stuck on it.
-        .http2_keep_alive_interval(KEEP_ALIVE)
-        .http2_keep_alive_timeout(KEEP_ALIVE_WAIT)
-        .http2_keep_alive_while_idle(true)
-        // Proton's API does not redirect. Following one would carry the session's headers along.
-        .redirect(reqwest::redirect::Policy::none());
-    let builder = match proxy {
-        // A proxy from the environment would resolve names itself and sit in the connection.
-        None => builder.no_proxy().dns_resolver(dns.clone()).connect_timeout(Duration::from_secs(20)),
-        Some(proxy) => builder
-            .proxy(reqwest::Proxy::all(proxy)?)
-            .dns_resolver(Arc::new(crate::dns::NoLookups))
-            .connect_timeout(crate::tor::CONNECT_TIMEOUT),
-    };
-    Ok(builder.build()?)
 }
 
 impl Client {

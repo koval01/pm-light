@@ -13,7 +13,7 @@ use std::{
 const WAYS_OUT: &[(&str, &[&str], &str)] = &[
     (
         "reqwest::Client::builder",
-        &["core/src/client.rs", "core/src/dns.rs"],
+        &["core/src/client/connection.rs", "core/src/dns.rs"],
         "Proton's API and Quad9: through Tor when it is chosen",
     ),
     ("reqwest::get", &[], "a request with no chosen way"),
