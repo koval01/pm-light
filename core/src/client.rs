@@ -385,6 +385,9 @@ impl Client {
             let status = response.status().as_u16();
             let took = started.elapsed();
             log::debug!("{method} {} -> {status} in {} ms", clean_path(path), took.as_millis());
+            if let Some(requests) = self.requests.get() {
+                requests.answered(method.as_str(), path, status);
+            }
             heard_back(transport, took);
             if retried {
                 return Ok(response);

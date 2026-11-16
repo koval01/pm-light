@@ -7,6 +7,10 @@
 //! taken, the memory of each minute, and every request to Proton summed up by `proton_core::request_log`: numbers and
 //! paths without ids only. CI judges them (`scripts/soak-report.sh`). Nothing of the account changes: a check refuses
 //! every request but a read (`checks`). `--soak-tor` takes the way through Tor, for CI to see that nothing passes it.
+//!
+//! `--soak-pressure`: once the run is over, CI puts the system under memory pressure and says so with
+//! `<file>.pressed`; the memory is then measured again and added to `<file>.soak`. What WebKit and the heaps give back
+//! then was a cache that the system takes back when it needs to; what stays is held.
 
 use crate::{App, Settings, Theme, composer, contacts, look, memory, palette, preferences, settings, view};
 use proton_core::{Service, model::MessageMeta, request_log::RequestLog};
@@ -24,6 +28,10 @@ use std::{
 const MINUTES: &str = "--soak-minutes=";
 const SEED: &str = "--soak-seed=";
 const THROUGH_TOR: &str = "--soak-tor";
+const PRESSURE: &str = "--soak-pressure";
+/// How long the end of a run waits for the system's memory pressure, and then for what is given back.
+const PRESSURE_PATIENCE: Duration = Duration::from_secs(180);
+const AFTER_PRESSURE: Duration = Duration::from_secs(10);
 /// Between two actions: a person's pace, from quick to unhurried.
 const FASTEST: u64 = 500;
 const SLOWEST: u64 = 2500;
@@ -247,7 +255,9 @@ fn perform(service: &Arc<Service>, app: &App, rows: &[MessageMeta], action: Acti
             return true;
         }
         Action::Letter => {
-            app.invoke_compose(one_of(&LETTERS, pick).into());
+            // A reply or a forward only with a mail on screen, as the keys and the palette offer them.
+            let letter = Some(one_of(&LETTERS, pick)).filter(|letter| *letter == "new" || app.get_has_mail());
+            app.invoke_compose(letter.unwrap_or("new").into());
             return true;
         }
         Action::Preview => {
@@ -334,6 +344,9 @@ fn report(soak: &Soak) -> String {
     for (kind, count) in &summary.repeats {
         let _ = writeln!(text, "repeated {kind}={count}");
     }
+    for (kind, count) in &summary.turned_down {
+        let _ = writeln!(text, "answered {kind}={count}");
+    }
     text
 }
 
@@ -348,6 +361,39 @@ fn finish() {
     log::info!("the long run ended after {} actions", soak.taken.values().sum::<u64>());
     let _ = std::fs::write(beside(&soak.note, ".soak"), text);
     let _ = std::fs::write(beside(&soak.note, ".done"), "done\n");
+    if std::env::args().skip(1).any(|argument| argument == PRESSURE) {
+        look_for_pressure(soak.note, Instant::now() + PRESSURE_PATIENCE);
+    }
+}
+
+fn look_for_pressure(note: PathBuf, deadline: Instant) {
+    Timer::single_shot(Duration::from_secs(1), move || {
+        if beside(&note, ".pressed").exists() {
+            Timer::single_shot(AFTER_PRESSURE, move || measure_after_pressure(&note));
+        } else if Instant::now() < deadline {
+            look_for_pressure(note, deadline);
+        } else {
+            log::warn!("the long run: no memory pressure came");
+        }
+    });
+}
+
+fn measure_after_pressure(note: &Path) {
+    let Some(parts) = memory::settled_parts() else { return };
+    log::info!(
+        "the long run: after the system's memory pressure, {} MB, {} MB of it the program's own, in {} processes",
+        parts.megabytes,
+        parts.own_megabytes,
+        parts.processes
+    );
+    let mut text = std::fs::read_to_string(beside(note, ".soak")).unwrap_or_default();
+    let _ = writeln!(
+        text,
+        "memory after pressure MB={}\nown memory after pressure MB={}\nprocesses after pressure={}",
+        parts.megabytes, parts.own_megabytes, parts.processes
+    );
+    let _ = std::fs::write(beside(note, ".soak"), text);
+    let _ = std::fs::write(beside(note, ".measured"), "measured\n");
 }
 
 #[cfg(test)]

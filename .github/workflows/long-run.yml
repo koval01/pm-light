@@ -225,20 +225,36 @@ jobs:
           note="$PWD/target/debug/account"
           seed=$(date +%s)
           echo "seed $seed"
+          pressure=()
+          [ "$RUNNER_OS" = macOS ] && pressure=(--soak-pressure)
           target/debug/proton-mail-light "--check-account=$note" "--soak-minutes=$MINUTES" "--soak-seed=$seed" \
-            > target/debug/account.log 2>&1 &
+            "${pressure[@]}" > target/debug/account.log 2>&1 &
           app=$!
           for _ in $(seq 1 $(((MINUTES + 25) * 60))); do
             [ -f "$note.done" ] && break
             kill -0 "$app" 2>/dev/null || { echo "::error::the app ended before the run did"; break; }
             sleep 1
           done
+          # On macOS the system then asks every process for memory back, as when memory runs short, without taking
+          # any (memory_pressure -S); the app measures again, and the report tells a cache from what is held.
+          if [ ${#pressure[@]} -gt 0 ] && [ -f "$note.done" ]; then
+            sudo memory_pressure -S -l critical -s 20 > /dev/null || echo "::warning::no memory pressure"
+            touch "$note.pressed"
+            for _ in $(seq 1 60); do
+              [ -f "$note.measured" ] && break
+              sleep 1
+            done
+          fi
           scripts/check-log.sh target/debug/account.log
           kill "$app" 2>/dev/null || true
           test -f "$note.soak" || { echo "::error::no report of the long run"; cat "$note.txt" 2>/dev/null; exit 1; }
       - name: Memory and requests
         if: ${{ !cancelled() }}
-        run: python3 -I scripts/soak-report.py target/debug/account.soak
+        shell: bash
+        run: |
+          pressure=()
+          [ "$RUNNER_OS" = macOS ] && pressure=(--pressure)
+          python3 -I scripts/soak-report.py target/debug/account.soak "${pressure[@]}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

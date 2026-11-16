@@ -92,3 +92,34 @@ fn a_read_after_a_change_is_no_repeat_and_a_change_twice_is() {
     assert_eq!(log.note(ms(2000), "PUT", "/mail/v4/conversations/read", true), None);
     assert_eq!(log.note(ms(2300), "PUT", "/mail/v4/conversations/read", true), Some(ms(300)), "a change twice");
 }
+
+#[test]
+fn errors_proton_answered_are_counted_by_status_and_kind_without_ids() {
+    let log = RequestLog::new();
+    for status in [200, 204, 301, 399] {
+        log.answered("GET", "/mail/v4/messages/abc", status);
+    }
+    assert!(log.summary().turned_down.is_empty(), "a success was counted as an error");
+    log.answered("GET", "/mail/v4/messages/abc==", 422);
+    log.answered("GET", "/mail/v4/messages/def==", 422);
+    log.answered("GET", "/core/v4/domains", 403);
+    log.answered("GET", "/mail/v4/messages/abc==", 500);
+    let turned_down = log.summary().turned_down;
+    assert_eq!(
+        turned_down,
+        [
+            ("422 GET /mail/v4/messages/{id}".to_string(), 2),
+            ("403 GET /core/v4/domains".to_string(), 1),
+            ("500 GET /mail/v4/messages/{id}".to_string(), 1),
+        ]
+    );
+    assert!(turned_down.iter().all(|(kind, _)| !kind.contains("abc") && !kind.contains("def")), "an id was kept");
+}
+
+#[test]
+fn an_answer_is_no_request() {
+    let log = RequestLog::new();
+    log.answered("GET", "/core/v4/users", 401);
+    let summary = log.summary();
+    assert_eq!((summary.total, summary.by_kind.len(), summary.turned_down.len()), (0, 0, 1));
+}

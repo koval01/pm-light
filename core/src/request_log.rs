@@ -1,7 +1,8 @@
 //! Every request to Proton while a check watches the app.
 //!
-//! What was asked how often, the most in any minute, and the same request asked again within a second with no change
-//! asked between, which a well-behaved client never does: a read after a change asks what the change made. Paths are
+//! What was asked how often, the most in any minute, the same request asked again within a second with no change
+//! asked between, which a well-behaved client never does (a read after a change asks what the change made), and what
+//! Proton answered with an error, which a client that asks for what is there seldom gets. Paths are
 //! kept as `journal::clean_path` writes them, ids and names taken out, so that the summary can be shown anywhere; the
 //! whole path stays in memory only, to tell a repeat from another request.
 
@@ -16,6 +17,8 @@ use std::{
 pub const REPEAT_WITHIN: Duration = Duration::from_secs(1);
 const READ: &str = "GET";
 const MINUTE: Duration = Duration::from_secs(60);
+/// The first status that is an error, the client's or the server's.
+const ERROR: u16 = 400;
 
 struct Asked {
     at: Duration,
@@ -28,6 +31,8 @@ struct Asked {
 pub struct RequestLog {
     started: Instant,
     asked: Mutex<Vec<Asked>>,
+    /// `STATUS METHOD /path/{id}` of each error Proton answered, with how often.
+    turned_down: Mutex<BTreeMap<String, usize>>,
 }
 
 /// What a run asked of Proton, in numbers and paths without ids.
@@ -40,6 +45,8 @@ pub struct RequestSummary {
     pub most_in_a_minute: usize,
     /// Each kind asked again within `REPEAT_WITHIN`, with how often.
     pub repeats: Vec<(String, usize)>,
+    /// Each request Proton answered with an error, `STATUS METHOD /path/{id}`, with how often.
+    pub turned_down: Vec<(String, usize)>,
 }
 
 impl Default for RequestLog {
@@ -51,7 +58,7 @@ impl Default for RequestLog {
 impl RequestLog {
     #[must_use]
     pub fn new() -> Self {
-        Self { started: Instant::now(), asked: Mutex::new(Vec::new()) }
+        Self { started: Instant::now(), asked: Mutex::new(Vec::new()), turned_down: Mutex::new(BTreeMap::new()) }
     }
 
     /// Records a request. One asked again within `REPEAT_WITHIN` says so in the journal at once, so that what the app
@@ -79,9 +86,18 @@ impl RequestLog {
         gap
     }
 
+    /// Records Proton's answer to a request: only an error is kept.
+    pub fn answered(&self, method: &str, path: &str, status: u16) {
+        if status >= ERROR {
+            *self.turned_down.lock().entry(format!("{status} {method} {}", clean_path(path))).or_default() += 1;
+        }
+    }
+
     #[must_use]
     pub fn summary(&self) -> RequestSummary {
-        summarize(&self.asked.lock())
+        let mut summary = summarize(&self.asked.lock());
+        summary.turned_down = sorted(self.turned_down.lock().clone());
+        summary
     }
 }
 
@@ -119,18 +135,21 @@ fn summarize(asked: &[Asked]) -> RequestSummary {
         }
         most_in_a_minute = most_in_a_minute.max(last + 1 - first);
     }
-    let sorted = |counts: BTreeMap<String, usize>| {
-        let mut counts: Vec<(String, usize)> = counts.into_iter().collect();
-        counts.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-        counts
-    };
     RequestSummary {
         total: asked.len(),
         refused: asked.iter().filter(|request| request.refused).count(),
         by_kind: sorted(by_kind),
         most_in_a_minute,
         repeats: sorted(repeats),
+        turned_down: Vec::new(),
     }
+}
+
+/// The most often first, and in order of name among equals.
+fn sorted(counts: BTreeMap<String, usize>) -> Vec<(String, usize)> {
+    let mut counts: Vec<(String, usize)> = counts.into_iter().collect();
+    counts.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    counts
 }
 
 #[cfg(test)]
