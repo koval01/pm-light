@@ -215,7 +215,11 @@ fn perform(service: &Arc<Service>, app: &App, rows: &[MessageMeta], action: Acti
         Action::OpenMail => {
             let at = usize::try_from(pick % u64::try_from(rows.len().max(1)).unwrap_or(1)).unwrap_or(0);
             if let Some(row) = rows.get(at) {
-                app.invoke_open_folder("inbox".into());
+                // The rows are the inbox's. A person opens a mail from the list shown, and goes to the inbox only from
+                // another folder: opening it again each time read the list again, which counted as a repeat.
+                if app.get_folder_id() != "inbox" {
+                    app.invoke_open_folder("inbox".into());
+                }
                 view::open_mail(service, &app.as_weak(), row.id.clone());
             }
         }
