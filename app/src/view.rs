@@ -2,8 +2,8 @@
 //! window on the main thread, so everything crosses over as plain data.
 
 use crate::{
-    App, BodyLine, FileRow, FolderRow, HeaderRow, InfoGroup, InfoItem, InfoWindow, MailRow, actions, composer,
-    contacts, mail_view, modal, numbers, palette,
+    App, BodyLine, FileRow, FolderRow, HeaderRow, InfoGroup, InfoItem, InfoWindow, MailRow, actions, contacts,
+    mail_view, modal, numbers, palette,
     pictures::{Logo, logo_of, picture_pixels, thumbnail_pixels},
     reader, search,
 };
@@ -926,7 +926,7 @@ pub fn with_front_window(app: &App, then: impl FnOnce(&slint::Window)) {
         }
         None => Some(then),
     };
-    let then = then.and_then(|then| composer::with_window(then));
+    let then = then.and_then(|then| crate::composer::with_window(then));
     let then = then.and_then(|then| contacts::with_window(then));
     let then = then.and_then(|then| crate::print_dialog::with_window(then));
     let then = then.and_then(|then| palette::with_window(then));
