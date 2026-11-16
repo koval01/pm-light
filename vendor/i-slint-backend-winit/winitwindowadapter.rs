@@ -1287,7 +1287,20 @@ impl WinitWindowAdapter {
         }
 
         match event {
-            WinitWindowEvent::RedrawRequested => self.draw()?,
+            WinitWindowEvent::RedrawRequested => {
+                // Patched: a redraw the toolkit did not ask for comes from the system, which lost what the
+                // window showed: X11 asks so when a child window, a webview, moves off the area it covered.
+                // Only the parts that changed would be drawn and shown, and the rest of that area stayed black.
+                #[cfg(all(unix, not(target_vendor = "apple")))]
+                if !self.pending_redraw.get() {
+                    let scale_factor = WindowInner::from_pub(self.window()).scale_factor();
+                    self.renderer().as_core_renderer().mark_dirty_region(
+                        LogicalRect::from_size(logical_size_from_api(self.size.get().to_logical(scale_factor)))
+                            .into(),
+                    );
+                }
+                self.draw()?
+            }
             WinitWindowEvent::Resized(size) => {
                 let resized = self.resize_event(size);
 
