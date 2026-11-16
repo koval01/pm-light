@@ -415,7 +415,9 @@ fn close(service: &Arc<Service>, app: &App) {
     settings.set_open(false);
     settings.set_sections(ModelRc::default());
     settings.set_tabs(ModelRc::default());
-    if let Some(id) = view::current_id() {
+    // The message being read comes back, not its row: the row may have left the list meanwhile, and a conversation's
+    // id is no message's.
+    if let Some(id) = view::open_message_id() {
         view::open_mail(service, &app.as_weak(), id);
     }
 }

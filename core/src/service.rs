@@ -10,6 +10,7 @@ mod mailbox;
 mod print;
 mod programs;
 mod protection;
+mod rows;
 mod sending;
 mod sensitive;
 mod settings;

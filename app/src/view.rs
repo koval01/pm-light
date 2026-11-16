@@ -1050,8 +1050,26 @@ pub fn show_images(service: &Arc<Service>, app: &Weak<App>) {
 /// folder, it stayed the current one: closing settings opened it again, and a conversation the folder does not hold
 /// was asked for as a message, which Proton refuses. Printing, snoozing and its headers reached it too.
 pub fn let_go_of_mail() {
-    *CURRENT.lock() = None;
+    // Under the lock on the row, which a mail that arrives takes too: it either sees the row gone or is let go here.
+    let mut current = CURRENT.lock();
+    *current = None;
     *OPEN.lock() = None;
+    drop(current);
+}
+
+/// Makes `message` the open one, or none, while `row` is still the current row, and says whether it was. Under the lock
+/// on the row, which `let_go_of_mail` takes too: a mail let go cannot come back after it.
+#[expect(
+    clippy::significant_drop_tightening,
+    reason = "the row stays locked while the open message changes, or a mail let go could come back"
+)]
+fn open_if_current(row: &str, message: Option<Arc<Message>>) -> bool {
+    let current = CURRENT.lock();
+    if current.as_deref() != Some(row) {
+        return false;
+    }
+    *OPEN.lock() = message;
+    true
 }
 
 pub fn close_mail(service: &Arc<Service>, app: &Weak<App>) {
@@ -1113,6 +1131,8 @@ fn step_to(service: &Arc<Service>, app: &Weak<App>, window: &App, id: String) {
 
 /// Opening a message reads it, as in any mail client, and Proton is told so.
 pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
+    // What the row opens is settled now, as it is shown: by the time it is read the person may be in another folder.
+    let opens = service.row_opens(&id);
     // A mail chosen inside a conversation leaves that conversation the open row.
     let held = CURRENT.lock().clone().filter(|row| !service.has_row(&id) && service.is_conversation_row(row));
     let staying = held.is_some();
@@ -1130,7 +1150,7 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
     let started = std::time::Instant::now();
     tokio::spawn(async move {
         // Before the row is marked read: where a conversation opens depends on what is unread.
-        let target = service.message_of_row(&id).await;
+        let target = service.message_of(opens).await;
         if !staying {
             let (service, row) = (service.clone(), row.clone());
             tokio::spawn(async move {
@@ -1140,11 +1160,13 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
         let id = target.unwrap_or(id);
         let message = service.message(&id).await;
         let Ok(message) = message.inspect_err(|error| log::warn!("a message did not open: {}", error.kind())) else {
-            if CURRENT.lock().as_deref() != Some(row.as_str()) {
+            if !open_if_current(&row, None) {
                 return; // the person has already moved on, and what they opened since stays
             }
-            *OPEN.lock() = None;
-            let _ = app.upgrade_in_event_loop(|app| {
+            let _ = app.upgrade_in_event_loop(move |app| {
+                if CURRENT.lock().as_deref() != Some(row.as_str()) {
+                    return;
+                }
                 app.set_opening(false);
                 app.set_has_mail(false);
                 app.set_failed(true);
@@ -1154,10 +1176,9 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
         // Known logos come straight away. One that has to be fetched follows the mail.
         let asked = tokio::time::timeout(LOGO_WAIT, picture_of(&service, &message.meta.from.email)).await;
         let hide = service.mail_settings().await.map_or(true, |settings| settings.hide_remote_images);
-        if CURRENT.lock().as_deref() != Some(row.as_str()) {
+        if !open_if_current(&row, Some(message.clone())) {
             return; // the person has already moved on
         }
-        OPEN.lock().replace(message.clone());
         LABELS.lock().clone_from(&message.meta.labels);
         let known = KNOWN_TRACKERS.lock().get(&id).cloned();
         *TRACKERS.lock() = known.clone().unwrap_or_default();
@@ -1173,6 +1194,10 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
         let held_back = service.with_embedded_held_back(&message);
         let (conversation, weak, shown, row_shown) = (service.clone(), app.clone(), message.clone(), row.clone());
         let _ = app.upgrade_in_event_loop(move |app| {
+            // Moved on, or let go, while this was on its way: the window's thread has the last word.
+            if CURRENT.lock().as_deref() != Some(row_shown.as_str()) {
+                return;
+            }
             app.set_sender_has_logo(logo_pixels.is_some());
             if let Some(pixels) = logo_pixels {
                 app.set_sender_logo(Image::from_rgba8(pixels));
@@ -1254,9 +1279,13 @@ fn read_ahead(service: &Arc<Service>, app: &App, id: &str) {
     let Some(at) = rows.iter().position(|row| row.id == id) else { return };
     let around = [at.checked_add(1), at.checked_sub(1)];
     for row in around.into_iter().flatten().filter_map(|near| rows.row_data(near)) {
-        let (service, near) = (service.clone(), row.id.to_string());
+        let opens = service.row_opens(&row.id);
+        if !opens.in_view() {
+            continue;
+        }
+        let service = service.clone();
         tokio::spawn(async move {
-            if let Ok(near) = service.message_of_row(&near).await {
+            if let Ok(near) = service.message_of(opens).await {
                 let _ = service.message(&near).await;
             }
         });

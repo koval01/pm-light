@@ -1058,10 +1058,11 @@ fn a_row_settled_while_shown_opens_its_conversation_after_the_person_left_the_fo
     let (service, _) = mailbox_at(&server.base);
     shows_a_conversation(&service, "inbox", "c0");
     let row = service.row_opens("c0");
-    assert_eq!(row, mailbox::RowOpens { id: "c0".into(), conversation_in: Some("inbox".into()) });
+    assert_eq!(row, rows::RowOpens { id: "c0".into(), conversation_in: Some("inbox".into()), in_view: true });
     service.view.lock().open("archive");
     // Asked only now, the row is not in the view, and its id would be taken for a message's.
-    assert_eq!(service.row_opens("c0").conversation_in, None);
+    let late = service.row_opens("c0");
+    assert_eq!((late.conversation_in, late.in_view), (None, false));
     let working = service;
     let opened = finishes(async move { working.message_of(row).await.ok() });
     assert_eq!(opened.as_deref(), Some("m0"));
@@ -1107,4 +1108,19 @@ fn a_read_ahead_begun_in_a_folder_reads_its_conversation_after_the_person_left()
     let seen = server.seen.lock().clone();
     assert!(seen.iter().any(|path| path.starts_with("/mail/v4/messages/m0")), "{seen:?}");
     assert!(!seen.iter().any(|path| path.starts_with("/mail/v4/messages/c0")), "{seen:?}");
+}
+
+#[test]
+fn a_row_the_view_no_longer_holds_is_not_read_ahead() {
+    let server = serve(|path, _| Some(a_conversation_answer(path)));
+    let (service, _) = mailbox_at(&server.base);
+    shows_a_conversation(&service, "inbox", "c0");
+    service.view.lock().open("archive");
+    let working = service.clone();
+    finishes(async move {
+        working.open_ahead(vec!["c0".to_string()]);
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    });
+    assert!(server.seen.lock().is_empty(), "{:?}", server.seen.lock());
+    assert!(!service.opening_ahead.load(std::sync::atomic::Ordering::Relaxed), "the read ahead stays taken");
 }

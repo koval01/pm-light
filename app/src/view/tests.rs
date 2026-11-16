@@ -82,3 +82,16 @@ fn an_odd_body_cannot_panic_the_split() {
         let _ = lines_of(body);
     }
 }
+
+/// A mail on its way shows only while its row is still the current one, and a mail let go stays gone. The only test
+/// that touches the open row, which is the program's own.
+#[test]
+fn a_mail_arriving_for_a_row_left_or_let_go_is_not_shown() {
+    *CURRENT.lock() = Some("row".into());
+    assert!(open_if_current("row", None), "the current row's mail was turned away");
+    assert!(!open_if_current("another", None), "a mail for a row left behind was shown");
+    let_go_of_mail();
+    assert_eq!(current_id(), None);
+    assert!(!open_if_current("row", None), "a mail let go came back");
+    assert_eq!(open_message_id(), None);
+}
