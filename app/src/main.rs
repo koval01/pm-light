@@ -31,6 +31,7 @@ mod nowhere;
 mod numbers;
 mod outside;
 mod palette;
+mod pictures;
 mod preferences;
 mod preview;
 mod print_dialog;
