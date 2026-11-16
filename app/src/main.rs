@@ -132,6 +132,7 @@ fn connect_mail(service: &Arc<Service>, app: &App) {
         log::info!("opening {}", view::folder_for_the_journal(&id));
         list_title(&weak, &id);
         mail_view::close();
+        view::let_go_of_mail();
         tokio::spawn(async move { service.view_open(&id).await });
     });
     let (mails, weak) = (service.clone(), app.as_weak());

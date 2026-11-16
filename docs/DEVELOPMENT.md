@@ -224,7 +224,9 @@ screen, and it never touches the real Keychain entries.
   (`Range`, status 206). On Windows the protocol is `http://attachment.preview`.
 - **A row is not always a message.** In conversations `current_id` is a conversation's id, and `message()` cannot take it. What
   needs a message uses `open_message_id` or `message_of_row`. Where a conversation opens depends on what is unread, so it is
-  asked before the row is marked read.
+  asked before the row is marked read. Whether a row is a conversation is known only while it is in the view: a read
+  that comes later settles it first (`row_opens`), and a mail that leaves the screen is let go (`let_go_of_mail`), or
+  its conversation's id reaches Proton as a message's and is refused.
 - **The composer's editor.** Anything entering it goes through `html::for_editor`. A `<textarea>` drops the first newline
   of its text, so a plain letter is written with one more.
 - **Slint's compiler and the stack.** It walks the window's tree deep enough to overflow a 1 MB main thread, which is

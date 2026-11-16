@@ -424,7 +424,7 @@ fn follow(service: &Arc<Service>, app: &Weak<App>, next: Option<String>) {
     if let Some(id) = next {
         open_mail(service, app, id);
     } else {
-        *CURRENT.lock() = None;
+        let_go_of_mail();
         mail_view::close();
         if let Some(window) = app.upgrade() {
             window.set_has_mail(false);
@@ -1086,8 +1086,16 @@ pub fn show_images(service: &Arc<Service>, app: &Weak<App>) {
     });
 }
 
-pub fn close_mail(service: &Arc<Service>, app: &Weak<App>) {
+/// The open mail leaves the screen: nothing may act on it after this, nor bring it back. Left by going to another
+/// folder, it stayed the current one: closing settings opened it again, and a conversation the folder does not hold
+/// was asked for as a message, which Proton refuses. Printing, snoozing and its headers reached it too.
+pub fn let_go_of_mail() {
     *CURRENT.lock() = None;
+    *OPEN.lock() = None;
+}
+
+pub fn close_mail(service: &Arc<Service>, app: &Weak<App>) {
+    let_go_of_mail();
     if let Some(app) = app.upgrade() {
         mail_view::close();
         app.set_has_mail(false);
@@ -1172,6 +1180,10 @@ pub fn open_mail(service: &Arc<Service>, app: &Weak<App>, id: String) {
         let id = target.unwrap_or(id);
         let message = service.message(&id).await;
         let Ok(message) = message.inspect_err(|error| log::warn!("a message did not open: {}", error.kind())) else {
+            if CURRENT.lock().as_deref() != Some(row.as_str()) {
+                return; // the person has already moved on, and what they opened since stays
+            }
+            *OPEN.lock() = None;
             let _ = app.upgrade_in_event_loop(|app| {
                 app.set_opening(false);
                 app.set_has_mail(false);
