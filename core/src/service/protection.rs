@@ -59,8 +59,12 @@ impl Service {
         self.client.act(Method::DELETE, &format!("/mail/v4/forwardings/{}", encoded(id))).await
     }
 
-    /// A free plan is refused this list, which is the same as having no domains.
+    /// Only an admin may read the list, and Proton's own client asks no one else. A refusal all the same is the same
+    /// as having no domains.
     pub async fn domains(&self) -> Result<Vec<DomainStatus>> {
+        if !api::may_read_domains(&self.user().await?) {
+            return Ok(Vec::new());
+        }
         let rows = match self.all_pages("/core/v4/domains", "Domains").await {
             Err(Error::Api { status: 403, .. }) => Vec::new(),
             other => other?,
@@ -117,3 +121,6 @@ impl Service {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests;

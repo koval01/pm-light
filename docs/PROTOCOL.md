@@ -220,6 +220,7 @@ and `7`, which then hold what was moved out of them as well, and `AlmostAllMail`
 | Sender lists: `GET`, `POST ?Overwrite=1`, `PUT .../delete` on `/mail/v4/incomingdefaults`                      | Web    | not yet checked live |
 | Forwarding: `GET /mail/v4/forwardings/{outgoing,incoming}`, `PUT .../{ID}/pause`, `/resume`, `DELETE .../{ID}` | Web    | not yet checked live |
 | Domains: `GET /core/v4/domains`, read only                                                                     | Web    | not yet checked live |
+| Domains asked for only by an admin, `Role` 2 of `GET /core/v4/users`                                           | Web    | fixed                |
 
 Earlier mail from a sender for printing: `GET /mail/v4/messages` with `LabelID=5`, `From`, `End`, `Total` in the reply
 (Web, `queryMessageMetadata`; not yet checked live).
@@ -335,12 +336,16 @@ These tabs are shown in the app, from the same calls as `packages/shared/lib/api
 Seen on a free test account: `PUT /core/v4/settings/earlyaccess` answers 400, code 2000, "invalid client", so
 it is not offered. `PUT .../logauth` answers 403, code 9102, until the password is confirmed. `GET /core/v4/organizations`
 refuses with 422, code 2501, and `GET /core/v4/members` answers 500 without an organization, so it is not asked then.
-`GET /core/v4/domains` answers 403, code 2026.
+`GET /core/v4/domains` answers 403, code 2026, `PERMISSION_DENIED` in `packages/shared/lib/errors.ts`.
 
-The organization is not asked of an account that cannot have one, as Proton's web client does not ask: the page reads
+Neither is asked of an account that cannot have it, as Proton's web client does not ask: each page reads
 `GET /core/v4/users` first. The organization, and its members with it, only when `Subscribed` is not `0`, or
 `LockedFlags` has bit `4`, the primary admin of an organization whose plan has lapsed (`canFetchOrganization`,
-`packages/account/organization/helper.ts`).
+`packages/account/organization/helper.ts`). The domains only when `Role` is `2`, an admin (`canFetch` in
+`packages/account/domains/index.ts`): that is what the permissions of `packages/account/userPermissions/index.ts` come
+to in Proton's older model, which its client also falls back to when the newer one is off or fails. Under the newer
+roles (`AdminRoleMVP`) a paying member, `Role` `1`, given `account.domain.read` would see the domains on Proton's site
+but is not asked here, and an admin without that permission is refused with a 403, which still means no domains.
 
 Left on the site: starting an import, which signs in at Google or Microsoft in a browser (`activation.ts`). The export
 is Proton's separate Export Tool, so that tab only leads to it.

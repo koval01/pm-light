@@ -19,6 +19,14 @@ pub fn may_have_organization(user: &Value) -> bool {
     count(user, "Subscribed") != 0 || count(user, "LockedFlags") & LOCKED_ORGANIZATION_ADMIN != 0
 }
 
+/// Whether the account may read its custom domains.
+///
+/// Proton's web client asks only for an admin (`Role` 2), and refuses anyone else, a free account too, with a 403.
+#[must_use]
+pub fn may_read_domains(user: &Value) -> bool {
+    count(user, "Role") == ADMIN_ROLE
+}
+
 /// A subscription lists its add-ons too: the name people know is the base plan's.
 pub(super) fn base_plan(subscription: Option<&Value>) -> Option<&Value> {
     let plans = subscription?.get("Plans")?.as_array()?;

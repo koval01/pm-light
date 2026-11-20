@@ -28,6 +28,14 @@ fn a_locked_admin_keeps_the_organization_and_no_other_lock_gives_one() {
 }
 
 #[test]
+fn only_an_admin_may_read_domains() {
+    assert!(may_read_domains(&json!({"Role": 2, "Subscribed": 1})));
+    assert!(!may_read_domains(&json!({"Role": 0, "Subscribed": 0})));
+    assert!(!may_read_domains(&json!({"Role": 1, "Subscribed": 1})));
+    assert!(!may_read_domains(&json!({})));
+}
+
+#[test]
 fn a_strange_user_is_asked_about_nothing() {
     for user in [
         json!({"Role": "2", "Subscribed": "1", "LockedFlags": "4"}),
@@ -35,6 +43,6 @@ fn a_strange_user_is_asked_about_nothing() {
         json!({"Role": [2], "Subscribed": {"Mail": 1}, "LockedFlags": null}),
         json!([{"Role": 2, "Subscribed": 1}]),
     ] {
-        assert!(!may_have_organization(&user), "{user}");
+        assert!(!may_have_organization(&user) && !may_read_domains(&user), "{user}");
     }
 }
