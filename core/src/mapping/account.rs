@@ -5,7 +5,19 @@ use super::{
     Organization, PLAN_TYPE_BASE, PaymentMethod, Plan, Referrals, Referred, ReferredState, SmtpToken, Value,
 };
 
-const MEMBER_ROLE_ADMIN: u64 = 2;
+/// The same for a user and for a member of an organization.
+const ADMIN_ROLE: u64 = 2;
+/// A bit of `User.LockedFlags`: the primary admin of an organization whose plan has lapsed, who still has it.
+const LOCKED_ORGANIZATION_ADMIN: u64 = 4;
+
+/// Whether the account can have an organization to ask about.
+///
+/// Proton's web client asks only for a paying user, or for an organization's admin locked after its plan lapsed
+/// (`canFetchOrganization`), and refuses anyone else with a 422.
+#[must_use]
+pub fn may_have_organization(user: &Value) -> bool {
+    count(user, "Subscribed") != 0 || count(user, "LockedFlags") & LOCKED_ORGANIZATION_ADMIN != 0
+}
 
 /// A subscription lists its add-ons too: the name people know is the base plan's.
 pub(super) fn base_plan(subscription: Option<&Value>) -> Option<&Value> {
@@ -195,7 +207,7 @@ pub fn to_organization(organization: &Value, members: &Value) -> Organization {
             .iter()
             .map(|row| Member {
                 name: words(row, "Name"),
-                admin: count(row, "Role") == MEMBER_ROLE_ADMIN,
+                admin: count(row, "Role") == ADMIN_ROLE,
                 own: count(row, "Self") != 0,
                 state: match count(row, "State") {
                     0 => MemberState::Disabled,
@@ -208,3 +220,6 @@ pub fn to_organization(organization: &Value, members: &Value) -> Organization {
             .collect(),
     }
 }
+
+#[cfg(test)]
+mod tests;

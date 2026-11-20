@@ -48,6 +48,10 @@ impl Service {
     }
 
     pub async fn organization(&self) -> Result<Organization> {
+        // An account that cannot have one is not asked about it, as Proton's own client does not ask.
+        if !api::may_have_organization(&self.user().await?) {
+            return Ok(api::to_organization(&Value::Null, &Value::Null));
+        }
         let path = format!("/core/v4/members?Page=0&PageSize={MEMBERS_SHOWN}");
         let organization = without_a_plan_for_it(self.client.get::<Value>("/core/v4/organizations").await)?;
         // Asked only where there is an organization: without one Proton answers this with a 500.

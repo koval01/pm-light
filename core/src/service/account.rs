@@ -6,6 +6,12 @@ use super::{
 };
 
 impl Service {
+    /// The account as Proton describes it: what it is decides what else may be asked about it.
+    pub(super) async fn user(&self) -> Result<Value> {
+        let mut reply: Value = self.client.get("/core/v4/users").await?;
+        Ok(reply.get_mut("User").map_or(Value::Null, Value::take))
+    }
+
     pub async fn storage(&self) -> Result<Storage> {
         let reply: Value = self.client.get("/core/v4/users").await?;
         let user = reply.get("User").unwrap_or(&Value::Null);

@@ -247,6 +247,13 @@ fn take_up_saved_session(service: &Service, store: &Memory) {
     service.client.set_session(Some(saved.session));
 }
 
+/// Signed in, against whatever `base` answers.
+pub(super) fn signed_in_at(base: &str) -> Arc<Service> {
+    let (service, store, _) = restarted_at(base);
+    take_up_saved_session(&service, &store);
+    service
+}
+
 const REFUSED: &str = r#"{"Code":10013,"Error":"Invalid refresh token"}"#;
 
 /// Every request meets an expired token, and Proton refuses to renew it.

@@ -337,6 +337,11 @@ it is not offered. `PUT .../logauth` answers 403, code 9102, until the password 
 refuses with 422, code 2501, and `GET /core/v4/members` answers 500 without an organization, so it is not asked then.
 `GET /core/v4/domains` answers 403, code 2026.
 
+The organization is not asked of an account that cannot have one, as Proton's web client does not ask: the page reads
+`GET /core/v4/users` first. The organization, and its members with it, only when `Subscribed` is not `0`, or
+`LockedFlags` has bit `4`, the primary admin of an organization whose plan has lapsed (`canFetchOrganization`,
+`packages/account/organization/helper.ts`).
+
 Left on the site: starting an import, which signs in at Google or Microsoft in a browser (`activation.ts`). The export
 is Proton's separate Export Tool, so that tab only leads to it.
 
