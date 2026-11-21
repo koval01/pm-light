@@ -18,6 +18,8 @@ How the app is built and why. The client is unofficial and not affiliated with P
 - A webview whose engine's process ends comes back by itself, with what it showed: its owner keeps the content, and
   `webviews/ends.rs` tells it when to load the page again or make the webview again. A page that ends the engine each
   time is given up after a few tries.
+- Blitz, an HTML and CSS engine in Rust without JavaScript, was measured as the reader's engine against WebKit:
+  `docs/BLITZ.md` has the pictures, the numbers, the limits it needs and what stands before it.
 
 ## Layout
 
