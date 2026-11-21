@@ -365,6 +365,14 @@ fn the_window_looks_as_it_did() {
     app.set_list_pages(0);
     app.set_list_page(0);
 
+    // An HTML mail whose page ended the web engine each time it was drawn: a plain line where the page would be.
+    app.set_plain(false);
+    app.set_page_failed(true);
+    shoot_at("mail-given-up-small", 900, 580, 1.0);
+    shoot_at("mail-given-up-qhd", 2560, 1440, 1.0);
+    app.set_page_failed(false);
+    app.set_plain(true);
+
     app.set_account_card(AccountCard {
         name: "Ann Example".into(),
         email: "ann@example.com".into(),

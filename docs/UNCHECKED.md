@@ -88,9 +88,11 @@ place says so in plain words (`webviews/ends.rs`). CI's picture check ends the e
 made-up mail's page is loaded, on every system, and requires the picture back: WebView2's browser processes under the
 program on Windows, WebKitGTK's web process on Linux, WebKit's web content processes on macOS. Beyond that check:
 
-- macOS: seen in a real build, the picture check: one web content process ended, the end heard, the picture drawn
-  again and delivered, and `revived=false` with the handler taken out. Not yet seen: the open mail, the editor, a
-  preview, printing and Proton's check after their web content process was ended, and the plain lines past the limit.
+- macOS: seen in a real build. The picture check: one web content process ended, the end heard, the picture drawn
+  again and delivered, and `revived=false` with the handler taken out. In the account check: the open mail and the
+  editor, its letter whole, back after their web content processes were ended, and past the limit the plain line in
+  the mail's pane and in the editor's place, both at once. Not yet seen: a preview, printing and Proton's check after
+  their process was ended, and the composer's line at the smallest size (the mail's is in `app/tests/screens`).
 - Windows: nothing seen. The mail, the editor, a preview and Proton's check after WebView2's processes were ended in
   Task Manager, a hung renderer (`ProcessFailed` kind 2, made again), a frame's renderer (kind 3, reloaded), and the
   plain line after a mail that ends its renderer each time.
