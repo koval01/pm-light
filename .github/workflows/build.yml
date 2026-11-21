@@ -1,5 +1,6 @@
 # Builds and checks the app on the systems it is made for, then starts it once on each, keeps a picture of its
-# window, and draws a made-up mail as a picture through the system's web engine (`--check-picture`). The pictures are
+# window, and draws a made-up mail as a picture through the system's web engine (`--check-picture`), twice: the second
+# time the engine's page processes are ended on the way, and the picture has to come back. The pictures are
 # the only look at Windows and Linux most changes get.
 #
 # It runs on all three systems for every push to main and every pull request, with nothing left out by path: its checks
@@ -162,6 +163,11 @@ jobs:
           width=$(sed -n 's/^width=//p' "$note")
           test "${width:-0}" -gt 0 || { echo "The picture is empty"; exit 1; }
           grep -qx "copied=true" "$note" || echo "::warning::The picture did not reach the clipboard"
+          # Drawn a second time, with the web engine's page processes ended once the page had loaded, as in Task
+          # Manager: the picture has to come back by itself.
+          grep -qx "revived=true" "$note" || { echo "The picture did not come back after its engine was ended"; exit 1; }
+          revived=$(sed -n 's/^revived_width=//p' "$note")
+          test "${revived:-0}" -gt 0 || { echo "The picture that came back is empty"; exit 1; }
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()

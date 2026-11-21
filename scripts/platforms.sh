@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds and tests the app for Linux, starts it under a virtual screen, and lints the Windows build, inside Docker.
 # GNU ld runs out of Docker's memory linking the app with WebKitGTK, so lld links. Windows cannot run here, so for it this proves that it compiles, not that a window opens: that is what CI's
-# pictures are for. The start on Linux echoes the journal and draws a made-up mail with `--check-picture`.
+# pictures are for. The start on Linux echoes the journal and draws a made-up mail with `--check-picture`, a second
+# time with WebKitGTK's web process ended on the way, which has to come back.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -64,6 +65,7 @@ docker run --rm \
             if [ "$code" -eq 124 ]; then echo "ran for 30 seconds"; else echo "-- quit by itself with $code"; failed=1; fi
             cat /tmp/picture.png.txt 2>/dev/null || { echo "-- no picture check"; failed=1; }
             grep -q "^width=[1-9]" /tmp/picture.png.txt 2>/dev/null || { echo "-- the mail picture was not drawn"; failed=1; }
+            grep -qx "revived=true" /tmp/picture.png.txt 2>/dev/null || { echo "-- the mail picture did not come back after its engine was ended"; failed=1; }
             grep -viE "^\s*$" /tmp/start.log | cut -c1-300 | tail -40
         else
             grep -E "^error|collect2|by signal" /tmp/start-build.log | head -20; echo "-- failed to build"; failed=1
