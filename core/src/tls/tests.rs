@@ -29,10 +29,9 @@ fn junk_has_no_pin() {
 fn rogue_authority(host: &str) -> (RootCertStore, CertificateDer<'static>) {
     let mut authority = rcgen::CertificateParams::new(Vec::new()).unwrap();
     authority.is_ca = rcgen::IsCa::Ca(rcgen::BasicConstraints::Unconstrained);
-    let authority_key = rcgen::KeyPair::generate().unwrap();
-    let authority = authority.self_signed(&authority_key).unwrap();
+    let authority = rcgen::CertifiedIssuer::self_signed(authority, rcgen::KeyPair::generate().unwrap()).unwrap();
     let params = rcgen::CertificateParams::new(vec![host.to_string()]).unwrap();
-    let leaf = params.signed_by(&rcgen::KeyPair::generate().unwrap(), &authority, &authority_key).unwrap();
+    let leaf = params.signed_by(&rcgen::KeyPair::generate().unwrap(), &authority).unwrap();
     let mut roots = RootCertStore::empty();
     roots.add(authority.der().clone()).unwrap();
     (roots, leaf.der().clone())
@@ -47,14 +46,12 @@ fn verify(verifier: &Pinned, leaf: &CertificateDer<'static>, host: &'static str)
 fn chain(host: &str) -> (RootCertStore, CertificateDer<'static>, CertificateDer<'static>) {
     let mut root = rcgen::CertificateParams::new(Vec::new()).unwrap();
     root.is_ca = rcgen::IsCa::Ca(rcgen::BasicConstraints::Unconstrained);
-    let root_key = rcgen::KeyPair::generate().unwrap();
-    let root = root.self_signed(&root_key).unwrap();
+    let root = rcgen::CertifiedIssuer::self_signed(root, rcgen::KeyPair::generate().unwrap()).unwrap();
     let mut issuer = rcgen::CertificateParams::new(Vec::new()).unwrap();
     issuer.is_ca = rcgen::IsCa::Ca(rcgen::BasicConstraints::Unconstrained);
-    let issuer_key = rcgen::KeyPair::generate().unwrap();
-    let issuer = issuer.signed_by(&issuer_key, &root, &root_key).unwrap();
+    let issuer = rcgen::CertifiedIssuer::signed_by(issuer, rcgen::KeyPair::generate().unwrap(), &root).unwrap();
     let leaf = rcgen::CertificateParams::new(vec![host.to_string()]).unwrap();
-    let leaf = leaf.signed_by(&rcgen::KeyPair::generate().unwrap(), &issuer, &issuer_key).unwrap();
+    let leaf = leaf.signed_by(&rcgen::KeyPair::generate().unwrap(), &issuer).unwrap();
     let mut roots = RootCertStore::empty();
     roots.add(root.der().clone()).unwrap();
     (roots, leaf.der().clone(), issuer.der().clone())
