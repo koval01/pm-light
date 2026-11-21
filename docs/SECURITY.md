@@ -50,6 +50,14 @@ What this client defends against, how, and what it does not. It records the find
   written to disk. The few lines that fit its height and scroll it are run by the program, not by the page. Canvas, WebGPU, the page cache and the GPU process are off too, which also leaves less
   of WebKit to attack. The switches for those are private, so each is checked for and a system without them only
   uses more memory: the policy above does not depend on them.
+- **A mail that ends its engine.** A hostile mail could crash the web engine's process, or run it out of memory, every
+  time it is drawn. The app brings a page back by itself when the process behind it ends (`webviews/ends.rs`), so
+  without a limit such a mail would start and end the engine again and again, holding the processor and filling the
+  journal. A page is tried again at most `MOST_TRIES` times, two, while each end comes within `QUIET`, five minutes,
+  of the one before; then it is given up, the webview goes, and the pane says in plain words that the mail cannot be
+  shown. Opening it again tries afresh, one click at a time. The editor, previews, printouts, the mail picture and
+  Proton's check have the same limit. The journal records an end by the webview's fixed word and the system's kind as
+  a number, never anything the engine wrote, and a late report from a webview already replaced is let be.
 - **The app's pages have no network.** A mail, the editor, previews and printouts get what they show over protocols of
   the app's own. WebKit still connected by itself to a clicked link's address, before the app said no to going there
   (`LinkPreconnect`), and that went around Tor and Quad9. Every connection of those pages now goes, as to a SOCKS

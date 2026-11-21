@@ -2095,6 +2095,10 @@ msgid "Save"
 msgstr "Сохранить"
 
 msgctxt "Say"
+msgid "The system's web engine stopped each time the editor opened, so it is closed. What you wrote is kept: close this window to keep it as a draft."
+msgstr "Системный веб-движок останавливался при каждом открытии редактора, поэтому он закрыт. Написанное сохранено: закройте это окно, чтобы оставить письмо черновиком."
+
+msgctxt "Say"
 msgid "Delete the message after"
 msgstr "Удалить письмо через"
 
@@ -3071,6 +3075,10 @@ msgid "This type of file cannot be shown here. You can save it."
 msgstr "Файлы этого типа здесь не показываются. Его можно сохранить."
 
 msgctxt "Say"
+msgid "The system's web engine stopped each time it drew this file. You can save it."
+msgstr "Системный веб-движок останавливался каждый раз, когда показывал этот файл. Его можно сохранить."
+
+msgctxt "Say"
 msgid "{{name}} can hold macros, which run on your computer once allowed. Save it only if you trust the sender, and do not enable macros in it."
 msgstr "{{name}} может содержать макросы: после разрешения они выполняются на компьютере. Сохраняй его, только если доверяешь отправителю, и не включай в нём макросы."
 
@@ -3357,6 +3365,10 @@ msgstr "Данные для Proton"
 msgctxt "Say"
 msgid "Download"
 msgstr "Скачать"
+
+msgctxt "Say"
+msgid "The system's web engine stopped each time it drew this mail, so it is not shown. Open the mail again to try once more."
+msgstr "Системный веб-движок останавливался каждый раз, когда показывал это письмо, поэтому оно не показано. Откройте письмо снова, чтобы попробовать ещё раз."
 
 msgctxt "Say"
 msgid "Could not open this file"
@@ -4097,6 +4109,14 @@ msgstr "Отсканируйте код в приложении-аутентиф
 msgctxt "Say"
 msgid "B,KB,MB,GB,TB"
 msgstr "Б,КБ,МБ,ГБ,ТБ"
+
+msgctxt "Say"
+msgid "The system's web engine stopped each time it showed Proton's check. Open the page in your browser instead."
+msgstr "Системный веб-движок останавливался каждый раз, когда показывал проверку Proton. Откройте страницу в браузере."
+
+msgctxt "Say"
+msgid "The web engine behind Proton's check stopped, so the check was loaded again. Any progress in it may be lost."
+msgstr "Веб-движок проверки Proton остановился, и проверка загружена заново. Пройденная часть могла пропасть."
 
 msgctxt "InfoWindow"
 msgid "Message"

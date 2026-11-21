@@ -31,3 +31,11 @@ fn the_report_holds_the_pictures_size_and_what_came_of_it() {
 fn a_report_of_what_is_no_picture_says_nothing_was_drawn() {
     assert!(report(b"not a picture", false, true).starts_with("width=0\nheight=0\n"));
 }
+
+#[test]
+fn a_picture_that_came_back_says_so_with_its_width() {
+    let mut png = Vec::new();
+    image::RgbaImage::new(9, 4).write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).unwrap_or_default();
+    assert_eq!(revived(&png, 3), "revived=true\nrevived_width=9\nprocesses_ended=3\n");
+    assert_eq!(revived(b"not a picture", 1), "revived=true\nrevived_width=0\nprocesses_ended=1\n");
+}

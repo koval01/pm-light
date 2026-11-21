@@ -2,10 +2,13 @@
 //! which goes as soon as the panel closes: a mail may be plain text, or several, with no page to print.
 
 use crate::App;
-use crate::webviews::PageScriptsOff as _;
+use crate::webviews::{Held, Keeper, PageScriptsOff as _, Remedy, Tries};
 use proton_core::print::PrintDocument;
 use slint::{ComponentHandle, Timer, TimerMode};
-use std::{cell::RefCell, time::Duration};
+use std::{
+    cell::{Cell, RefCell},
+    time::{Duration, Instant},
+};
 use wry::PageLoadEvent;
 
 const POLICY: &str = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:";
@@ -21,9 +24,18 @@ const CHECK_PANEL: Duration = Duration::from_millis(500);
 const PANEL_MAY_TAKE: Duration = Duration::from_secs(600);
 
 thread_local! {
-    static VIEW: RefCell<Option<crate::webviews::Held>> = const { RefCell::new(None) };
+    static VIEW: RefCell<Option<Held>> = const { RefCell::new(None) };
     static WATCH: Timer = Timer::default();
+    /// The document, until the system's panel has it: what to start again with if the engine ends before then.
+    static JOB: RefCell<Option<PrintDocument>> = const { RefCell::new(None) };
+    /// Numbers the webviews made, so that what a page that went still reports cannot act on the next one.
+    static MADE: Cell<u64> = const { Cell::new(0) };
+    /// Numbers the printouts asked for: the engine's ends are counted for one at a time.
+    static ASKED: Cell<u64> = const { Cell::new(0) };
+    static TRIES: RefCell<Tries> = const { RefCell::new(Tries::new()) };
 }
+
+static KEEPER: Keeper = Keeper { what: "printing", ended: engine_ended };
 
 pub fn page() -> String {
     format!(
@@ -44,6 +56,7 @@ pub fn own_page(url: &str) -> bool {
 
 pub fn go_away() {
     WATCH.with(Timer::stop);
+    drop(JOB.take());
     drop(VIEW.take());
 }
 
@@ -78,6 +91,8 @@ fn when_panel_closes(_app: &App) {
 }
 
 fn ask_system(weak: slint::Weak<App>) {
+    // The panel has the document from here on, and whatever happens to the engine, it is the panel's.
+    drop(JOB.take());
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
             let _ = view.print();
@@ -91,14 +106,20 @@ fn ask_system(weak: slint::Weak<App>) {
     });
 }
 
-fn place(prepared: &PrintDocument, app: &App) {
+fn place(prepared: &PrintDocument, app: &App, made: u64) {
     let Some(script) = placing(prepared) else { return };
     let weak = app.as_weak();
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
             let done = view.evaluate_script_with_callback(&script, move |_| {
                 let weak = weak.clone();
-                let _ = slint::invoke_from_event_loop(move || Timer::single_shot(SETTLES, move || ask_system(weak)));
+                let _ = slint::invoke_from_event_loop(move || {
+                    Timer::single_shot(SETTLES, move || {
+                        if MADE.get() == made {
+                            ask_system(weak);
+                        }
+                    });
+                });
             });
             if done.is_err() {
                 log::warn!("a document could not be placed for printing");
@@ -112,8 +133,37 @@ pub fn print(app: &App, prepared: PrintDocument) {
         return;
     }
     go_away();
+    ASKED.set(ASKED.get() + 1);
+    make(app, prepared);
+}
+
+/// The engine behind the page ended before the system's panel had the document: the printout starts again in a new
+/// webview, a few times at most. After the panel has it, the panel holds what it was given, and the person is told
+/// that this may not have been the whole document.
+fn engine_ended(_remedy: Remedy) {
+    let Some(prepared) = JOB.with_borrow(Clone::clone) else {
+        if VIEW.with_borrow(Option::is_some) {
+            crate::actions::toast(crate::toasts::FAILED);
+        }
+        return;
+    };
+    if !TRIES.with_borrow_mut(|tries| tries.again(ASKED.get(), Instant::now())) {
+        crate::webviews::given_up(&KEEPER);
+        go_away();
+        crate::actions::toast(crate::toasts::FAILED);
+        return;
+    }
+    let Some(app) = crate::actions::main_window() else { return };
+    drop(VIEW.take());
+    make(&app, prepared);
+}
+
+fn make(app: &App, prepared: PrintDocument) {
+    let made = MADE.get() + 1;
+    MADE.set(made);
+    JOB.set(Some(prepared.clone()));
     let weak = app.as_weak();
-    let built = crate::webviews::page(|builder| {
+    let built = crate::webviews::page(&KEEPER, |builder| {
         crate::switches::keep_to_drawing(builder)
             .page_scripts_off()
             .with_navigation_handler(|url| own_page(&url))
@@ -121,8 +171,8 @@ pub fn print(app: &App, prepared: PrintDocument) {
                 if matches!(event, PageLoadEvent::Finished) {
                     let (weak, prepared) = (weak.clone(), prepared.clone());
                     let _ = slint::invoke_from_event_loop(move || {
-                        if let Some(app) = weak.upgrade() {
-                            place(&prepared, &app);
+                        if let Some(app) = weak.upgrade().filter(|_| MADE.get() == made) {
+                            place(&prepared, &app, made);
                         }
                     });
                 }
@@ -136,9 +186,9 @@ pub fn print(app: &App, prepared: PrintDocument) {
     match built {
         Ok(view) => {
             crate::webviews::scripts_settled(&view);
-            VIEW.set(Some(crate::webviews::Held::new("printing", view)));
+            VIEW.set(Some(view));
         }
-        Err(_) => log::warn!("no webview to print with"),
+        Err(error) => log::warn!("no webview to print with: {}", crate::webviews::failure(&error)),
     }
 }
 

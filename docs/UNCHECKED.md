@@ -81,6 +81,25 @@ left to a real run.
 - The memory figure in the footer adds the program's private working set to its WebView2 processes', as Task Manager
   shows them. Only the choice of processes is tested; the figure itself has not been seen on Windows.
 
+## A web engine's process that ends
+
+Every webview comes back by itself when the engine's process behind it ends, or, past `MOST_TRIES` close together, its
+place says so in plain words (`webviews/ends.rs`). CI's picture check ends the engine's page processes while the
+made-up mail's page is loaded, on every system, and requires the picture back: WebView2's browser processes under the
+program on Windows, WebKitGTK's web process on Linux, WebKit's web content processes on macOS. Beyond that check:
+
+- macOS: seen in a real build. The picture check: one web content process ended, the end heard, the picture drawn
+  again and delivered, and `revived=false` with the handler taken out. In the account check: the open mail and the
+  editor, its letter whole, back after their web content processes were ended, and past the limit the plain line in
+  the mail's pane and in the editor's place, both at once. Not yet seen: a preview, printing and Proton's check after
+  their process was ended, and the composer's line at the smallest size (the mail's is in `app/tests/screens`).
+- Windows: nothing seen. The mail, the editor, a preview and Proton's check after WebView2's processes were ended in
+  Task Manager, a hung renderer (`ProcessFailed` kind 2, made again), a frame's renderer (kind 3, reloaded), and the
+  plain line after a mail that ends its renderer each time.
+- Linux: seen under a virtual screen (`scripts/platforms.sh`), the picture check: the web process ended, reported as
+  crashed (0), and the picture drawn again. Not yet seen: the mail, the editor, a preview and Proton's check after
+  `WebKitWebProcess` was ended, and WebKitGTK's own reason for running out of memory.
+
 ## Notifications on macOS
 
 The bundle asks the system for notifications with badges at its start, and the Dock shows the unread count only once

@@ -1,25 +1,26 @@
 //! The compose window. Its fields are the toolkit's, and the body is a page of its own: rich text
-//! needs a browser's editing, so this is the one webview with scripts on. Only the script written
-//! here can run in it, by the nonce in its policy, and all it can do is hand text back to Rust.
+//! needs a browser's editing, so this is the one webview with scripts on (`editor.rs`). Rust keeps
+//! the letter, and the page only hands text back to it.
 
 use crate::{
     ComposeWindow, FileRow, Say, actions, modal, moment_picker,
     recipients::{self, BCC, CC, People, TO},
     tray, view,
 };
+use editor::{run_in_page, script_text};
 use parking_lot::Mutex;
 use proton_core::{
     Error, Service,
     compose::{self, ComposeLabels, ComposeMode, ComposeState, SendOptions},
     file_kind, html,
     model::{ContactEmail, OutgoingFile},
-    text, timing,
+    timing,
 };
-use rand::RngCore;
 use rfd::FileDialog;
 use slint::{ComponentHandle, ModelRc, Timer, TimerMode, VecModel};
 use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc, time::Duration};
-use wry::{DragDropEvent, Rect, http::Request};
+
+mod editor;
 
 const AUTOSAVE: Duration = Duration::from_millis(2500);
 const WIDTH: f32 = 720.0;
@@ -39,37 +40,6 @@ const FAILED_PAST: i32 = 5;
 /// What Proton's own client offers.
 const EXPIRY_HOURS: [u64; 5] = [0, 1, 24, 168, 672];
 const SECONDS_IN_AN_HOUR: u64 = 3600;
-
-const SCRIPT: &str = r#"
-const area = document.getElementById("area");
-const post = (kind, text) => window.ipc.postMessage(kind + ":" + text);
-let timer;
-const plain = area.tagName === "TEXTAREA";
-const body = () => plain ? area.value : area.innerHTML;
-const report = () => { clearTimeout(timer); timer = setTimeout(() => post("body", body()), 150); };
-area.addEventListener("input", report);
-area.addEventListener("focus", () => post("focus", ""));
-if (!plain) area.addEventListener("paste", (event) => {
-  event.preventDefault();
-  const rich = event.clipboardData.getData("text/html");
-  const words = event.clipboardData.getData("text/plain");
-  if (rich) post("paste", rich);
-  else if (words) document.execCommand("insertText", false, words);
-});
-document.addEventListener("keydown", (event) => {
-  const command = event.metaKey || event.ctrlKey;
-  if (event.key === "Escape") post("close", "");
-  if (command && event.key === "Enter") { event.preventDefault(); post("send", ""); }
-  if (command && event.key === "s") { event.preventDefault(); post("save", ""); }
-});
-window.format = (command, value) => {
-  if (plain) return;
-  area.focus();
-  document.execCommand(command, false, value);
-  post("body", area.innerHTML);
-};
-window.replaceBody = (text) => { if (plain) area.value = text; else area.innerHTML = text; };
-"#;
 
 /// The message being written, shared with the workers that save and send it.
 struct Draft {
@@ -92,62 +62,6 @@ static SAVING: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 thread_local! {
     static OPEN: RefCell<Option<Open>> = const { RefCell::new(None) };
-}
-
-/// The element that is written in. Plain text takes a `textarea`, whose value is only ever text.
-fn writing_area(state: &ComposeState, right_to_left: bool) -> String {
-    if state.plain {
-        let direction = if right_to_left { r#" dir="rtl""# } else { "" };
-        // A parser drops one line break right after the tag, and a letter that starts with room to
-        // write would lose a line each time it opened. This is the one it drops.
-        format!("<textarea id=\"area\" spellcheck=\"true\"{direction}>\n{}</textarea>", text::escape(&state.body))
-    } else {
-        format!(r#"<div id="area" contenteditable="true">{}</div>"#, state.body)
-    }
-}
-
-fn page(area: &str, dark: bool) -> String {
-    let mut bytes = [0; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
-    let nonce = proton_core::hex(&bytes);
-    let (paper, ink) = if dark { ("#1b1c1f", "#f2f3f5") } else { ("#ffffff", "#17181c") };
-    format!(
-        r#"<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="x-dns-prefetch-control" content="off"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{nonce}'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'"><style>html,body{{height:100%;margin:0;overscroll-behavior:none}}body{{background:{paper};color:{ink};font:14px/1.5 -apple-system,"Segoe UI",system-ui,sans-serif}}#area{{box-sizing:border-box;min-height:100%;padding:14px 20px;outline:none;overflow-wrap:break-word}}#area [style]{{background-color:transparent!important;color:inherit!important}}img{{max-width:100%;height:auto}}blockquote{{margin:8px 0;padding-left:12px;border-left:2px solid #8884}}textarea#area{{display:block;width:100%;height:100%;border:0;resize:none;background:transparent;color:inherit;font:inherit}}</style></head><body>{area}<script nonce="{nonce}">{SCRIPT}</script></body></html>"#
-    )
-}
-
-fn bounds(window: &ComposeWindow) -> Rect {
-    crate::webviews::area(
-        "the editor",
-        f64::from(window.get_body_x()),
-        f64::from(window.get_body_y()),
-        f64::from(window.get_body_width()),
-        f64::from(window.get_body_height()),
-    )
-}
-
-/// The editor's page, over a protocol: a reply quoting a mail with its pictures can pass the 2 MB
-/// WebView2 takes through `with_html`.
-static SERVED: crate::webviews::OnePage = crate::webviews::OnePage::new("composerpage");
-
-thread_local! {
-    static PAGE_NUMBER: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
-}
-
-fn own_page(url: &str) -> bool {
-    SERVED.is_own(url) || url == "about:blank"
-}
-
-fn script_text(text: &str) -> String {
-    serde_json::to_string(text).unwrap_or_else(|_| "\"\"".to_string())
-}
-
-fn run_in_page(script: &str) {
-    OPEN.with_borrow(|open| {
-        if let Some(open) = open {
-            let _ = open.view.evaluate_script(script);
-        }
-    });
 }
 
 fn show_files() {
@@ -615,7 +529,7 @@ fn show(service: &Arc<Service>, state: ComposeState) {
     let people = People::new(&state.to, &state.cc, &state.bcc);
     let begins_at_top = people.is_empty();
     window.set_plain(state.plain);
-    let body = page(&writing_area(&state, service.habits().right_to_left), window.get_dark());
+    let body = editor::page_for(&state, service.habits().right_to_left, window.get_dark());
     *DRAFT.lock() = Some(Draft { state, people, changed: false });
     show_people(&window);
     let _ = window.show();
@@ -630,7 +544,7 @@ fn connect_fields(window: &ComposeWindow) {
         if let Some(window) = weak.upgrade() {
             OPEN.with_borrow(|open| {
                 if let Some(open) = open {
-                    crate::webviews::place_at(&open.view, bounds(&window));
+                    crate::webviews::place_at(&open.view, editor::bounds(&window));
                 }
             });
         }
@@ -789,33 +703,7 @@ fn connect_actions(service: &Arc<Service>, window: &ComposeWindow) {
 
 /// Everything that needs the window to exist for the system, which it does only after `show`.
 fn open_page(service: &Arc<Service>, window: ComposeWindow, body: &str, begins_at_top: bool) {
-    let messages = service.clone();
-    let dropped = service.clone();
-    let number = PAGE_NUMBER.get() + 1;
-    PAGE_NUMBER.set(number);
-    let address = SERVED.serve(number, body.to_string());
-    let built = crate::webviews::page(|builder| {
-        crate::switches::keep_to_drawing(builder)
-            // The page carries its own policy, with the nonce of its one script.
-            .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, None))
-            .with_url(&address)
-            .with_incognito(true)
-            .with_bounds(bounds(&window))
-            .with_navigation_handler(|url| own_page(&url))
-            .with_ipc_handler(move |request: Request<String>| {
-                let (service, message) = (messages.clone(), request.into_body());
-                let _ = slint::invoke_from_event_loop(move || on_page_message(&service, &message));
-            })
-            .with_drag_drop_handler(move |event| {
-                if let DragDropEvent::Drop { paths, .. } = event {
-                    let service = dropped.clone();
-                    let _ = slint::invoke_from_event_loop(move || add_paths(&service, paths));
-                }
-                true
-            })
-            .build_as_child(&window.window().window_handle())
-    });
-    let Ok(view) = built else {
+    let Ok(view) = editor::first(service, &window, body) else {
         *DRAFT.lock() = None;
         let _ = window.hide();
         return;
@@ -842,7 +730,7 @@ fn open_page(service: &Arc<Service>, window: ComposeWindow, body: &str, begins_a
     } else {
         let _ = view.focus();
     }
-    OPEN.set(Some(Open { view: crate::webviews::Held::new("the editor", view), window, autosave }));
+    OPEN.set(Some(Open { view, window, autosave }));
     show_files();
 }
 
@@ -977,6 +865,3 @@ pub fn labels(app: &crate::App) -> ComposeLabels {
 fn footer_words(app: &crate::App) -> String {
     crate::settings::say(app, "compose.protonFooter")
 }
-
-#[cfg(test)]
-mod tests;
