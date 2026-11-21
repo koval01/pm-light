@@ -232,6 +232,9 @@ jobs:
           app=$!
           for _ in $(seq 1 $(((MINUTES + 25) * 60))); do
             [ -f "$note.done" ] && break
+            # A failed check, such as a refused session, means the run will never begin: as on Linux, it is not waited
+            # for. Waiting cost an hour and a half on macOS, whose minutes count ten times.
+            grep -qx failed "$note.txt" 2>/dev/null && break
             kill -0 "$app" 2>/dev/null || { echo "::error::the app ended before the run did"; break; }
             sleep 1
           done
