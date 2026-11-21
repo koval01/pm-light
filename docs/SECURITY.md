@@ -14,7 +14,10 @@ What this client defends against, how, and what it does not. It records the find
 ## Layers
 
 - **Mail** is cleaned in Rust by an allowlist, then shown in a webview of its own with scripts off and a policy of
-  `default-src 'none'` that lets in only pictures carried in the mail. Each layer is meant to hold alone.
+  `default-src 'none'` that lets in only pictures carried in the mail. Each layer is meant to hold alone. The cleaner
+  also keeps what engines read as numbers and colours within what browsers allow: a `colspan` of at most 1,000 and a
+  `rowspan` of at most 65,534, colour attributes in ASCII only, and four layers of shadow at most (`html/attributes.rs`,
+  `html/css.rs`; a larger span and a two-byte colour made Blitz panic, a thousand shadows held it for half a minute).
 - **The window** is drawn by Slint in this program. No web page holds the app's state, tokens or keys, and there is no
   bridge from a page to them.
 - **The composer** edits in a webview of its own, whose one script carries a fresh nonce. It reports only the letter's

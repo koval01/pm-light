@@ -364,3 +364,67 @@ fn every_way_of_writing_an_embedded_picture_is_held_back() {
         assert!(without_embedded(&html).is_some_and(|held| !held.contains("src=")), "{src}");
     }
 }
+
+#[test]
+fn a_cell_spans_no_more_than_browsers_allow() {
+    let html = protect(
+        r#"<table><tr><td colspan="40000">a</td><td colspan=" +65535x">b</td><td rowspan="99999">c</td></tr></table>"#,
+    )
+    .html;
+    assert!(html.contains(r#"colspan="1000""#), "{html}");
+    assert!(!html.contains("40000") && !html.contains("65535"), "{html}");
+    assert!(html.contains(r#"rowspan="65534""#), "{html}");
+}
+
+#[test]
+fn an_ordinary_span_stays_as_written() {
+    let html = protect(r#"<table><tr><td colspan="2" rowspan="3">a</td></tr></table>"#).html;
+    assert!(html.contains(r#"colspan="2""#) && html.contains(r#"rowspan="3""#), "{html}");
+}
+
+#[test]
+fn a_span_that_is_no_number_goes() {
+    let html = protect(r#"<table><tr><td colspan="wide" rowspan="-2">a</td><td colspan="0">b</td></tr></table>"#).html;
+    assert!(!html.contains("colspan") && !html.contains("rowspan"), "{html}");
+}
+
+#[test]
+fn a_colour_that_is_not_ascii_goes() {
+    let html = protect("<table bgcolor=\"#a\u{e9}\u{e9}1\"><tr><td bgcolor=\"#\u{e9}1\">x</td></tr></table><font color=\"r\u{e9}d\">y</font>").html;
+    assert!(!html.contains("bgcolor") && !html.contains("color="), "{html}");
+}
+
+#[test]
+fn a_plain_colour_stays() {
+    let html =
+        protect(r##"<table bgcolor="#eeeeee"><tr><td bgcolor="white">x</td></tr></table><font color="red">y</font>"##)
+            .html;
+    assert!(html.contains(r##"bgcolor="#eeeeee""##) && html.contains(r#"bgcolor="white""#), "{html}");
+    assert!(html.contains(r#"color="red""#), "{html}");
+}
+
+#[test]
+fn shadows_stop_after_four_layers() {
+    let layers: Vec<String> = (0..1000).map(|i| format!("{i}px {i}px {i}px rgba(0,0,0,.5)")).collect();
+    for css in [
+        format!("box-shadow:{};color:red", layers.join(",")),
+        format!("p{{text-shadow:{};color:red}}", layers.join(",")),
+    ] {
+        let clean = clean_css(&css);
+        assert_eq!(clean.matches("rgba").count(), 4, "{clean}");
+        assert!(clean.contains("color:red"), "{clean}");
+    }
+}
+
+#[test]
+fn shadows_within_the_limit_and_other_commas_stay() {
+    let css = "p,div{box-shadow:0 0 1px red,0 0 2px blue;font-family:A,B,C;background:rgba(1,2,3,.5)}";
+    assert_eq!(clean_css(css), css);
+}
+
+#[test]
+fn a_mail_with_a_thousand_shadows_keeps_four() {
+    let layers: Vec<String> = (0..1000).map(|i| format!("{i}px 0 {i}px blue")).collect();
+    let html = protect(&format!(r#"<div style="box-shadow:{}">x</div>"#, layers.join(","))).html;
+    assert_eq!(html.matches("blue").count(), 4, "{html}");
+}
