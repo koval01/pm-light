@@ -44,6 +44,11 @@ ignoreUntil = 2027-05-01
 reason = "bincode is unmaintained, an informational notice; it has no known vulnerability, and comes through a dependency"
 
 [[IgnoredVulns]]
+id = "RUSTSEC-2026-0543"
+ignoreUntil = 2027-05-01
+reason = "chrono is unmaintained, an informational notice; the app's own dates use jiff, and chrono comes only through Slint and rxing"
+
+[[IgnoredVulns]]
 id = "RUSTSEC-2025-0057"
 ignoreUntil = 2027-05-01
 reason = "fxhash is unmaintained, an informational notice; no known vulnerability, through a dependency"
