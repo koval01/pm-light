@@ -307,10 +307,11 @@ GitHub's Dependabot reports more, from GitHub's own advisory database:
 | `lru` 0.7.8    | RUSTSEC-2026-0253   | A use-after-free when a key's or value's `Hash` or `Drop` panics, inside `reed-solomon-erasure`. Its keys are `Vec<usize>`, its values `Arc<Matrix>`: neither panics. |
 
 `osv-scanner.toml` lists each of these with its reason, for osv-scanner and the OpenSSF Scorecard, and asks for each
-to be looked at again by a date. The rest are `unmaintained` notices for Linux-only and build-time crates, and one for
-`chrono` (RUSTSEC-2026-0543). The app's own dates and time zones moved to `jiff` when `chrono` and `chrono-tz` were
-declared unmaintained; `chrono` stays in the build only inside Slint's `i-slint-core` and `rxing`, and goes when they
-move. `cargo deny` reports `unmaintained` only for crates the app depends on directly (`unmaintained = "workspace"`),
+to be looked at again by a date. The rest are `unmaintained` notices for Linux-only and build-time crates, one for
+`chrono` (RUSTSEC-2026-0543), and one for `humantime` (RUSTSEC-2026-0542), which follows chrono's. The app's own dates
+and time zones moved to `jiff` when `chrono` and `chrono-tz` were declared unmaintained; `chrono` stays in the build
+only inside Slint's `i-slint-core` and `rxing`, and `humantime` only inside arti, the Tor client. Each goes when the
+crate that brings it moves. `cargo deny` reports `unmaintained` only for crates the app depends on directly (`unmaintained = "workspace"`),
 so it no longer stops the build. `cargo deny` also found two
 advisories in `hickory-proto` 0.25 (RUSTSEC-2026-0118 and 0119): the first needs DNSSEC validation, which is not
 built in, and the second only slows the encoding of the app's own queries. It was moved to 0.26.3 regardless.

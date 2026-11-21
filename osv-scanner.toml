@@ -54,6 +54,11 @@ ignoreUntil = 2027-05-01
 reason = "fxhash is unmaintained, an informational notice; no known vulnerability, through a dependency"
 
 [[IgnoredVulns]]
+id = "RUSTSEC-2026-0542"
+ignoreUntil = 2027-05-01
+reason = "humantime is unmaintained, an informational notice that follows chrono's; no known vulnerability, only through arti, the Tor client"
+
+[[IgnoredVulns]]
 id = "RUSTSEC-2024-0384"
 ignoreUntil = 2027-05-01
 reason = "instant is unmaintained, an informational notice; no known vulnerability, through a dependency"
