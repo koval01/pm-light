@@ -4,15 +4,14 @@
 use crate::model::{Counts, MessageChanges, MessageMeta};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use shelves::Shelf;
+pub use shelves::StoredList;
 use std::collections::HashSet;
 
 pub const PAGE: u64 = 50;
 /// Proton refuses to move these out to these.
 const CANNOT_LEAVE: [&str; 2] = ["sent", "drafts"];
 const CANNOT_ENTER: [&str; 2] = ["inbox", "spam"];
-/// Folders kept for a return visit, and how much of each: a long scroll is not worth its memory.
-const SHELVES: usize = 16;
-const SHELF_ROWS: usize = 150;
 /// Hostile mail nobody asked to open, and drafts that may still change, wait for the click.
 const NOT_AHEAD: [&str; 3] = ["spam", "trash", "drafts"];
 const AHEAD_OF_A_FOLDER: usize = 5;
@@ -71,18 +70,6 @@ pub struct ViewUpdate {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub counts: Option<Counts>,
 }
-
-/// A folder as it last looked, shown at once on a return while Proton is asked again.
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct StoredList {
-    rows: Vec<MessageMeta>,
-    has_more: bool,
-    updated_at: Option<u64>,
-    #[serde(default)]
-    found: Option<u64>,
-}
-
-type Shelf = StoredList;
 
 #[expect(clippy::struct_excessive_bools, reason = "the state of one screen, each a fact of its own")]
 pub struct View {
@@ -200,56 +187,6 @@ impl View {
         self.page_at = 0;
         self.unshelve();
         self.begin()
-    }
-
-    /// Search results are not the folder, and a folder Proton never confirmed is not worth keeping.
-    fn shelve(&mut self) {
-        if self.filters != Filters::default() || self.updated_at.is_none() || self.page_at > 0 {
-            return;
-        }
-        let shelf = Shelf {
-            rows: self.rows.iter().take(SHELF_ROWS).cloned().collect(),
-            has_more: self.has_more || self.rows.len() > SHELF_ROWS,
-            updated_at: self.updated_at,
-            found: self.found,
-        };
-        self.shelves.retain(|(kept, _)| *kept != self.folder);
-        self.shelves.push((self.folder.clone(), shelf));
-        if self.shelves.len() > SHELVES {
-            self.shelves.remove(0);
-        }
-    }
-
-    fn unshelve(&mut self) {
-        let found = self.shelves.iter().position(|(kept, _)| *kept == self.folder);
-        let shelf = found.map_or_default(|at| self.shelves.remove(at).1);
-        self.rows = shelf.rows;
-        self.has_more = shelf.has_more;
-        self.updated_at = shelf.updated_at;
-        self.found = shelf.found;
-        self.fit_to_page();
-    }
-
-    #[must_use]
-    pub fn has_shelf(&self, folder: &str) -> bool {
-        (self.folder == folder && self.updated_at.is_some()) || self.shelves.iter().any(|(kept, _)| kept == folder)
-    }
-
-    /// A folder as the disk remembers it, to show first after a start.
-    pub fn stock(&mut self, folder: &str, list: StoredList) {
-        self.shelves.retain(|(kept, _)| kept != folder);
-        self.shelves.push((folder.to_string(), list));
-    }
-
-    /// What the screen shows, for the disk, unless it is a search.
-    #[must_use]
-    pub fn as_stored(&self) -> Option<StoredList> {
-        (self.filters == Filters::default() && self.page_at == 0).then(|| StoredList {
-            rows: self.rows.iter().take(SHELF_ROWS).cloned().collect(),
-            has_more: self.has_more,
-            updated_at: self.updated_at,
-            found: self.found,
-        })
     }
 
     /// Proton has just vouched for what is on screen.
@@ -486,5 +423,6 @@ impl View {
 }
 
 mod pages;
+mod shelves;
 #[cfg(test)]
 mod tests;
