@@ -2,9 +2,15 @@
 //! screen. That webview runs Proton's full page, unchanged: a person passes the check there, and
 //! this code only learns the outcome. Protection is never bypassed, and nothing here can reach it.
 
+use crate::webviews::{Held, Keeper, Remedy, Tries};
 use crate::{App, Auth};
 use slint::ComponentHandle;
-use std::cell::RefCell;
+use std::{
+    cell::{Cell, RefCell},
+    net::SocketAddr,
+    rc::Rc,
+    time::Instant,
+};
 use url::Url;
 use wry::{PageLoadEvent, ProxyConfig, ProxyEndpoint, Rect, WebViewBuilder};
 
@@ -85,9 +91,22 @@ fn is_proton(url: &Url) -> bool {
     url.scheme() == "https" && url.host_str().is_some_and(|host| host == "proton.me" || host.ends_with(".proton.me"))
 }
 
-thread_local! {
-    static VIEW: RefCell<Option<crate::webviews::Held>> = const { RefCell::new(None) };
+/// What the page was opened for: kept, so that it can be made again when the engine behind it ends.
+struct Asked {
+    page: Url,
+    door: Option<SocketAddr>,
+    report: Rc<dyn Fn(Outcome)>,
 }
+
+thread_local! {
+    static VIEW: RefCell<Option<Held>> = const { RefCell::new(None) };
+    static ASKED: RefCell<Option<Asked>> = const { RefCell::new(None) };
+    /// Numbers the checks opened, so that the engine's ends are counted for one at a time.
+    static OPENED: Cell<u64> = const { Cell::new(0) };
+    static TRIES: RefCell<Tries> = const { RefCell::new(Tries::new()) };
+}
+
+static KEEPER: Keeper = Keeper { what: "the verification page", ended: engine_ended };
 
 fn bounds(app: &App) -> Rect {
     let auth = app.global::<Auth>();
@@ -101,7 +120,7 @@ fn bounds(app: &App) -> Rect {
 }
 
 /// `report` gets the outcome on the window's thread, however the page ended.
-pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + Clone + Send + 'static) -> bool {
+pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + 'static) -> bool {
     close();
     // Under Tor the page goes through Tor too, or it does not open: never by the system's own way.
     let door = if crate::tor_link::chosen() {
@@ -119,8 +138,17 @@ pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + Clone + Send + 'st
     } else {
         None
     };
-    let (navigating, leaving) = (report.clone(), report);
-    let built = crate::webviews::proton(|builder| {
+    OPENED.set(OPENED.get() + 1);
+    app.global::<Auth>().set_verify_note("".into());
+    ASKED.set(Some(Asked { page: page.clone(), door, report: Rc::new(report) }));
+    let made = make(app, page, door);
+    let opened = made.is_some();
+    VIEW.set(made);
+    opened
+}
+
+fn make(app: &App, page: &Url, door: Option<SocketAddr>) -> Option<Held> {
+    let built = crate::webviews::proton(&KEEPER, |builder| {
         through_tor(builder, door)
             .with_url(page.as_str())
             .with_incognito(true)
@@ -129,8 +157,7 @@ pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + Clone + Send + 'st
             .with_on_page_load_handler(move |event, address| {
                 let left = Url::parse(&address).is_ok_and(|url| !is_proton(&url));
                 if left && matches!(event, PageLoadEvent::Finished) {
-                    let leaving = leaving.clone();
-                    let _ = slint::invoke_from_event_loop(move || leaving(Outcome::Closed));
+                    deliver(Outcome::Closed);
                 }
             })
             .with_navigation_handler(move |address| {
@@ -138,18 +165,57 @@ pub fn open(app: &App, page: &Url, report: impl Fn(Outcome) + Clone + Send + 'st
                 outcome_of(&url).map_or_else(
                     || may_load(&url),
                     |outcome| {
-                        let navigating = navigating.clone();
-                        let _ = slint::invoke_from_event_loop(move || navigating(outcome));
+                        deliver(outcome);
                         false
                     },
                 )
             })
             .build_as_child(&app.window().window_handle())
     });
-    built.is_ok_and(|view| {
-        VIEW.set(Some(crate::webviews::Held::new("the verification page", view)));
-        true
-    })
+    built.inspect_err(|error| log::warn!("no webview for Proton's check: {}", crate::webviews::failure(error))).ok()
+}
+
+/// The outcome to whoever opened the page, on the window's thread. Taken out of `ASKED` first: the report closes the
+/// page, which lets go of it.
+fn deliver(outcome: Outcome) {
+    let _ = slint::invoke_from_event_loop(move || {
+        let report = ASKED.with_borrow(|asked| asked.as_ref().map(|asked| asked.report.clone()));
+        if let Some(report) = report {
+            report(outcome);
+        }
+    });
+}
+
+/// The engine behind Proton's page ended: the page is loaded again from the address Proton gave, in the same webview or
+/// a new one, and the bar above it says that what the person did in the check may be lost. A page that ends the engine
+/// each time is given up after a few tries, and the screen offers the check in the browser instead.
+fn engine_ended(remedy: Remedy) {
+    let Some(app) = crate::actions::main_window() else { return };
+    let auth = app.global::<Auth>();
+    if !TRIES.with_borrow_mut(|tries| tries.again(OPENED.get(), Instant::now())) {
+        crate::webviews::given_up(&KEEPER);
+        drop(VIEW.take());
+        auth.set_verify_failed(true);
+        auth.set_verify_note(crate::settings::say(&app, "verify.engineStopped").into());
+        return;
+    }
+    let Some((page, door)) = ASKED.with_borrow(|asked| asked.as_ref().map(|asked| (asked.page.clone(), asked.door)))
+    else {
+        return;
+    };
+    auth.set_verify_note(crate::settings::say(&app, "verify.reloaded").into());
+    match remedy {
+        Remedy::Reload => VIEW.with_borrow(|view| {
+            if let Some(view) = view {
+                let _ = view.load_url(page.as_str());
+            }
+        }),
+        Remedy::Remake => {
+            drop(VIEW.take());
+            let made = make(&app, &page, door);
+            VIEW.set(made);
+        }
+    }
 }
 
 pub fn place(app: &App) {
@@ -162,6 +228,7 @@ pub fn place(app: &App) {
 
 pub fn close() {
     drop(VIEW.take());
+    drop(ASKED.take());
     if let Some(tor) = crate::tor_link::tor() {
         tor.close_page_door();
     }

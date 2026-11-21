@@ -2,7 +2,7 @@
 //! drawn only inside a web engine's sandboxed process, scripts and the network off, from a protocol
 //! of its own that serves this one file. The engine lives as long as the sheet does.
 
-use crate::webviews::PageScriptsOff as _;
+use crate::webviews::{Held, Keeper, PageScriptsOff as _, Remedy, Tries};
 use crate::{App, PreviewWindow, Say, actions, look, mail_view, modal};
 use proton_core::{
     Service,
@@ -15,7 +15,7 @@ use std::{
     borrow::Cow,
     cell::{Cell, RefCell},
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 use wry::{
     Rect,
@@ -43,11 +43,15 @@ thread_local! {
     static OPEN: RefCell<Option<Open>> = const { RefCell::new(None) };
     /// Numbers the sheets, so that a file arriving late cannot land in a later one.
     static TURN: Cell<u64> = const { Cell::new(0) };
+    /// How often the engine ended under the sheet now, by its number.
+    static TRIES: RefCell<Tries> = const { RefCell::new(Tries::new()) };
 }
+
+static KEEPER: Keeper = Keeper { what: "a preview", ended: engine_ended };
 
 /// The webview goes before its window, or X11 ends the program: see `a_webview_is_let_go_before_its_window`.
 struct Open {
-    view: Option<crate::webviews::Held>,
+    view: Option<Held>,
     window: PreviewWindow,
     file: Attachment,
     data: Option<Arc<Vec<u8>>>,
@@ -151,13 +155,13 @@ fn bounds(window: &PreviewWindow) -> Rect {
     )
 }
 
-fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<crate::webviews::Held> {
+fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<Held> {
     let panel = window.global::<crate::Theme>().get_panel();
     let start = if matches!(shown, Shown::Pdf) { FILE_PATH } else { PAGE_PATH };
     let served = Arc::new(served);
     // Video and sound need the engine's media process, which mail has no use for.
     let moving = matches!(shown, Shown::Video(_) | Shown::Audio(_) | Shown::Pdf);
-    let built = crate::webviews::page(|builder| {
+    let built = crate::webviews::page(&KEEPER, |builder| {
         let builder = if moving { builder } else { crate::switches::keep_to_drawing(builder) };
         builder
             .page_scripts_off()
@@ -174,7 +178,7 @@ fn draw(window: &PreviewWindow, shown: &Shown, served: Served) -> Option<crate::
             crate::webviews::scripts_settled(&view);
             let _ = view.zoom(look::zoom());
             mail_view::round_lower_corners(&view, CORNER);
-            Some(crate::webviews::Held::new("a preview", view))
+            Some(view)
         }
         Err(error) => {
             log::error!("no webview for a preview: {}", crate::webviews::failure(&error));
@@ -223,19 +227,55 @@ fn arrived(turn: u64, data: Option<Vec<u8>>) {
         window.set_state(NOT_SHOWN);
         return;
     };
-    modal::after_show(&window, move |window| {
-        let theme = window.global::<crate::Theme>();
-        let (background, text) = (css(theme.get_panel()), css(theme.get_foreground()));
-        let page = content_of(&shown, &data).map_or_else(Vec::new, |content| page_of(&content, &background, &text));
-        let served = Served { page, file: data.clone(), file_type: type_of(&shown) };
-        let view = draw(&window, &shown, served);
-        window.set_state(if view.is_some() { SHOWN } else { NOT_SHOWN });
-        OPEN.with_borrow_mut(|open| {
-            if let Some(open) = open {
-                open.view = view;
+    modal::after_show(&window, move |window| show_file(&window, &shown, &data));
+}
+
+/// The file in a webview of its own, once the sheet exists for the system, and again after the engine behind it ended.
+fn show_file(window: &PreviewWindow, shown: &Shown, data: &Arc<Vec<u8>>) {
+    let theme = window.global::<crate::Theme>();
+    let (background, text) = (css(theme.get_panel()), css(theme.get_foreground()));
+    let page = content_of(shown, data).map_or_else(Vec::new, |content| page_of(&content, &background, &text));
+    let served = Served { page, file: data.clone(), file_type: type_of(shown) };
+    let mut view = draw(window, shown, served);
+    window.set_state(if view.is_some() { SHOWN } else { NOT_SHOWN });
+    // What goes, the webview before or this one with no sheet left, goes outside the borrow: on Linux letting a
+    // webview go runs GTK's loop.
+    let before = OPEN.with_borrow_mut(|open| open.as_mut().map(|open| std::mem::replace(&mut open.view, view.take())));
+    drop(before);
+    drop(view);
+}
+
+/// The engine behind the file's page ended: the page loads again, or the file is drawn in a new webview, from the
+/// bytes the sheet holds. A file that ends the engine each time is given up after a few tries, and the sheet says so
+/// in plain words; it can still be saved.
+fn engine_ended(remedy: Remedy) {
+    let Some((window, file, data)) = OPEN.with_borrow(|open| {
+        let open = open.as_ref()?;
+        Some((open.window.clone_strong(), open.file.clone(), open.data.clone()?))
+    }) else {
+        return;
+    };
+    if !TRIES.with_borrow_mut(|tries| tries.again(TURN.get(), Instant::now())) {
+        crate::webviews::given_up(&KEEPER);
+        let gone = OPEN.with_borrow_mut(|open| open.as_mut().and_then(|open| open.view.take()));
+        drop(gone);
+        window.set_state(NOT_SHOWN);
+        window.set_problem(window.global::<Say>().invoke_text("preview.engineStopped".into()));
+        return;
+    }
+    if remedy == Remedy::Reload {
+        OPEN.with_borrow(|open| {
+            if let Some(Open { view: Some(view), .. }) = open {
+                let _ = view.reload();
             }
         });
-    });
+        return;
+    }
+    let gone = OPEN.with_borrow_mut(|open| open.as_mut().and_then(|open| open.view.take()));
+    drop(gone);
+    if let Some(shown) = file_kind::examine(&file.name, &file.mime, &data).shown {
+        show_file(&window, &shown, &data);
+    }
 }
 
 fn place() {

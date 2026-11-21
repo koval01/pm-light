@@ -2,13 +2,17 @@
 //! nothing, follows no link, and exists only while such a mail is open.
 
 use crate::App;
-use crate::webviews::{Held, PageScriptsOff as _};
+use crate::webviews::{Held, Keeper, PageScriptsOff as _, Remedy, Tries};
+use layer::{round_the_corner, snapshot};
 use slint::{ComponentHandle, Timer, TimerMode};
 use std::{
     cell::{Cell, RefCell},
-    time::Duration,
+    time::{Duration, Instant},
 };
-use wry::{PageLoadEvent, Rect, WebView, WebViewBuilder};
+use wry::{PageLoadEvent, Rect, WebView};
+
+mod layer;
+pub use layer::round_lower_corners;
 
 /// Run by this app, never by the mail: a fixed-width newsletter shrinks to the pane as it would on
 /// a phone. Scripts in the mail itself stay off.
@@ -42,7 +46,11 @@ thread_local! {
     static COVERS: Cell<u32> = const { Cell::new(0) };
     /// Whether the page is meant to be on screen, covered or not.
     static SHOWN: Cell<bool> = const { Cell::new(false) };
+    /// How often the engine ended under the page now, by its number.
+    static TRIES: RefCell<Tries> = const { RefCell::new(Tries::new()) };
 }
+
+static KEEPER: Keeper = Keeper { what: "a mail", ended: engine_ended };
 
 /// Something the toolkit draws goes over the mail, or comes away again. While it is there the page shows as a picture
 /// of itself, where the toolkit can draw over it: hidden outright, the mail vanished behind a panel that covers a
@@ -112,57 +120,6 @@ fn thaw() {
     }
 }
 
-/// A picture of the page as it stands, handed to `then` on the window's thread. False when none can be asked for.
-#[cfg(target_os = "macos")]
-fn snapshot(view: &WebView, then: fn(Option<slint::SharedPixelBuffer<slint::Rgba8Pixel>>)) -> bool {
-    use objc2::{msg_send, runtime::AnyObject};
-    use wry::WebViewExtMacOS;
-
-    let page = view.webview();
-    let done = block2::RcBlock::new(move |image: *mut AnyObject, _error: *mut AnyObject| {
-        // Safety: WebKit hands an `NSImage` or nothing, and it lives for this call.
-        let picture = unsafe { image.as_ref() }.and_then(pixels_of);
-        then(picture);
-    });
-    // Safety: a plain call on the page's own view, on the window's thread; no configuration means the whole page.
-    unsafe {
-        let none: Option<&AnyObject> = None;
-        let _: () = msg_send![&*page, takeSnapshotWithConfiguration: none, completionHandler: &*done];
-    }
-    true
-}
-
-/// An `NSImage` as pixels: through PNG, which every image of AppKit can become.
-#[cfg(target_os = "macos")]
-fn pixels_of(image: &objc2::runtime::AnyObject) -> Option<slint::SharedPixelBuffer<slint::Rgba8Pixel>> {
-    use objc2::{
-        msg_send,
-        rc::Retained,
-        runtime::{AnyClass, AnyObject},
-    };
-    use objc2_foundation::{NSData, NSDictionary};
-
-    // `NSBitmapImageFileTypePNG`.
-    const PNG: usize = 4;
-    // Safety: plain AppKit calls on an image WebKit made, each checked for nothing before it is used.
-    let png: Retained<NSData> = unsafe {
-        let tiff: Option<Retained<NSData>> = msg_send![image, TIFFRepresentation];
-        let class = AnyClass::get(c"NSBitmapImageRep")?;
-        let rep: Option<Retained<AnyObject>> = msg_send![class, imageRepWithData: &*tiff?];
-        let properties = NSDictionary::<AnyObject, AnyObject>::new();
-        let png: Option<Retained<NSData>> = msg_send![&*rep?, representationUsingType: PNG, properties: &*properties];
-        png?
-    };
-    let decoded = image::load_from_memory(&png.to_vec()).ok()?.to_rgba8();
-    let (width, height) = decoded.dimensions();
-    Some(slint::SharedPixelBuffer::clone_from_slice(decoded.as_raw(), width, height))
-}
-
-#[cfg(not(target_os = "macos"))]
-const fn snapshot(_view: &WebView, _then: fn(Option<slint::SharedPixelBuffer<slint::Rgba8Pixel>>)) -> bool {
-    false
-}
-
 /// The page on screen or not, as asked, unless something is over it: then only once that has gone.
 fn show_page(view: &WebView, visible: bool) {
     SHOWN.set(visible);
@@ -196,24 +153,38 @@ fn bounds(app: &App) -> Rect {
     crate::webviews::area("a mail", x, y, length(app.get_body_width()), length(app.get_body_height()))
 }
 
-/// Hostile mail may yet crash the engine's process. Loading it again would only crash it again, so
-/// the page goes empty and the person is told, and the mail stays one click from being tried again.
-#[cfg(target_os = "macos")]
-fn when_the_page_dies(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
-    use wry::WebViewBuilderExtDarwin;
-
-    builder.with_on_web_content_process_terminate_handler(|| {
-        log::error!("the page of a mail crashed");
-        let _ = slint::invoke_from_event_loop(|| {
-            close();
-            crate::actions::toast(crate::toasts::INTERNAL);
-        });
-    })
+/// The engine behind the page ended: the page comes back as it was, from the address it was served at, in the same
+/// webview or a new one. A mail that ends the engine each time it loads is given up after a few tries: the webview
+/// goes, the pane says in plain words that the mail cannot be shown, and opening it again tries afresh.
+fn engine_ended(remedy: Remedy) {
+    let Some(app) = crate::actions::main_window() else { return };
+    if !TRIES.with_borrow_mut(|tries| tries.again(PAGE.get(), Instant::now())) {
+        crate::webviews::given_up(&KEEPER);
+        give_up(&app);
+        return;
+    }
+    let Some(address) = SERVED.address() else { return };
+    match remedy {
+        Remedy::Reload => VIEW.with_borrow(|view| {
+            if let Some(view) = view {
+                let _ = view.load_url(&address);
+            }
+        }),
+        Remedy::Remake => {
+            drop(VIEW.take());
+            let made = make(&app, &address, SHOWN.get());
+            VIEW.set(made);
+        }
+    }
 }
 
-#[cfg(not(target_os = "macos"))]
-const fn when_the_page_dies(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
-    builder
+/// No page in the pane any more, and a plain line in its place, until another mail opens.
+fn give_up(app: &App) {
+    PATIENCE.with(Timer::stop);
+    WAITING.set(false);
+    SHOWN.set(false);
+    drop(VIEW.take());
+    app.set_page_failed(true);
 }
 
 /// Only the page handed over may load. A link goes to the browser, and nothing else goes at all:
@@ -273,107 +244,67 @@ fn fit_then_reveal() {
 
 pub fn show(app: &App, html: &str) {
     let address = page(html);
-    VIEW.with_borrow_mut(|view| {
-        if let Some(existing) = view.as_ref() {
-            round_the_corner(existing, app);
-            // The view outlives a change of theme, and its edge shows beside a page that does not fill it.
-            let _ = existing.set_background_color(behind_the_page(app));
-            let _ = existing.load_url(&address);
-            return;
-        }
-        let built = crate::webviews::page(|builder| {
-            when_the_page_dies(crate::switches::keep_to_drawing(builder))
-                .page_scripts_off()
-                .with_background_color(behind_the_page(app))
-                .with_navigation_handler(|url| own_page(&url))
-                // Every link of a mail opens a window of its own (`target="_blank"`, core/src/html.rs), which wry on
-                // Linux never shows the navigation handler: the link goes the same way here, and no window opens.
-                .with_new_window_req_handler(|url, _| {
-                    own_page(&url);
-                    wry::NewWindowResponse::Deny
-                })
-                .with_on_page_load_handler(|event, _| {
-                    if matches!(event, PageLoadEvent::Finished) {
-                        let _ = slint::invoke_from_event_loop(fit_then_reveal);
-                    }
-                })
-                .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, Some(POLICY)))
-                .with_url(&address)
-                .with_incognito(true)
-                .with_visible(!WAITING.get() && COVERS.get() == 0)
-                .with_bounds(bounds(app))
-                .build_as_child(&app.window().window_handle())
-        });
-        match built {
-            Ok(created) => {
-                crate::webviews::scripts_settled(&created);
-                SHOWN.set(!WAITING.get());
-                round_the_corner(&created, app);
-                let _ = created.zoom(crate::look::zoom());
-                *view = Some(Held::new("a mail", created));
-            }
-            Err(error) => {
-                log::error!("no webview for mail: {}", crate::webviews::failure(&error));
-                crate::actions::toast(crate::toasts::NO_ENGINE);
-            }
-        }
+    app.set_page_failed(false);
+    let reused = VIEW.with_borrow(|view| {
+        view.as_ref()
+            .inspect(|existing| {
+                round_the_corner(existing, app);
+                // The view outlives a change of theme, and its edge shows beside a page that does not fill it.
+                let _ = existing.set_background_color(behind_the_page(app));
+                let _ = existing.load_url(&address);
+            })
+            .is_some()
     });
+    if reused {
+        return;
+    }
+    let visible = !WAITING.get();
+    let made = make(app, &address, visible);
+    if made.is_some() {
+        SHOWN.set(visible);
+    }
+    VIEW.set(made);
 }
 
-/// In drafts there are no reply buttons, so the page reaches the panel's lower right corner and would
-/// square it off. Anywhere else it has no corner to follow.
-#[cfg(target_os = "macos")]
-fn round_the_corner(view: &WebView, app: &App) {
-    use objc2::{msg_send, rc::Retained, runtime::AnyObject};
-    use objc2_app_kit::NSView;
-    use wry::WebViewExtMacOS;
-
-    const RADIUS: f64 = 14.0;
-    // `kCALayerMaxXMaxYCorner`: a webview's layer is flipped, so its largest Y is the bottom.
-    const LOWER_RIGHT: usize = 1 << 3;
-    let radius = if app.get_folder_id() == "drafts" { RADIUS } else { 0.0 };
-    let page = view.webview();
-    let page: &NSView = &page;
-    page.setWantsLayer(true);
-    // Safety: a view that wants a layer has one, and these are plain properties of it.
-    unsafe {
-        let layer: Option<Retained<AnyObject>> = msg_send![page, layer];
-        if let Some(layer) = layer {
-            let _: () = msg_send![&*layer, setCornerRadius: radius];
-            let _: () = msg_send![&*layer, setMaskedCorners: LOWER_RIGHT];
-            let _: () = msg_send![&*layer, setMasksToBounds: true];
+/// A webview for the page at `address`, on screen if `visible` and nothing covers it.
+fn make(app: &App, address: &str, visible: bool) -> Option<Held> {
+    let built = crate::webviews::page(&KEEPER, |builder| {
+        crate::switches::keep_to_drawing(builder)
+            .page_scripts_off()
+            .with_background_color(behind_the_page(app))
+            .with_navigation_handler(|url| own_page(&url))
+            // Every link of a mail opens a window of its own (`target="_blank"`, core/src/html.rs), which wry on
+            // Linux never shows the navigation handler: the link goes the same way here, and no window opens.
+            .with_new_window_req_handler(|url, _| {
+                own_page(&url);
+                wry::NewWindowResponse::Deny
+            })
+            .with_on_page_load_handler(|event, _| {
+                if matches!(event, PageLoadEvent::Finished) {
+                    let _ = slint::invoke_from_event_loop(fit_then_reveal);
+                }
+            })
+            .with_custom_protocol(SERVED.protocol().to_string(), |_, request| SERVED.answer(&request, Some(POLICY)))
+            .with_url(address)
+            .with_incognito(true)
+            .with_visible(visible && COVERS.get() == 0)
+            .with_bounds(bounds(app))
+            .build_as_child(&app.window().window_handle())
+    });
+    match built {
+        Ok(created) => {
+            crate::webviews::scripts_settled(&created);
+            round_the_corner(&created, app);
+            let _ = created.zoom(crate::look::zoom());
+            Some(created)
+        }
+        Err(error) => {
+            log::error!("no webview for mail: {}", crate::webviews::failure(&error));
+            crate::actions::toast(crate::toasts::NO_ENGINE);
+            None
         }
     }
 }
-
-#[cfg(not(target_os = "macos"))]
-const fn round_the_corner(_view: &WebView, _app: &App) {}
-
-/// A page that reaches the bottom of a sheet would square off its corners.
-#[cfg(target_os = "macos")]
-pub fn round_lower_corners(view: &WebView, radius: f64) {
-    use objc2::{msg_send, rc::Retained, runtime::AnyObject};
-    use objc2_app_kit::NSView;
-    use wry::WebViewExtMacOS;
-
-    // `kCALayerMinXMaxYCorner` and `kCALayerMaxXMaxYCorner`, as in `round_the_corner`.
-    const LOWER: usize = (1 << 2) | (1 << 3);
-    let page = view.webview();
-    let page: &NSView = &page;
-    page.setWantsLayer(true);
-    // Safety: a view that wants a layer has one, and these are plain properties of it.
-    unsafe {
-        let layer: Option<Retained<AnyObject>> = msg_send![page, layer];
-        if let Some(layer) = layer {
-            let _: () = msg_send![&*layer, setCornerRadius: radius];
-            let _: () = msg_send![&*layer, setMaskedCorners: LOWER];
-            let _: () = msg_send![&*layer, setMasksToBounds: true];
-        }
-    }
-}
-
-#[cfg(not(target_os = "macos"))]
-pub const fn round_lower_corners(_view: &WebView, _radius: f64) {}
 
 fn fit() {
     VIEW.with_borrow(|view| {
@@ -442,6 +373,9 @@ pub fn set_visible(visible: bool) {
 /// difference between a mail that opens and one that arrives.
 pub fn close() {
     set_visible(false);
+    if let Some(app) = crate::actions::main_window() {
+        app.set_page_failed(false);
+    }
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
             let _ = view.load_url(&page(""));

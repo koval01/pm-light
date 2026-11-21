@@ -31,10 +31,15 @@ const WAYS_OUT: &[(&str, &[&str], &str)] = &[
     ("open::that", &["app/src/outside.rs"], "a link to the browser, which asks first under Tor"),
     (
         ".with_url(",
-        &["app/src/mail_view.rs", "app/src/composer.rs", "app/src/preview.rs", "app/src/verify.rs"],
+        &["app/src/mail_view.rs", "app/src/composer/editor.rs", "app/src/preview.rs", "app/src/verify.rs"],
         "webviews: the app's own protocols, and Proton's page through Tor",
     ),
-    ("load_url(", &["app/src/mail_view.rs"], "the mail page, over the app's own protocol"),
+    (
+        "load_url(",
+        &["app/src/mail_view.rs", "app/src/composer/editor.rs", "app/src/verify.rs"],
+        "the mail and the editor again over the app's own protocols, and Proton's page again in its own webview, \
+         whose way through Tor stays",
+    ),
     (
         "with_proxy_config",
         &["app/src/verify.rs", "app/src/webviews.rs"],

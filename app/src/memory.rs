@@ -75,6 +75,39 @@ fn added_up<P: PartialEq + Copy>(own: P, measured: &[(P, u64)]) -> Option<(u64, 
     Some((measured.iter().map(|(_, bytes)| bytes).sum(), mine, measured.len()))
 }
 
+/// The engine's processes that draw pages, for a check that ends them to see the pages come back: WebKit's web content
+/// processes on macOS, WebView2's browser processes under the program on Windows, whose renderers go with them, and
+/// WebKitGTK's web processes on Linux.
+pub fn page_processes() -> Vec<u32> {
+    system::page_processes()
+}
+
+/// Every process under `own`, at any depth, whatever it is: on Linux a sandbox may stand between the program and
+/// WebKit's processes.
+#[cfg(any(target_os = "linux", test))]
+fn descendants(own: u32, processes: &[(u32, u32)]) -> Vec<u32> {
+    let mut found = vec![own];
+    let mut index = 0;
+    while let Some(&parent) = found.get(index) {
+        for (pid, under) in processes {
+            if *under == parent && !found.contains(pid) {
+                found.push(*pid);
+            }
+        }
+        index += 1;
+    }
+    found.retain(|pid| *pid != own);
+    found
+}
+
+/// The parent's number in a line of `/proc/<pid>/stat`. The name in brackets may hold brackets and spaces itself, so
+/// the fields are read after the last closing one: the state, then the parent.
+#[cfg(any(target_os = "linux", test))]
+fn parent_in_stat(stat: &str) -> Option<u32> {
+    let (_, fields) = stat.rsplit_once(')')?;
+    fields.split_whitespace().nth(1)?.parse().ok()
+}
+
 const fn megabytes(bytes: u64) -> u64 {
     (bytes + BYTES_IN_A_MEGABYTE / 2) / BYTES_IN_A_MEGABYTE
 }
@@ -87,6 +120,7 @@ mod system {
     const MOST_PROCESSES: usize = 8192;
     const NAME_BYTES: usize = 64;
     const WEBKIT: &[u8] = b"com.apple.WebKit";
+    const WEB_CONTENT: &[u8] = b"com.apple.WebKit.WebContent";
 
     /// `rusage_info_v0` of `<sys/resource.h>`.
     #[repr(C)]
@@ -121,10 +155,25 @@ mod system {
     }
 
     pub(super) fn is_webkit(pid: i32) -> bool {
+        named(pid, WEBKIT)
+    }
+
+    fn named(pid: i32, start: &[u8]) -> bool {
         let mut name = [0_u8; NAME_BYTES];
         // Safety: the buffer has the size given, and the call writes no more.
         let length = unsafe { proc_name(pid, name.as_mut_ptr().cast(), u32::try_from(NAME_BYTES).unwrap_or(0)) };
-        usize::try_from(length).is_ok_and(|length| name.get(..length).is_some_and(|name| name.starts_with(WEBKIT)))
+        usize::try_from(length).is_ok_and(|length| name.get(..length).is_some_and(|name| name.starts_with(start)))
+    }
+
+    /// WebKit's web content processes among those `used` adds up.
+    pub fn page_processes() -> Vec<u32> {
+        let own = process::id();
+        let counted = counted().unwrap_or_default();
+        counted
+            .into_iter()
+            .filter(|pid| u32::try_from(*pid).is_ok_and(|pid| pid != own) && named(*pid, WEB_CONTENT))
+            .filter_map(|pid| u32::try_from(pid).ok())
+            .collect()
     }
 
     /// The physical footprint, which is what Activity Monitor calls Memory, of this program and of
@@ -172,6 +221,28 @@ mod system {
     pub fn parts() -> Option<(u64, u64, usize)> {
         let used = used()?;
         Some((used, used, 1))
+    }
+
+    /// `/proc/<pid>/comm` keeps 15 bytes of a name.
+    const WEB_PROCESS: &str = "WebKitWebProces";
+
+    /// WebKitGTK's web processes under the program, however deep.
+    pub fn page_processes() -> Vec<u32> {
+        let Ok(entries) = std::fs::read_dir("/proc") else { return Vec::new() };
+        let processes: Vec<(u32, u32)> = entries
+            .flatten()
+            .filter_map(|entry| entry.file_name().to_str()?.parse::<u32>().ok())
+            .filter_map(|pid| {
+                let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
+                Some((pid, super::parent_in_stat(&stat)?))
+            })
+            .collect();
+        super::descendants(std::process::id(), &processes)
+            .into_iter()
+            .filter(|pid| {
+                std::fs::read_to_string(format!("/proc/{pid}/comm")).is_ok_and(|name| name.starts_with(WEB_PROCESS))
+            })
+            .collect()
     }
 }
 
@@ -258,6 +329,16 @@ mod system {
         (total > 0).then_some(total)
     }
 
+    /// WebView2's browser processes, right under the program: ending one takes its renderers and helpers with it.
+    pub fn page_processes() -> Vec<u32> {
+        let own = process::id();
+        processes()
+            .into_iter()
+            .filter(|(_, parent, name)| *parent == own && name.eq_ignore_ascii_case(WEBVIEW))
+            .map(|(pid, _, _)| pid)
+            .collect()
+    }
+
     /// `used`, with this process's own part and how many processes it adds up.
     pub fn parts() -> Option<(u64, u64, usize)> {
         let own = process::id();
@@ -277,6 +358,10 @@ mod system {
 
     pub const fn parts() -> Option<(u64, u64, usize)> {
         None
+    }
+
+    pub const fn page_processes() -> Vec<u32> {
+        Vec::new()
     }
 }
 
