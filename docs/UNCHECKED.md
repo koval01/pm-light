@@ -94,7 +94,8 @@ program on Windows, WebKitGTK's web process on Linux, WebKit's web content proce
 - Windows: nothing seen. The mail, the editor, a preview and Proton's check after WebView2's processes were ended in
   Task Manager, a hung renderer (`ProcessFailed` kind 2, made again), a frame's renderer (kind 3, reloaded), and the
   plain line after a mail that ends its renderer each time.
-- Linux: nothing seen beyond the picture check: the mail, the editor, a preview and Proton's check after
+- Linux: seen under a virtual screen (`scripts/platforms.sh`), the picture check: the web process ended, reported as
+  crashed (0), and the picture drawn again. Not yet seen: the mail, the editor, a preview and Proton's check after
   `WebKitWebProcess` was ended, and WebKitGTK's own reason for running out of memory.
 
 ## Notifications on macOS

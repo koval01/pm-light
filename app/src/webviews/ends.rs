@@ -66,7 +66,8 @@ impl Tries {
 }
 
 /// The one kind WebKit on macOS reports, as a number for the journal: the page's own process.
-pub const WEB_CONTENT: i32 = 0;
+#[cfg(target_os = "macos")]
+const WEB_CONTENT: i32 = 0;
 
 /// What WebView2 reported, by its `COREWEBVIEW2_PROCESS_FAILED_KIND`; `None` for a kind it could not say. Microsoft's
 /// documentation: the browser process gone (0) closes every webview of it, which must be made again. The main frame's
