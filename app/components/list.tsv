@@ -20,6 +20,7 @@ annotate-snippets	0.12.17	MIT OR Apache-2.0	https://github.com/rust-lang/annotat
 anstyle	1.0.14	MIT OR Apache-2.0	https://github.com/rust-cli/anstyle.git	mwl
 arboard	3.7.0	MIT OR Apache-2.0	https://github.com/1Password/arboard	mwl
 argon2	0.5.3	MIT OR Apache-2.0	https://github.com/RustCrypto/password-hashes/tree/master/argon2	mwl
+argon2	0.6.0	MIT OR Apache-2.0	https://github.com/RustCrypto/password-hashes	mwl
 arrayref	0.3.9	BSD-2-Clause	https://github.com/droundy/arrayref	mwl
 arrayvec	0.7.8	MIT OR Apache-2.0	https://github.com/bluss/arrayvec	mwl
 arti-client	0.48.0	MIT OR Apache-2.0	https://gitlab.torproject.org/tpo/core/arti.git/	mwl
@@ -62,6 +63,7 @@ bitflags	1.3.2	MIT/Apache-2.0	https://github.com/bitflags/bitflags	ml
 bitflags	2.13.2	MIT OR Apache-2.0	https://github.com/bitflags/bitflags	mwl
 bitvec	1.1.1	MIT	https://github.com/bitvecto-rs/bitvec	mwl
 blake2	0.10.6	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
+blake2	0.11.0	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
 blanket	0.3.0	MIT	https://github.com/althonos/blanket	mwl
 block-buffer	0.10.4	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
 block-buffer	0.12.1	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
@@ -536,11 +538,13 @@ parlance	0.1.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 parley	0.11.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 parley_data	0.11.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 password-hash	0.5.0	MIT OR Apache-2.0	https://github.com/RustCrypto/traits/tree/master/password-hash	mwl
+password-hash	0.6.1	MIT OR Apache-2.0	https://github.com/RustCrypto/traits	mwl
 paste	1.0.15	MIT OR Apache-2.0	https://github.com/dtolnay/paste	mwl
 pem-rfc7468	0.7.0	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats/tree/master/pem-rfc7468	mwl
 percent-encoding	2.3.2	MIT OR Apache-2.0	https://github.com/servo/rust-url/	mwl
 petgraph	0.8.3	MIT OR Apache-2.0	https://github.com/petgraph/petgraph	l
 pgp	0.21.0	MIT OR Apache-2.0	https://github.com/rpgp/rpgp	mwl
+phc	0.6.1	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats	mwl
 phf	0.13.1	MIT	https://github.com/rust-phf/rust-phf	mwl
 phf	0.14.0	MIT	https://github.com/rust-phf/rust-phf	mwl
 phf_generator	0.13.1	MIT	https://github.com/rust-phf/rust-phf	mwl
