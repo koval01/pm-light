@@ -44,6 +44,27 @@ fn the_signed_part_is_readable_by_a_person() {
     assert!(seal.statement.contains("Subject: Subject") && seal.statement.contains("Text-SHA256: "));
 }
 
+/// Seals already on paper write their times this way, and a checker compares what it reads with them.
+#[test]
+fn times_are_written_in_utc_as_every_seal_has_them() {
+    let seal = pack(&mail("Hello"), keep()).unwrap();
+    assert!(seal.statement.contains("\nPrinted: 2023-11-14T22:13:20+00:00\n"), "{}", seal.statement);
+    assert!(seal.statement.contains("\nDate: 2023-07-22T04:26:40+00:00\n"));
+    assert_eq!(time_text(1_700_000_000_999), "2023-11-14T22:13:20+00:00", "a seal counts whole seconds");
+    assert_eq!(time_text(u64::MAX), "");
+}
+
+#[test]
+fn a_time_is_read_back_whatever_offset_it_is_written_with() {
+    for text in ["2023-11-14T22:13:20+00:00", "2023-11-14T22:13:20Z", "2023-11-15T00:13:20+02:00"] {
+        assert_eq!(time_of(text), 1_700_000_000_000, "{text}");
+    }
+    for junk in ["", "yesterday", "2023-11-14", "2023-11-14T22:13:20", "1969-12-31T23:59:59Z", "99999-01-01T00:00:00Z"]
+    {
+        assert_eq!(time_of(junk), 0, "{junk:?}");
+    }
+}
+
 #[test]
 fn a_long_mail_goes_in_further_codes_held_by_the_hash() {
     let long = noise(4000);

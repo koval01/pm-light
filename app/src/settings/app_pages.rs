@@ -195,9 +195,9 @@ fn choose_zone(ctx: &Ctx, app: &App) {
     let ctx = ctx.clone();
     tray::choose(app, &zone_options(&ctx), move |_, chosen| {
         let zone =
-            chosen.checked_sub(1).and_then(|position| timing::zones().get(position).copied()).unwrap_or_default();
-        timing::set_zone(zone);
-        preferences::change(|preferences| preferences.time_zone = zone.to_string());
+            chosen.checked_sub(1).and_then(|position| timing::zones().into_iter().nth(position)).unwrap_or_default();
+        timing::set_zone(&zone);
+        preferences::change(|preferences| preferences.time_zone = zone);
         times_changed(&ctx);
     });
 }

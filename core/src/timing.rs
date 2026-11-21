@@ -1,16 +1,26 @@
 //! Times people pick by name: tomorrow morning, next week. Local to wherever they are.
 
 use crate::error::{Error, Result};
-use chrono::{DateTime, Datelike, Days, Duration, Local, LocalResult, NaiveDate, NaiveDateTime, TimeZone, Utc};
-use chrono_tz::Tz;
+use jiff::{
+    SignedDuration, Span, Timestamp, Zoned,
+    civil::{Date, DateTime, Time, Weekday},
+    fmt::strtime,
+    tz::{self, TimeZone},
+};
 use parking_lot::RwLock;
 use serde::Deserialize;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
-const SEND_MORNING_HOUR: u32 = 8;
-const SNOOZE_MORNING_HOUR: u32 = 9;
-const LATER_TODAY_HOURS: i64 = 3;
-const DAYS_IN_WEEK: u32 = 7;
+const SEND_MORNING_HOUR: i8 = 8;
+const SNOOZE_MORNING_HOUR: i8 = 9;
+const LATER_TODAY: SignedDuration = SignedDuration::from_hours(3);
+const A_DAY: SignedDuration = SignedDuration::from_hours(24);
+const HOURS_IN_DAY: i64 = 24;
+const DAYS_IN_WEEK: i64 = 7;
+const LAST_SECOND: Time = Time::constant(23, 59, 59, 0);
+/// Names in a zone database that are no place anyone lives: the rules a POSIX zone string falls back on, and the
+/// zone of a system not yet set up.
+const NOT_PLACES: [&str; 2] = ["posixrules", "Factory"];
 /// The format of a `datetime-local` field.
 pub const FIELD_FORMAT: &str = "%Y-%m-%dT%H:%M";
 const TWELVE_HOURS: &str = "%I:%M %p";
@@ -23,7 +33,7 @@ const MONTH_FIRST: u8 = 2;
 const YEAR_FIRST: u8 = 3;
 
 /// The zone the person chose. Nothing means the system's.
-static ZONE: RwLock<Option<Tz>> = RwLock::new(None);
+static ZONE: RwLock<Option<TimeZone>> = RwLock::new(None);
 /// In Proton's numbering, where 1 is Monday and 7 is Sunday.
 static WEEK_START: AtomicU8 = AtomicU8::new(1);
 /// As the account has it, where 0 leaves it to the language.
@@ -35,15 +45,30 @@ static DATES: AtomicU8 = AtomicU8::new(0);
 /// English has its own 12 hours and month first, and the other languages here agree with each other.
 static ENGLISH: AtomicBool = AtomicBool::new(false);
 
-/// An empty or unknown name is the system's zone.
-/// Every zone a person can choose, by its IANA name.
+/// Every zone a person can choose, by its IANA name, in order: from the system's database, or from the copy built
+/// into the program where the system keeps none, as on Windows.
 #[must_use]
-pub fn zones() -> Vec<&'static str> {
-    chrono_tz::TZ_VARIANTS.iter().map(|zone| zone.name()).collect()
+pub fn zones() -> Vec<String> {
+    places(tz::db().available().map(|name| name.to_string()))
 }
 
+fn places(names: impl Iterator<Item = String>) -> Vec<String> {
+    let mut names: Vec<String> = names.filter(|name| !NOT_PLACES.contains(&name.as_str())).collect();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
+/// An empty or unknown name is the system's zone.
 pub fn set_zone(name: &str) {
-    *ZONE.write() = name.parse().ok();
+    *ZONE.write() = zone_named(name);
+}
+
+fn zone_named(name: &str) -> Option<TimeZone> {
+    if name.is_empty() || NOT_PLACES.contains(&name) {
+        return None;
+    }
+    tz::db().get(name).ok()
 }
 
 /// Proton's 0 means "as the language has it", which leaves Monday here.
@@ -64,31 +89,21 @@ pub fn set_language(language: &str) {
     ENGLISH.store(language == "en", Ordering::Relaxed);
 }
 
+/// The zone times are shown in: the one chosen, or the system's.
+fn zone() -> TimeZone {
+    let chosen = ZONE.read().clone();
+    chosen.unwrap_or_else(TimeZone::system)
+}
+
 /// Times computed the way they are shown: the moment is the same, the wall clock is the zone's.
-macro_rules! in_zone {
-    (|$now:ident| $work:expr) => {{
-        let zone = *ZONE.read();
-        match zone {
-            Some(zone) => {
-                let $now = Utc::now().with_timezone(&zone);
-                $work
-            }
-            None => {
-                let $now = Local::now();
-                $work
-            }
-        }
-    }};
+fn now() -> Zoned {
+    Timestamp::now().to_zoned(zone())
 }
 
 /// The wall clock at a moment, for text that leaves the app, such as a printed date.
+#[must_use]
 pub fn clock_text(seconds: i64, format: &str) -> String {
-    let zone = *ZONE.read();
-    zone.map_or_else(
-        || Local.timestamp_opt(seconds, 0).single().map(|at| written(&at, format)),
-        |zone| zone.timestamp_opt(seconds, 0).single().map(|at| written(&at, format)),
-    )
-    .unwrap_or_default()
+    Timestamp::from_second(seconds).map_or_else(|_| String::new(), |at| written(&at.to_zoned(zone()), format))
 }
 
 /// A moment for the journal: the date as the account writes it, and the clock to the millisecond,
@@ -97,12 +112,8 @@ pub fn clock_text(seconds: i64, format: &str) -> String {
 pub fn precise_text(milliseconds: i64) -> String {
     let (clock, dates, english) = formats();
     let format = precise_format(clock, dates, english);
-    let zone = *ZONE.read();
-    zone.map_or_else(
-        || Local.timestamp_millis_opt(milliseconds).single().map(|at| written(&at, &format)),
-        |zone| zone.timestamp_millis_opt(milliseconds).single().map(|at| written(&at, &format)),
-    )
-    .unwrap_or_default()
+    Timestamp::from_millisecond(milliseconds)
+        .map_or_else(|_| String::new(), |at| written(&at.to_zoned(zone()), &format))
 }
 
 fn precise_format(clock: u8, dates: u8, english: bool) -> String {
@@ -111,29 +122,26 @@ fn precise_format(clock: u8, dates: u8, english: bool) -> String {
 }
 
 /// A format from a dictionary, and a bad one must not panic while being written out.
-fn written<Z: TimeZone>(time: &DateTime<Z>, format: &str) -> String
-where
-    Z::Offset: std::fmt::Display,
-{
-    let mut text = String::new();
-    if std::fmt::Write::write_fmt(&mut text, format_args!("{}", time.format(format))).is_err() {
-        return time.to_rfc3339();
-    }
-    text
+fn written(time: &Zoned, format: &str) -> String {
+    strtime::format(format, time).unwrap_or_else(|_| time.timestamp().display_with_offset(time.offset()).to_string())
 }
 
 /// Which heading a mail falls under in a list: 1 today, 2 yesterday, 3 this week, 4 earlier.
+#[must_use]
 pub fn age_group(seconds: i64) -> i32 {
-    fn group<Z: TimeZone>(zone: &Z, now: &DateTime<Z>, seconds: i64) -> i32 {
-        let Some(then) = zone.timestamp_opt(seconds, 0).single() else { return 4 };
-        match (now.date_naive() - then.date_naive()).num_days() {
-            ..=0 => 1,
-            1 => 2,
-            2..=6 => 3,
-            _ => 4,
-        }
+    group(&now(), seconds)
+}
+
+/// By the calendar where the person is, not by hours: a mail from last night is yesterday's.
+fn group(now: &Zoned, seconds: i64) -> i32 {
+    let Ok(then) = Timestamp::from_second(seconds) else { return 4 };
+    let then = then.to_zoned(now.time_zone().clone());
+    match now.date().duration_since(then.date()).as_hours() / HOURS_IN_DAY {
+        ..=0 => 1,
+        1 => 2,
+        2..=6 => 3,
+        _ => 4,
     }
-    in_zone!(|now| group(&now.timezone(), &now, seconds))
 }
 
 const fn clock_pattern(clock: u8, english: bool) -> &'static str {
@@ -201,37 +209,34 @@ pub enum Left {
 #[must_use]
 pub fn left_until(expires_seconds: u64) -> Option<Left> {
     let expires = i64::try_from(expires_seconds).ok().filter(|seconds| *seconds > 0)?;
-    in_zone!(|now| left_at(&now, expires))
+    left_at(&now(), expires)
 }
 
-fn left_at<Z: TimeZone>(now: &DateTime<Z>, expires: i64) -> Option<Left> {
-    let then = now.timezone().timestamp_opt(expires, 0).single()?;
+fn left_at(now: &Zoned, expires: i64) -> Option<Left> {
+    let then = Timestamp::from_second(expires).ok()?.to_zoned(now.time_zone().clone());
     if then <= *now {
         return None;
     }
-    if then.clone() - now.clone() < Duration::hours(24) {
+    if now.duration_until(&then) < A_DAY {
         return Some(Left::LessThanADay);
     }
-    let end_of_day = then.date_naive().and_hms_opt(23, 59, 59)?;
-    let end = now.timezone().from_local_datetime(&end_of_day).earliest()?;
-    Some(Left::Days((end - now.clone()).num_days()))
+    let end_of_day = then.date().to_datetime(LAST_SECOND);
+    let end = now.time_zone().to_ambiguous_zoned(end_of_day).earlier().ok()?;
+    Some(Left::Days(now.duration_until(&end).as_hours() / HOURS_IN_DAY))
 }
 
-pub fn today() -> NaiveDate {
-    in_zone!(|now| now.date_naive())
+#[must_use]
+pub fn today() -> Date {
+    now().date()
 }
 
 /// A moment that is still only being chosen, and so belongs to no zone yet.
 #[must_use]
-pub fn wall_text(moment: NaiveDateTime, with_time: bool) -> String {
+pub fn wall_text(moment: DateTime, with_time: bool) -> String {
     let (clock, dates, english) = formats();
     let date = date_pattern(dates, english);
     let format = if with_time { format!("{date} {}", clock_pattern(clock, english)) } else { date.to_string() };
-    let mut text = String::new();
-    if std::fmt::Write::write_fmt(&mut text, format_args!("{}", moment.format(&format))).is_err() {
-        return moment.to_string();
-    }
-    text
+    strtime::format(&format, moment).unwrap_or_else(|_| moment.to_string())
 }
 
 #[must_use]
@@ -260,56 +265,56 @@ pub enum SnoozeChoice {
     NextWeek,
 }
 
-fn morning_in<Z: TimeZone>(now: &DateTime<Z>, days: u32, hour: u32) -> Option<NaiveDateTime> {
-    now.date_naive().checked_add_days(Days::new(u64::from(days)))?.and_hms_opt(hour, 0, 0)
+fn morning_in(now: &Zoned, days: i64, hour: i8) -> Option<DateTime> {
+    let day = now.date().checked_add(Span::new().try_days(days).ok()?).ok()?;
+    Some(day.to_datetime(Time::new(hour, 0, 0, 0).ok()?))
 }
 
-/// A wall-clock time the clocks skipped takes the moment after the change.
-fn resolve<Z: TimeZone>(zone: &Z, at: NaiveDateTime) -> Option<DateTime<Z>> {
-    match zone.from_local_datetime(&at) {
-        LocalResult::Single(time) | LocalResult::Ambiguous(time, _) => Some(time),
-        LocalResult::None => zone.from_local_datetime(&(at + Duration::hours(1))).earliest(),
-    }
+/// A wall-clock time the clocks skipped moves on by the length of the change, as 02:30 becomes 03:30 in spring, and
+/// one they show twice in autumn is the first of the two.
+fn resolve(zone: &TimeZone, at: DateTime) -> Option<Zoned> {
+    zone.to_ambiguous_zoned(at).compatible().ok()
 }
 
-fn snooze_at<Z: TimeZone>(choice: SnoozeChoice, now: &DateTime<Z>, week_start: u8) -> Option<i64> {
-    let morning = |days| resolve(&now.timezone(), morning_in(now, days, SNOOZE_MORNING_HOUR)?);
+fn snooze_at(choice: SnoozeChoice, now: &Zoned, week_start: u8) -> Option<i64> {
+    let morning = |days| resolve(now.time_zone(), morning_in(now, days, SNOOZE_MORNING_HOUR)?);
     let at = match choice {
-        SnoozeChoice::Later => now.clone() + Duration::hours(LATER_TODAY_HOURS),
+        SnoozeChoice::Later => now.checked_add(LATER_TODAY).ok()?,
         SnoozeChoice::Tomorrow => morning(1)?,
         SnoozeChoice::NextWeek => {
-            let today = now.weekday().num_days_from_sunday();
-            let first = u32::from(week_start) % DAYS_IN_WEEK;
-            let until_it = (DAYS_IN_WEEK + first - today) % DAYS_IN_WEEK;
+            let first = i8::try_from(week_start).ok().and_then(|day| Weekday::from_monday_one_offset(day).ok());
+            let until_it = i64::from(first.unwrap_or(Weekday::Monday).since(now.weekday()));
             morning(if until_it == 0 { DAYS_IN_WEEK } else { until_it })?
         }
     };
-    Some(at.timestamp())
+    Some(at.timestamp().as_second())
 }
 
 /// Seconds since the epoch. "Next week" means the coming first day of the week.
 pub fn snooze_time(choice: SnoozeChoice) -> Result<u64> {
     let week_start = WEEK_START.load(Ordering::Relaxed);
-    let at = in_zone!(|now| snooze_at(choice, &now, week_start)).ok_or(Error::BadTime)?;
+    let at = snooze_at(choice, &now(), week_start).ok_or(Error::BadTime)?;
     u64::try_from(at).map_err(|_| Error::BadTime)
 }
 
-fn tomorrow_field<Z: TimeZone>(now: &DateTime<Z>) -> String {
-    morning_in(now, 1, SEND_MORNING_HOUR).map_or_else(String::new, |at| at.format(FIELD_FORMAT).to_string())
+fn tomorrow_field(now: &Zoned) -> String {
+    morning_in(now, 1, SEND_MORNING_HOUR)
+        .map_or_else(String::new, |at| strtime::format(FIELD_FORMAT, at).unwrap_or_default())
 }
 
 /// What a `datetime-local` field should hold for "tomorrow morning".
+#[must_use]
 pub fn tomorrow_morning() -> String {
-    in_zone!(|now| tomorrow_field(&now))
+    tomorrow_field(&now())
 }
 
-fn scheduled_at<Z: TimeZone>(value: &str, now: &DateTime<Z>) -> Result<i64> {
-    let at = NaiveDateTime::parse_from_str(value, FIELD_FORMAT).map_err(|_| Error::BadTime)?;
-    let at = resolve(&now.timezone(), at).ok_or(Error::BadTime)?;
+fn scheduled_at(value: &str, now: &Zoned) -> Result<i64> {
+    let at = DateTime::strptime(FIELD_FORMAT, value).map_err(|_| Error::BadTime)?;
+    let at = resolve(now.time_zone(), at).ok_or(Error::BadTime)?;
     if at <= *now {
         return Err(Error::PastTime);
     }
-    Ok(at.timestamp())
+    Ok(at.timestamp().as_second())
 }
 
 /// A moment as a date field shows it, in the zone in use.
@@ -320,19 +325,19 @@ pub fn field_text(seconds: u64) -> String {
 
 /// What a date field holds, for a moment that may be in the past.
 pub fn field_time(value: &str) -> Result<u64> {
-    let at = NaiveDateTime::parse_from_str(value, FIELD_FORMAT).map_err(|_| Error::BadTime)?;
-    let seconds = in_zone!(|now| resolve(&now.timezone(), at).map(|at| at.timestamp()));
-    seconds.and_then(|seconds| u64::try_from(seconds).ok()).ok_or(Error::BadTime)
+    let at = DateTime::strptime(FIELD_FORMAT, value).map_err(|_| Error::BadTime)?;
+    let at = resolve(&zone(), at).ok_or(Error::BadTime)?;
+    u64::try_from(at.timestamp().as_second()).map_err(|_| Error::BadTime)
 }
 
 #[must_use]
 pub fn now_seconds() -> i64 {
-    Utc::now().timestamp()
+    Timestamp::now().as_second()
 }
 
 /// When to send, from what the field holds. A scheduled send must be in the future.
 pub fn scheduled_time(value: &str) -> Result<u64> {
-    u64::try_from(in_zone!(|now| scheduled_at(value, &now))?).map_err(|_| Error::BadTime)
+    u64::try_from(scheduled_at(value, &now())?).map_err(|_| Error::BadTime)
 }
 
 #[cfg(test)]

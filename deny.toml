@@ -53,7 +53,7 @@ interpreted = "deny"
 include-archives = true
 allow-build-scripts = [
     "ahash", "android-activity", "ash", "async-io", "async_executors", "atk-sys", "bindgen", "borsh", "cairo-sys-rs",
-    "chrono-tz", "clang-sys", "codepage-437", "cookie", "crc24", "crc32fast", "crossbeam-deque", "crossbeam-epoch",
+    "clang-sys", "codepage-437", "cookie", "crc24", "crc32fast", "crossbeam-deque", "crossbeam-epoch",
     "crossbeam-utils", "crunchy", "curve25519-dalek", "defmt", "defmt-macros", "derive-deftly-macros", "drm-fourcc",
     "drm-sys", "encoding_rs", "field-offset", "figment", "gdk-pixbuf-sys", "gdk-sys", "gdkx11-sys", "generic-array",
     "getrandom", "gio", "gio-sys", "glib-sys", "glutin", "glutin-winit", "glutin_egl_sys", "glutin_glx_sys",

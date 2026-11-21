@@ -5,7 +5,7 @@
 //! the `regex` crate runs in linear time, so no pattern can hang the app.
 
 use crate::model::MessageMeta;
-use chrono::NaiveDate;
+use jiff::{civil::Date, tz::TimeZone};
 use regex::{Regex, RegexBuilder};
 
 const MAX_PATTERN: usize = 256;
@@ -153,9 +153,8 @@ fn near_key(word: &str) -> Option<&'static str> {
 }
 
 fn date_of(text: &str) -> Option<u64> {
-    let date =
-        NaiveDate::parse_from_str(text, "%Y-%m-%d").or_else(|_| NaiveDate::parse_from_str(text, "%d.%m.%Y")).ok()?;
-    u64::try_from(date.and_hms_opt(0, 0, 0)?.and_utc().timestamp()).ok()
+    let date = Date::strptime("%Y-%m-%d", text).or_else(|_| Date::strptime("%d.%m.%Y", text)).ok()?;
+    u64::try_from(date.to_zoned(TimeZone::UTC).ok()?.timestamp().as_second()).ok()
 }
 
 fn compiled(pattern: &Pattern) -> Result<Regex, Problem> {

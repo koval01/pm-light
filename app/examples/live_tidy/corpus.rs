@@ -3,7 +3,7 @@
 //! documentation, so no reply, and no image, can reach anyone.
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use chrono::{Duration, Utc};
+use jiff::{Span, Timestamp, civil::Time, fmt::rfc2822, tz::TimeZone};
 use std::io::Cursor;
 
 /// A mail, whole, and whether it arrives unread.
@@ -15,9 +15,11 @@ pub struct Mail {
 const BOUNDARY: &str = "sample-boundary";
 
 fn date(days_ago: i64, hour: u32) -> String {
-    let at = Utc::now() - Duration::days(days_ago);
-    let at = at.date_naive().and_hms_opt(hour, 12, 0).map_or(at, |time| time.and_utc());
-    at.to_rfc2822()
+    let now = Timestamp::now().to_zoned(TimeZone::UTC);
+    let day = Span::new().try_days(days_ago).ok().and_then(|days| now.date().checked_sub(days).ok());
+    let time = i8::try_from(hour).ok().and_then(|hour| Time::new(hour, 12, 0, 0).ok());
+    let at = day.zip(time).and_then(|(day, time)| day.to_datetime(time).to_zoned(TimeZone::UTC).ok()).unwrap_or(now);
+    rfc2822::to_string(&at).unwrap_or_default()
 }
 
 /// A header value as RFC 2047 writes text that is not ASCII: `=?UTF-8?B?...?=`.

@@ -1,7 +1,10 @@
 //! A calendar and a clock for anything that needs a date, in a sheet over the window that asks.
 
 use crate::{DayCell, MomentWindow, Say, look, modal};
-use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
+use jiff::{
+    civil::{Date, DateTime, Time},
+    fmt::strtime,
+};
 use proton_core::{
     calendar::{DAY_FORMAT, Picking, week_in_order},
     timing::{self, FIELD_FORMAT},
@@ -12,7 +15,7 @@ use std::{cell::RefCell, rc::Rc, time::Duration};
 const WIDTH: f32 = 344.0;
 const HEIGHT_WITH_TIME: f32 = 584.0;
 const HEIGHT_DATE_ONLY: f32 = 460.0;
-const NOON: u32 = 12;
+const NOON: i8 = 12;
 /// A search field takes this too, as a person would write it.
 const DOTTED_DAY: &str = "%d.%m.%Y";
 
@@ -26,7 +29,7 @@ pub struct Request {
     pub value: String,
     pub with_time: bool,
     /// Days before this one cannot be chosen.
-    pub earliest: Option<NaiveDate>,
+    pub earliest: Option<Date>,
     /// Says what is wrong with a choice, as a key of the dictionary.
     pub check: Option<fn(&str) -> Option<&'static str>>,
 }
@@ -34,27 +37,26 @@ pub struct Request {
 struct Open {
     window: MomentWindow,
     picking: Picking,
-    cells: Vec<NaiveDate>,
+    cells: Vec<Date>,
     with_time: bool,
-    earliest: Option<NaiveDate>,
+    earliest: Option<Date>,
     check: Option<fn(&str) -> Option<&'static str>>,
     chosen: Option<Box<dyn FnOnce(String)>>,
     let_go: Box<dyn Fn(&Window)>,
 }
 
-fn field_of(moment: NaiveDateTime, with_time: bool) -> String {
-    moment.format(if with_time { FIELD_FORMAT } else { DAY_FORMAT }).to_string()
+fn field_of(moment: DateTime, with_time: bool) -> String {
+    strtime::format(if with_time { FIELD_FORMAT } else { DAY_FORMAT }, moment).unwrap_or_default()
 }
 
-fn moment_of(value: &str) -> Option<NaiveDateTime> {
-    NaiveDateTime::parse_from_str(value, FIELD_FORMAT).ok().or_else(|| {
-        let day =
-            NaiveDate::parse_from_str(value, DAY_FORMAT).or_else(|_| NaiveDate::parse_from_str(value, DOTTED_DAY));
-        day.ok()?.and_hms_opt(0, 0, 0)
+fn moment_of(value: &str) -> Option<DateTime> {
+    DateTime::strptime(FIELD_FORMAT, value).ok().or_else(|| {
+        let day = Date::strptime(DAY_FORMAT, value).or_else(|_| Date::strptime(DOTTED_DAY, value));
+        Some(day.ok()?.to_datetime(Time::midnight()))
     })
 }
 
-fn hour_shown(hour: u32, twelve: bool) -> (String, String) {
+fn hour_shown(hour: i8, twelve: bool) -> (String, String) {
     if !twelve {
         return (format!("{hour:02}"), String::new());
     }
@@ -65,9 +67,14 @@ fn hour_shown(hour: u32, twelve: bool) -> (String, String) {
     (format!("{shown:02}"), if hour < NOON { "AM" } else { "PM" }.to_string())
 }
 
-fn cell_of(day: NaiveDate, picking: &Picking, today: NaiveDate, earliest: Option<NaiveDate>) -> DayCell {
+/// The dictionary lists the months from January, by commas.
+fn month_name(names: &str, month: Date) -> &str {
+    usize::try_from(month.month() - 1).ok().and_then(|index| names.split(',').nth(index)).unwrap_or_default()
+}
+
+fn cell_of(day: Date, picking: &Picking, today: Date, earliest: Option<Date>) -> DayCell {
     DayCell {
-        number: i32::try_from(day.day()).unwrap_or(0),
+        number: i32::from(day.day()),
         inside: day.month() == picking.month.month(),
         today: day == today,
         picked: day == picking.moment.date(),
@@ -83,8 +90,7 @@ fn draw() {
     };
     let say = window.global::<Say>();
     let months = say.invoke_text("date.months".into());
-    let name = months.split(',').nth(picking.month.month0() as usize).unwrap_or_default();
-    window.set_month(format!("{name} {}", picking.month.year()).into());
+    window.set_month(format!("{} {}", month_name(&months, picking.month), picking.month.year()).into());
     let first = timing::first_day_of_week();
     let cells = picking.cells(first);
     let today = timing::today();
@@ -212,12 +218,12 @@ pub fn open<C: ComponentHandle + 'static>(parent: &C, request: &Request, chosen:
     });
 }
 
-fn start_of_today() -> NaiveDateTime {
-    timing::today().and_hms_opt(0, 0, 0).unwrap_or_default()
+fn start_of_today() -> DateTime {
+    timing::today().to_datetime(Time::midnight())
 }
 
 /// The arrow keys stop at the first day allowed, as a click does.
-fn step_within(picking: &mut Picking, delta: i32, earliest: Option<NaiveDate>) {
+fn step_within(picking: &mut Picking, delta: i32, earliest: Option<Date>) {
     let before = *picking;
     picking.step_day(delta);
     if earliest.is_some_and(|earliest| picking.moment.date() < earliest) {

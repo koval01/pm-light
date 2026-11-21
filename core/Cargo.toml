@@ -27,8 +27,9 @@ ammonia = "4"
 argon2 = "0.5"
 log = { version = "0.4", features = ["std"] }
 base64 = "0.23"
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
-chrono-tz = "0.10"
+# Dates and time zones. The system's zone database where there is one, and a copy built in for where there is none:
+# Windows, or a Linux without tzdata.
+jiff = { version = "0.2", features = ["tzdb-bundle-always"] }
 chacha20poly1305 = "0.11"
 cssparser = "0.37"
 encoding_rs = "0.8"

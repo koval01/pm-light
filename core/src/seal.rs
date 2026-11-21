@@ -12,8 +12,8 @@
 
 use crate::error::{Error, Result};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
-use chrono::{DateTime, Utc};
 use flate2::{Compression, read::DeflateDecoder, write::DeflateEncoder};
+use jiff::{Timestamp, tz::Offset};
 use reed_solomon_erasure::galois_8::ReedSolomon;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -77,14 +77,16 @@ fn text_hash(text: &str) -> String {
     })
 }
 
+/// RFC 3339 in UTC, written `+00:00` as every seal printed so far has it.
 fn time_text(milliseconds: u64) -> String {
     let seconds = i64::try_from(milliseconds / 1000).unwrap_or(0);
-    DateTime::<Utc>::from_timestamp(seconds, 0).map_or_else(String::new, |time| time.to_rfc3339())
+    Timestamp::from_second(seconds)
+        .map_or_else(|_| String::new(), |time| time.display_with_offset(Offset::UTC).to_string())
 }
 
 fn time_of(text: &str) -> u64 {
-    let parsed = DateTime::parse_from_rfc3339(text).ok();
-    parsed.and_then(|time| u64::try_from(time.timestamp()).ok()).map_or(0, |seconds| seconds * 1000)
+    let parsed = text.parse::<Timestamp>().ok();
+    parsed.and_then(|time| u64::try_from(time.as_second()).ok()).map_or(0, |seconds| seconds * 1000)
 }
 
 /// No line may end in a space: OpenPGP tools drop those before checking a clear signature, so one
