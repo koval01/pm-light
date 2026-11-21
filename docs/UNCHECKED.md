@@ -81,6 +81,19 @@ left to a real run.
 - The memory figure in the footer adds the program's private working set to its WebView2 processes', as Task Manager
   shows them. Only the choice of processes is tested; the figure itself has not been seen on Windows.
 
+## A web engine's process that ends
+
+Every webview comes back by itself when the engine's process behind it ends, or, past `MOST_TRIES` close together, its
+place says so in plain words (`webviews/ends.rs`). CI's picture check ends the engine's page processes while the
+made-up mail's page is loaded, on every system, and requires the picture back: WebView2's browser processes under the
+program on Windows, WebKitGTK's web process on Linux, WebKit's web content processes on macOS. Beyond that check:
+
+- Windows: nothing seen. The mail, the editor, a preview and Proton's check after WebView2's processes were ended in
+  Task Manager, a hung renderer (`ProcessFailed` kind 2, made again), a frame's renderer (kind 3, reloaded), and the
+  plain line after a mail that ends its renderer each time.
+- Linux: nothing seen beyond the picture check: the mail, the editor, a preview and Proton's check after
+  `WebKitWebProcess` was ended, and WebKitGTK's own reason for running out of memory.
+
 ## Notifications on macOS
 
 The bundle asks the system for notifications with badges at its start, and the Dock shows the unread count only once

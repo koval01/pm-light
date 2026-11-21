@@ -15,6 +15,9 @@ How the app is built and why. The client is unofficial and not affiliated with P
   it needs. A mail has scripts off; nothing in any of them reaches the program's state.
 - An HTML mail's webview starts with the list and stays, hidden and emptied between mails: WebKit takes about a second
   to start. A text mail never needs it.
+- A webview whose engine's process ends comes back by itself, with what it showed: its owner keeps the content, and
+  `webviews/ends.rs` tells it when to load the page again or make the webview again. A page that ends the engine each
+  time is given up after a few tries.
 
 ## Layout
 
