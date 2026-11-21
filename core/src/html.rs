@@ -222,6 +222,7 @@ static CLEANER: LazyLock<Builder<'static>> = LazyLock::new(|| {
 
 pub mod attributes;
 mod css;
+pub mod hints;
 pub use css::clean_css;
 
 pub(crate) static PIXEL_STYLE: Pattern =
