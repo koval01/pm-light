@@ -52,7 +52,7 @@ fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBu
         runtime::{AnyClass, AnyObject, Bool},
         sel,
     };
-    use objc2_foundation::{NSArray, NSString};
+    use objc2_foundation::NSArray;
     use objc2_web_kit::{WKWebViewConfiguration, WKWebsiteDataStore};
     use wry::WebViewBuilderExtMacos;
 
@@ -70,8 +70,7 @@ fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBu
         let features: Option<Retained<NSArray<AnyObject>>> =
             if listed.as_bool() && settable.as_bool() { msg_send![kind, _features] } else { None };
         for feature in features.iter().flat_map(|features| features.iter()) {
-            let key: Option<Retained<NSString>> = msg_send![&*feature, key];
-            if let Some(key) = key.filter(|key| off.contains(&key.to_string().as_str())) {
+            if let Some(key) = key_of(&feature).filter(|key| off.contains(&key.to_string().as_str())) {
                 let _: () = msg_send![&*preferences, _setEnabled: false, forFeature: &*feature];
                 log::debug!("a WebKit feature turned off: {key}");
             }
@@ -80,7 +79,29 @@ fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBu
     }
 }
 
+/// A feature's name, when it has one: `_WKFeature` is a private class, which another version of WebKit may change, so
+/// it is asked whether it answers to `key` before it is sent, and what comes back must be a string.
+#[cfg(target_os = "macos")]
+fn key_of(feature: &objc2::runtime::AnyObject) -> Option<objc2::rc::Retained<objc2_foundation::NSString>> {
+    use objc2::{
+        msg_send,
+        rc::Retained,
+        runtime::{AnyObject, Bool},
+        sel,
+    };
+    // Safety: `key` is sent only to an object that says it answers to it, and nothing that comes back is used before
+    // it is found to be a string.
+    let key: Option<Retained<AnyObject>> = unsafe {
+        let answers: Bool = msg_send![feature, respondsToSelector: sel!(key)];
+        if answers.as_bool() { msg_send![feature, key] } else { None }
+    };
+    key.and_then(|key| key.downcast::<objc2_foundation::NSString>().ok())
+}
+
 #[cfg(not(target_os = "macos"))]
 pub const fn keep_to_drawing(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
     builder
 }
+
+#[cfg(test)]
+mod tests;

@@ -23,9 +23,13 @@ pub fn harden_process() -> Vec<&'static str> {
     }
     // A build for AddressSanitizer leaves the process readable: its leak check reads it from outside.
     #[cfg(all(target_os = "linux", not(checked_memory)))]
-    // Safety: a setting of this process, with plain numbers.
-    if unsafe { libc::prctl(libc::PR_SET_DUMPABLE, 0, 0, 0, 0) } != 0 {
-        missing.push("the process could not be made unreadable to others");
+    {
+        // The call reads every argument after the option as an `unsigned long`, and a plain `0` would go as an `int`.
+        let (off, unused): (libc::c_ulong, libc::c_ulong) = (0, 0);
+        // Safety: a setting of this process, each argument of the width the call reads.
+        if unsafe { libc::prctl(libc::PR_SET_DUMPABLE, off, unused, unused, unused) } != 0 {
+            missing.push("the process could not be made unreadable to others");
+        }
     }
     #[cfg(target_os = "windows")]
     return windows::harden();
@@ -82,3 +86,6 @@ pub fn keep_awake_in_background() {
 
 #[cfg(not(target_os = "macos"))]
 pub const fn keep_awake_in_background() {}
+
+#[cfg(test)]
+mod tests;

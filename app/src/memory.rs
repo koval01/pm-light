@@ -23,7 +23,8 @@ unsafe extern "C" {
 /// Hands what this thread has freed back to the system, for a thread with nothing left to do.
 #[cfg(not(checked_memory))]
 pub fn give_back() {
-    // Safety: takes no pointers, and only tidies the calling thread's own heap.
+    // Safety: takes no pointers. Forced, it also tidies what ended threads left behind and the arenas the whole program
+    // shares, which mimalloc guards itself, so any thread may call it at any time.
     unsafe { mi_collect(true) };
 }
 
