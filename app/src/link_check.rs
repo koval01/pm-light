@@ -48,7 +48,7 @@ thread_local! {
 
 /// Shows the link, says where it is, and runs `then` once CI has pressed it, or when it waited long enough.
 pub fn run(app: &App, note: PathBuf, then: impl FnOnce(&App) + 'static) {
-    let Some(port) = port_in(std::env::args().skip(1)) else {
+    let Some(port) = port_in(crate::program::arguments()) else {
         then(app);
         return;
     };

@@ -49,7 +49,7 @@ fn listen() -> io::Result<()> {
 /// False when another copy took over and this one should leave. A restart after a crash never
 /// hands over: the copy it would hand over to is the one that is ending.
 pub fn claim() -> bool {
-    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    let arguments: Vec<String> = crate::program::arguments().collect();
     // A copy started by the one before it would only hand itself back to that one, which is leaving.
     if !guard::is_restart() && !guard::is_relaunch() && hand_over(&arguments) {
         return false;

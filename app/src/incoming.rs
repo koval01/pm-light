@@ -60,7 +60,7 @@ pub fn second_start<'a>(arguments: impl Iterator<Item = &'a str>) {
 
 /// Windows and Linux hand a link to the program as an argument, on macOS it comes as an event.
 pub fn listen() {
-    std::env::args().skip(1).for_each(|argument| accept(&argument));
+    crate::program::arguments().for_each(|argument| accept(&argument));
     system::listen();
 }
 

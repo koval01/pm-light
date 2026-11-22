@@ -42,7 +42,7 @@ fn next_restart(previous: Option<&str>, now: u64) -> Option<String> {
 }
 
 fn this_start() -> Option<String> {
-    std::env::args().find(|argument| argument.starts_with(ARGUMENT))
+    crate::program::arguments().find(|argument| argument.starts_with(ARGUMENT))
 }
 
 pub fn is_restart() -> bool {
@@ -68,7 +68,7 @@ pub fn relaunch_if_asked() {
     if !RELAUNCH_ASKED.load(Ordering::Relaxed) {
         return;
     }
-    if let Ok(program) = std::env::current_exe()
+    if let Some(program) = crate::program::file()
         && let Err(error) = Command::new(program).arg(RELAUNCH).spawn()
     {
         log::error!("the app could not start again: {:?}", error.kind());
@@ -77,7 +77,7 @@ pub fn relaunch_if_asked() {
 
 /// This copy was started by `relaunch`, while the one before it was still on its way out.
 pub fn is_relaunch() -> bool {
-    std::env::args().any(|argument| argument == RELAUNCH)
+    crate::program::arguments().any(|argument| argument == RELAUNCH)
 }
 
 /// Once, and only when the mail is on screen: the splash would hide it.
@@ -89,7 +89,7 @@ pub fn say_if_restarted(app: &App) {
 
 fn start_again() {
     let Some(argument) = next_restart(this_start().as_deref(), now()) else { return };
-    if let Ok(program) = std::env::current_exe() {
+    if let Some(program) = crate::program::file() {
         let _ = Command::new(program).arg(argument).spawn();
     }
 }

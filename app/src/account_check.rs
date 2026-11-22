@@ -44,7 +44,7 @@ pub fn asked_in(arguments: impl Iterator<Item = String>) -> Option<PathBuf> {
 
 /// Whether this start is the account check.
 pub fn asked() -> bool {
-    ASKED.get_or_init(|| asked_in(std::env::args().skip(1))).is_some()
+    ASKED.get_or_init(|| asked_in(crate::program::arguments())).is_some()
 }
 
 fn reached(stage: &'static str) {
@@ -66,7 +66,7 @@ pub fn report(folders: usize, rows: usize, width: u32, height: u32) -> String {
 
 /// From `main`, once the window exists: the note is waited for from here.
 pub fn begin() {
-    let Some(path) = ASKED.get_or_init(|| asked_in(std::env::args().skip(1))).clone() else { return };
+    let Some(path) = ASKED.get_or_init(|| asked_in(crate::program::arguments())).clone() else { return };
     log::info!("an account check asked for");
     WRITE_TO.set(Some(path));
     let patience = if crate::soak::through_tor() { PATIENCE_THROUGH_TOR } else { PATIENCE };

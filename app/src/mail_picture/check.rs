@@ -28,7 +28,7 @@ pub fn asked_in(arguments: impl Iterator<Item = String>) -> Option<PathBuf> {
 
 /// From `main`, once the window is up.
 pub fn run_if_asked(app: &App) {
-    let Some(path) = asked_in(std::env::args().skip(1)) else { return };
+    let Some(path) = asked_in(crate::program::arguments()) else { return };
     log::info!("a check of the mail picture asked for");
     WRITE_TO.set(Some(path));
     modal::after_show(app, |app| {

@@ -8,7 +8,7 @@ const NAME: &str = "Proton Mail Light";
 const HIDDEN: &str = "--hidden";
 
 pub fn started_hidden() -> bool {
-    std::env::args().any(|argument| argument == HIDDEN)
+    crate::program::arguments().any(|argument| argument == HIDDEN)
 }
 
 /// On macOS the thing to start is the bundle around the program.

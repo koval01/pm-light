@@ -24,6 +24,13 @@ fn say(text: &str) {
     let _ = writeln!(std::io::stdout().lock(), "{text}");
 }
 
+/// Whether the person who ran this asked for `flag`. Only the words after the program's own name are read, and each
+/// only widens what this does to the throwaway account it was written for.
+fn asked(flag: &str) -> bool {
+    // nosemgrep: rust.lang.security.args.args
+    std::env::args().skip(1).any(|argument| argument == flag)
+}
+
 /// Where Proton's own mail comes from.
 const PROTON_DOMAINS: [&str; 4] = ["proton.me", "protonmail.com", "protonmail.ch", "pm.me"];
 const FILTER_NAME: &str = "Only Proton's own mail stays in the inbox";
@@ -78,14 +85,14 @@ async fn run() -> Result<(), String> {
     let strangers: Vec<String> =
         rows.iter().filter(|row| !from_proton(&row.from.email)).map(|row| row.id.clone()).collect();
     say(&format!("inbox: {} mails, {} not from Proton", rows.len(), strangers.len()));
-    if !strangers.is_empty() && std::env::args().any(|argument| argument == "--delete") {
+    if !strangers.is_empty() && asked("--delete") {
         service.view_move(Some(strangers.clone()), "trash").await.map_err(|e| e.to_string())?;
         service.view_open("trash").await;
         service.view_delete(Some(strangers.clone())).await.map_err(|e| e.to_string())?;
         say(&format!("deleted for good: {}", strangers.len()));
     }
 
-    if std::env::args().any(|argument| argument == "--sample-draft") {
+    if asked("--sample-draft") {
         let drafts = service
             .list("drafts", &ListOptions { limit: Some(50), ..Default::default() })
             .await
@@ -113,7 +120,7 @@ async fn run() -> Result<(), String> {
         }
     }
 
-    if std::env::args().any(|argument| argument == "--import") {
+    if asked("--import") {
         let inbox = service
             .list("inbox", &ListOptions { limit: Some(150), ..Default::default() })
             .await

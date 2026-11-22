@@ -88,7 +88,7 @@ const WEIGHTS: [(Action, u32); 17] = [
 ];
 
 fn argument(prefix: &str) -> Option<String> {
-    std::env::args().skip(1).find_map(|argument| argument.strip_prefix(prefix).map(str::to_string))
+    crate::program::arguments().find_map(|argument| argument.strip_prefix(prefix).map(str::to_string))
 }
 
 /// The minutes asked for, when this start is a long run.
@@ -98,7 +98,7 @@ pub fn minutes() -> Option<u64> {
 
 /// Whether the long run goes through Tor.
 pub fn through_tor() -> bool {
-    std::env::args().skip(1).any(|argument| argument == THROUGH_TOR)
+    crate::program::arguments().any(|argument| argument == THROUGH_TOR)
 }
 
 struct Soak {
@@ -361,7 +361,7 @@ fn finish() {
     log::info!("the long run ended after {} actions", soak.taken.values().sum::<u64>());
     let _ = std::fs::write(beside(&soak.note, ".soak"), text);
     let _ = std::fs::write(beside(&soak.note, ".done"), "done\n");
-    if std::env::args().skip(1).any(|argument| argument == PRESSURE) {
+    if crate::program::arguments().any(|argument| argument == PRESSURE) {
         look_for_pressure(soak.note, Instant::now() + PRESSURE_PATIENCE);
     }
 }

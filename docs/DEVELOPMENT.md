@@ -308,5 +308,8 @@ screen, and it never touches the real Keychain entries.
 - One format, `rustfmt.toml`'s: `cargo fmt` before a commit, and `scripts/check.sh` fails on anything else.
 - A lint is set aside only where it is wrong, with `#[expect]` and a reason, never `#[allow]`: rewrite the code
   first. What the app says goes to the journal; a program of `app/examples` writes its report to stdout itself.
+- A Semgrep note on code that is safe on purpose is marked at that one place: the reason in a comment, then
+  `// nosemgrep: <rule>` alone on the line right above the code, as Semgrep reads only that line. The program's
+  arguments and its own path are read only through `app/src/program.rs`.
 - `app/tests/structure.rs` holds the shape: tests in `name/tests.rs`, a `//!` line atop every file, at most 500 lines
   a file (the few longer ones may only shrink), `unsafe` only in the files listed there, and none in the core.

@@ -36,6 +36,7 @@ mod preferences;
 mod preview;
 mod print_dialog;
 mod print_view;
+mod program;
 mod protection;
 mod reader;
 mod recipients;

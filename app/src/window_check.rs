@@ -22,7 +22,7 @@ pub fn asked_in(mut arguments: impl Iterator<Item = String>) -> bool {
 
 /// From `main`, once the window is up.
 pub fn run_if_asked(app: &App) {
-    if !asked_in(std::env::args().skip(1)) {
+    if !asked_in(crate::program::arguments()) {
         return;
     }
     log::info!("a check of the window's ways asked for");
