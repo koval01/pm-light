@@ -7,7 +7,6 @@ use chacha20poly1305::{
     KeyInit, XChaCha20Poly1305, XNonce,
     aead::{Aead, Payload},
 };
-use rand::RngCore;
 use serde::{Serialize, de::DeserializeOwned};
 use sha2::{Digest, Sha256};
 use std::{
@@ -29,7 +28,7 @@ const MOST_AGE: Duration = Duration::from_hours(720);
 #[must_use]
 pub fn new_key() -> StoreKey {
     let mut key = Zeroizing::new([0; KEY_BYTES]);
-    rand::thread_rng().fill_bytes(key.as_mut());
+    rand::fill(key.as_mut_slice());
     key
 }
 

@@ -14,7 +14,7 @@
 
 use crate::{App, Settings, Theme, composer, contacts, look, memory, palette, preferences, settings, view};
 use proton_core::{Service, model::MessageMeta, request_log::RequestLog};
-use rand::{Rng, SeedableRng, rngs::StdRng, seq::SliceRandom};
+use rand::{RngExt, SeedableRng, rngs::StdRng, seq::IndexedRandom};
 use slint::{ComponentHandle, LogicalSize, Model, Timer, TimerMode, Weak};
 use std::{
     cell::RefCell,
@@ -163,7 +163,7 @@ pub fn start(app: &App, note: PathBuf, minutes: u64) {
 fn next_after_a_while() {
     SOAK.with_borrow_mut(|soak| {
         if let Some(soak) = soak {
-            let pause = Duration::from_millis(soak.random.gen_range(FASTEST..=SLOWEST));
+            let pause = Duration::from_millis(soak.random.random_range(FASTEST..=SLOWEST));
             soak.timer.start(TimerMode::SingleShot, pause, act);
         }
     });
@@ -195,7 +195,7 @@ fn act() {
         }
         let action = WEIGHTS.choose_weighted(&mut soak.random, |(_, weight)| *weight).ok()?.0;
         *soak.taken.entry(action).or_default() += 1;
-        let pick = soak.random.r#gen::<u64>();
+        let pick = soak.random.random::<u64>();
         Some((soak.service.clone(), soak.app.upgrade()?, soak.rows.clone(), soak.open.take(), action, pick))
     });
     let Some((service, app, rows, open, action, pick)) = chosen else {

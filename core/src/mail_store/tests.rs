@@ -64,3 +64,33 @@ fn the_same_mail_never_lies_on_disk_the_same_way() {
     assert_ne!(first, read(), "each write has a nonce of its own");
     erase(&dir);
 }
+
+/// A store key as the Keychain keeps it, and a mail the store wrote with it before an update of what makes keys and
+/// nonces (rand 0.8): the file's name, from SHA-256 of the key, the kind, a zero and the id, then its bytes, the nonce
+/// and the sealed text.
+const KEPT_KEY: &str = "5b0e3c9a71d24f86e1a03b57c9d82e146fa0b3c58d71e29f04a6b8c3d5e7f912";
+const KEPT_NAME: &str = "8813093a74933bb60cc41e0e163aebd740e6f9d88b02261e4cb51fdea572779a";
+const KEPT_MAIL: &str = "c8a7c21663a16bd39015697611ef7bbd986cf16fcb1eb2fe27819f083cf279c983d1d10fe9807fd19cd20988149d2beaf501314bbd35fde7228c5e2a2427a0af2f";
+
+fn bytes_of(hex: &str) -> Vec<u8> {
+    hex.as_bytes().chunks(2).map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap()).collect()
+}
+
+#[test]
+fn a_mail_kept_before_an_update_still_opens() {
+    let dir = folder("kept");
+    let mut key = Zeroizing::new([0; KEY_BYTES]);
+    key.copy_from_slice(&bytes_of(KEPT_KEY));
+    fs::create_dir_all(&dir).unwrap();
+    fs::write(dir.join(format!("{KEPT_NAME}.{EXTENSION}")), bytes_of(KEPT_MAIL)).unwrap();
+    let store = MailStore::open(&dir, key).unwrap();
+    assert_eq!(store.get::<String>("mail", "id-1").as_deref(), Some("a mail kept from before"));
+    erase(&dir);
+}
+
+#[test]
+fn every_store_key_is_new_and_none_is_zero() {
+    let keys: std::collections::BTreeSet<[u8; KEY_BYTES]> = (0..100).map(|_| *new_key()).collect();
+    assert_eq!(keys.len(), 100);
+    assert!(!keys.contains(&[0; KEY_BYTES]));
+}

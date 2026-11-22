@@ -1,11 +1,11 @@
 //! Contacts and their cards.
 
-use super::{CARD_SIGNED, CONTACTS_PAGE, ContactEmail, Method, Result, RngCore, Service, Value, json, text, vcard};
+use super::{CARD_SIGNED, CONTACTS_PAGE, ContactEmail, Method, Result, Service, Value, json, text, vcard};
 
 impl Service {
     pub async fn create_contact(&self, name: &str, email: &str) -> Result<()> {
         let mut uid = [0u8; 16];
-        rand::thread_rng().fill_bytes(&mut uid);
+        rand::fill(&mut uid);
         let uid = crate::hex(&uid);
         let data = vcard::contact_card(name, email, &format!("proton-mail-light-{uid}"));
         let signature = self.crypto.sign_with_user_key(&data)?;

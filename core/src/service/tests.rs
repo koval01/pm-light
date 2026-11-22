@@ -1131,3 +1131,12 @@ fn a_row_the_view_no_longer_holds_is_not_read_ahead() {
     assert!(server.seen.lock().is_empty(), "{:?}", server.seen.lock());
     assert!(!service.opening_ahead.load(std::sync::atomic::Ordering::Relaxed), "the read ahead stays taken");
 }
+
+/// Two files staged with one id would leave one of them out of the letter.
+#[test]
+fn every_staged_file_has_an_id_of_its_own() {
+    let (service, _) = signed_in();
+    let ids: std::collections::BTreeSet<String> = (0..100).map(|_| service.stage_file(vec![1])).collect();
+    assert_eq!(ids.len(), 100);
+    assert!(ids.iter().all(|id| id.len() == 32));
+}

@@ -7,7 +7,6 @@ use crate::{
     request_log::RequestLog,
 };
 use parking_lot::Mutex;
-use rand::RngCore;
 use reqwest::{Method, Response, header::HeaderMap, multipart::Form};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Value, json};
@@ -135,7 +134,7 @@ struct Options {
 
 fn random_hex() -> String {
     let mut bytes = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes);
     crate::hex(&bytes)
 }
 

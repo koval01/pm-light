@@ -310,6 +310,9 @@ fn a_password_recipient_gets_everything_proton_expects() {
     assert_eq!(entry["PasswordHint"], "usual");
     assert!(entry["EncToken"].as_str().unwrap().starts_with("-----BEGIN PGP MESSAGE-----"));
     assert_ne!(entry["Token"], package["Addresses"]["y@gmail.com"]["Token"]);
+    let token = STANDARD.decode(entry["Token"].as_str().unwrap()).unwrap();
+    assert_eq!(token.len(), 32);
+    assert_ne!(token, [0; 32]);
 }
 
 #[test]

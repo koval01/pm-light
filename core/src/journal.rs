@@ -10,7 +10,6 @@ use chacha20poly1305::{
     aead::{Aead, Payload},
 };
 use log::{Level, LevelFilter, Log, Metadata};
-use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, File, OpenOptions},
@@ -71,7 +70,7 @@ static JOURNAL: OnceLock<Shared> = OnceLock::new();
 #[must_use]
 pub fn new_key() -> JournalKey {
     let mut key = Zeroizing::new([0; KEY_BYTES]);
-    rand::thread_rng().fill_bytes(key.as_mut());
+    rand::fill(key.as_mut_slice());
     key
 }
 
