@@ -27,6 +27,21 @@ ammonia = "4"
 # The app password's key, and nothing else: raw Argon2id, without the password-hash strings or their randomness.
 # `zeroize` wipes its own working hashes, which 0.5 did through pgp's features and 0.6 does only when asked.
 argon2 = { version = "0.6", default-features = false, features = ["alloc", "zeroize"] }
+# The mail's page drawn in Rust, with no script and nothing fetched (page.rs, docs/BLITZ.md). Only what the reader
+# needs: no networking crate, no window, no GPU, no SVG, which could read pictures from the disk.
+blitz-dom = { version = "=0.3.0-beta.4", default-features = false, features = ["system-fonts", "floats"] }
+blitz-html = { version = "=0.3.0-beta.4", default-features = false }
+blitz-paint = { version = "=0.3.0-beta.4", default-features = false }
+blitz-traits = { version = "=0.3.0-beta.4", default-features = false }
+anyrender = "0.14"
+anyrender_vello_cpu = { version = "0.18", default-features = false }
+# Apple's colour emoji are PNG glyphs, which the CPU renderer draws only with `png`; anyrender_vello_cpu leaves it out.
+vello_cpu = { version = "0.3", default-features = false, features = ["std", "text", "u8_pipeline", "png"] }
+peniko = "0.6"
+parley = { version = "0.12", default-features = false, features = ["system"] }
+# On Linux, fontconfig is opened at run time: a build needs no headers, and a system without it has no fonts, not a
+# failed start.
+fontique = { version = "0.12", default-features = false, features = ["fontconfig-dlopen"] }
 log = { version = "0.4", features = ["std"] }
 base64 = "0.23"
 # Dates and time zones. The system's zone database where there is one, and a copy built in for where there is none:

@@ -69,7 +69,8 @@ allow-build-scripts = [
     "proc-macro-error-attr", "proc-macro2", "pulldown-cmark", "quinn", "quinn-udp", "quote", "radium", "rayon-core",
     "reed-solomon-erasure", "ref-cast", "rfd", "ring", "rspolib", "rustix", "rustls", "rustversion", "selectors",
     "serde", "serde_core", "serde_json", "skia-bindings", "slotmap", "smithay-client-toolkit", "soup3-sys",
-    "sqlite-wasm-rs", "syn", "target-lexicon", "thiserror", "tiny-xlib", "uncased", "wasm-bindgen",
+    "sqlite-wasm-rs", "stylo", "stylo_atoms", "stylo_static_prefs", "syn", "target-lexicon", "thiserror",
+    "tiny-xlib", "uncased", "wasm-bindgen",
     "wasm-bindgen-shared", "wayland-backend", "wayland-client", "wayland-sys", "web_atoms", "webkit2gtk-sys",
     "webview2-com-sys", "wgpu", "wgpu-core", "wgpu-hal", "winapi", "winapi-i686-pc-windows-gnu",
     "winapi-x86_64-pc-windows-gnu", "windows_aarch64_gnullvm", "windows_aarch64_msvc", "windows_i686_gnu",
@@ -209,6 +210,17 @@ allow = [
     { path = "crypto/perlasm/x86asm.pl", checksum = "99a3123e5135486546b36cf32c8e91f3635451cb9d926acdc6ac4d82aa652ed5" },
     { path = "crypto/perlasm/x86gas.pl", checksum = "48bd5fb1f764137fe58dac82e86b8876bc9bdfd041ff53b5706ba2ad46bf6d80" },
     { path = "crypto/perlasm/x86nasm.pl", checksum = "15383baac0a53850322e304b8f2ff9f210bed8c0d080ae938d329d71ed93d71e" },
+]
+
+# Stylo, Blitz's CSS engine, writes its property code from Mako templates with python3 while it builds
+# (properties/build.py, which is no executable). These three are Firefox's tools to write its tables again, which the
+# build does not run.
+[[bans.build.bypass]]
+crate = "stylo"
+allow = [
+    { path = "counter_style/update_predefined.py", checksum = "bff9c11b4e7a3f6b767d8a0a6f81cbb8d84adc98217ebc1d21cecfa4802ef876" },
+    { path = "gecko/pseudo_elements.py", checksum = "0d28d38e2c6826d5aa5de50b8d7f3b3ff49cb5f64af60b8440fdeacc17da2728" },
+    { path = "gecko/regen_pseudo_elements.py", checksum = "08a054fcc6c0e18f58afb81bc916e05839b0365935c03c10b836d9332c5e8f61" },
 ]
 
 [[bans.build.bypass]]

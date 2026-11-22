@@ -73,3 +73,5 @@ lto = "thin"
 [patch.crates-io]
 softbuffer = { path = "vendor/softbuffer" }
 i-slint-backend-winit = { path = "vendor/i-slint-backend-winit" }
+# Cells made blocks stacked instead of left out, and two panics on hostile mail fixed, see vendor/blitz-dom/PATCHED.md.
+blitz-dom = { path = "vendor/blitz-dom" }

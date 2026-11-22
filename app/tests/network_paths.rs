@@ -45,6 +45,13 @@ const WAYS_OUT: &[(&str, &[&str], &str)] = &[
         &["app/src/verify.rs", "app/src/webviews.rs"],
         "Proton's page through Tor, and the app's own pages to the door to nowhere",
     ),
+    (
+        "impl NetProvider for",
+        &["core/src/page/pictures.rs"],
+        "what Blitz asks for while it lays out a mail: answered from the page itself, nothing fetched",
+    ),
+    ("blitz_net", &[], "Blitz's own HTTP client, which would fetch what a mail names"),
+    ("blitz_shell", &[], "Blitz's window, which brings blitz_net"),
     ("hyper::Client", &[], "an HTTP client of its own"),
     ("ureq::", &[], "an HTTP client of its own"),
     ("Command::new", &["app/src/guard.rs"], "the app starting itself again"),
@@ -166,4 +173,16 @@ fn no_page_looks_up_the_names_of_its_links() {
         }
     }
     assert!(pages >= 4, "only {pages} pages were found");
+}
+
+/// Blitz draws a mail's page and fetches nothing itself; its networking and its window are crates of their own, and
+/// neither may come in by any dependency.
+#[test]
+fn blitz_comes_without_its_network() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().expect("the project");
+    let lock = fs::read_to_string(root.join("Cargo.lock")).expect("the lock file");
+    assert!(lock.contains("name = \"blitz-dom\""), "Blitz is not in the lock file");
+    for crate_name in ["blitz-net", "blitz-shell", "blitz"] {
+        assert!(!lock.contains(&format!("name = \"{crate_name}\"\n")), "{crate_name} came in");
+    }
 }

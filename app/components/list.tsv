@@ -18,6 +18,9 @@ amplify_num	0.5.4	Apache-2.0	https://github.com/rust-amplify/amplify-num	mwl
 amplify_syn	2.0.1	Apache-2.0	https://github.com/rust-amplify/amplify-derive	mwl
 annotate-snippets	0.12.17	MIT OR Apache-2.0	https://github.com/rust-lang/annotate-snippets-rs	mwl
 anstyle	1.0.14	MIT OR Apache-2.0	https://github.com/rust-cli/anstyle.git	mwl
+anyrender	0.14.0	MIT OR Apache-2.0	https://github.com/dioxuslabs/anyrender	mwl
+anyrender_vello_cpu	0.18.0	MIT OR Apache-2.0	https://github.com/dioxuslabs/anyrender	mwl
+app_units	0.7.8	MPL-2.0	https://github.com/servo/app_units	mwl
 arboard	3.7.0	MIT OR Apache-2.0	https://github.com/1Password/arboard	mwl
 argon2	0.5.3	MIT OR Apache-2.0	https://github.com/RustCrypto/password-hashes/tree/master/argon2	mwl
 argon2	0.6.0	MIT OR Apache-2.0	https://github.com/RustCrypto/password-hashes	mwl
@@ -48,6 +51,7 @@ atk	0.18.2	MIT	https://github.com/gtk-rs/gtk3-rs	l
 atk-sys	0.18.2	MIT	https://github.com/gtk-rs/gtk3-rs	l
 atomic	0.5.3	Apache-2.0/MIT	https://github.com/Amanieu/atomic-rs	mwl
 atomic-waker	1.1.2	Apache-2.0 OR MIT	https://github.com/smol-rs/atomic-waker	mwl
+atomic_refcell	0.1.14	Apache-2.0 OR MIT	https://github.com/mozilla/atomic_refcell	mwl
 auto-launch	0.6.0	MIT	https://github.com/zzzgydi/auto-launch.git	mwl
 base16ct	0.2.0	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats/tree/master/base16ct	mwl
 base64	0.22.1	MIT OR Apache-2.0	https://github.com/marshallpierce/rust-base64	mwl
@@ -65,6 +69,10 @@ bitvec	1.1.1	MIT	https://github.com/bitvecto-rs/bitvec	mwl
 blake2	0.10.6	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
 blake2	0.11.0	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
 blanket	0.3.0	MIT	https://github.com/althonos/blanket	mwl
+blitz-dom	0.3.0-beta.4	MIT OR Apache-2.0	https://github.com/dioxuslabs/blitz	mwl
+blitz-html	0.3.0-beta.4	MIT OR Apache-2.0	https://github.com/dioxuslabs/blitz	mwl
+blitz-paint	0.3.0-beta.4	MIT OR Apache-2.0	https://github.com/dioxuslabs/blitz	mwl
+blitz-traits	0.3.0-beta.4	MIT OR Apache-2.0	https://github.com/dioxuslabs/blitz	mwl
 block-buffer	0.10.4	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
 block-buffer	0.12.1	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
 block-padding	0.3.3	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
@@ -107,6 +115,7 @@ cmov	0.5.4	Apache-2.0 OR MIT	https://github.com/RustCrypto/utils	mwl
 coarsetime	0.1.38	BSD-2-Clause	https://github.com/jedisct1/rust-coarsetime	mwl
 codepage-437	0.1.0	MIT	https://github.com/nabijaczleweli/codepage-437	mwl
 codespan-reporting	0.13.1	Apache-2.0	https://github.com/brendanzab/codespan	mwl
+color	0.3.3	Apache-2.0 OR MIT	https://github.com/linebender/color	mwl
 color_quant	1.1.0	MIT	https://github.com/image-rs/color_quant.git	mwl
 compression-codecs	0.4.46	MIT OR Apache-2.0	https://github.com/Nullus157/async-compression	mwl
 compression-core	0.4.34	MIT OR Apache-2.0	https://github.com/Nullus157/async-compression	mwl
@@ -124,6 +133,7 @@ core-foundation-sys	0.8.7	MIT OR Apache-2.0	https://github.com/servo/core-founda
 core-graphics	0.23.2	MIT OR Apache-2.0	https://github.com/servo/core-foundation-rs	m
 core-graphics-types	0.1.3	MIT OR Apache-2.0	https://github.com/servo/core-foundation-rs	m
 core_detect	1.0.0	MIT/Apache-2.0	https://github.com/thomcc/core_detect	mwl
+core_maths	0.1.1	MIT	https://github.com/robertbastian/core_maths	mwl
 countme	3.0.1	MIT OR Apache-2.0	https://github.com/matklad/countme	mwl
 cpubits	0.1.1	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
 cpufeatures	0.2.17	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
@@ -170,6 +180,7 @@ data-url	0.3.2	MIT OR Apache-2.0	https://github.com/servo/rust-url	mwl
 dbl	0.3.2	MIT OR Apache-2.0	https://github.com/RustCrypto/utils	mwl
 dbus	0.9.12	Apache-2.0/MIT	https://github.com/diwic/dbus-rs	l
 dbus-secret-service	4.1.0	MIT OR Apache-2.0	https://github.com/brotskydotcom/dbus-secret-service.git	l
+debug_timer	0.1.3	MIT OR Apache-2.0	https://github.com/dioxuslabs/blitz	mwl
 der	0.7.10	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats/tree/master/der	mwl
 der	0.8.3	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats	mwl
 der-parser	10.0.0	MIT OR Apache-2.0	https://github.com/rusticata/der-parser.git	mwl
@@ -238,6 +249,7 @@ fallible-iterator	0.3.0	MIT/Apache-2.0	https://github.com/sfackler/rust-fallible
 fallible-streaming-iterator	0.1.9	MIT/Apache-2.0	https://github.com/sfackler/fallible-streaming-iterator	mwl
 fastrand	2.5.0	Apache-2.0 OR MIT	https://github.com/smol-rs/fastrand	mwl
 fdeflate	0.3.7	MIT OR Apache-2.0	https://github.com/image-rs/fdeflate	mwl
+fearless_simd	0.7.0	Apache-2.0 OR MIT	https://github.com/linebender/fearless_simd	mwl
 ff	0.13.1	MIT/Apache-2.0	https://github.com/zkcrypto/ff	mwl
 field-offset	0.3.6	MIT OR Apache-2.0	https://github.com/Diggsey/rust-field-offset	mwl
 figment	0.10.19	MIT OR Apache-2.0	https://github.com/SergioBenitez/Figment	mwl
@@ -253,6 +265,7 @@ foldhash	0.2.0	Zlib	https://github.com/orlp/foldhash	mwl
 font-types	0.12.7	MIT OR Apache-2.0	https://github.com/googlefonts/fontations	mwl
 fontdb	0.24.0	MIT	https://github.com/RazrFalcon/fontdb	mwl
 fontique	0.11.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
+fontique	0.12.0	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 foreign-types	0.5.0	MIT/Apache-2.0	https://github.com/sfackler/foreign-types	m
 foreign-types-macros	0.2.4	MIT/Apache-2.0	https://github.com/sfackler/foreign-types	m
 foreign-types-shared	0.3.1	MIT/Apache-2.0	https://github.com/sfackler/foreign-types	m
@@ -293,6 +306,7 @@ gio-sys	0.18.1	MIT	https://github.com/gtk-rs/gtk-rs-core	l
 glib	0.18.5	MIT	https://github.com/gtk-rs/gtk-rs-core	l
 glib-macros	0.18.5	MIT	https://github.com/gtk-rs/gtk-rs-core	l
 glib-sys	0.18.1	MIT	https://github.com/gtk-rs/gtk-rs-core	l
+glifo	0.4.0	Apache-2.0 OR MIT	https://github.com/linebender/vello	mwl
 glob-match	0.2.1	MIT		mwl
 glow	0.18.0	MIT OR Apache-2.0 OR Zlib	https://github.com/grovesNL/glow	mwl
 glutin	0.32.3	Apache-2.0	https://github.com/rust-windowing/glutin	mwl
@@ -307,6 +321,7 @@ group	0.13.0	MIT/Apache-2.0	https://github.com/zkcrypto/group	mwl
 gtk	0.18.2	MIT	https://github.com/gtk-rs/gtk3-rs	l
 gtk-sys	0.18.2	MIT	https://github.com/gtk-rs/gtk3-rs	l
 gtk3-macros	0.18.2	MIT	https://github.com/gtk-rs/gtk3-rs	l
+guillotiere	0.7.0	MIT/Apache-2.0	https://github.com/nical/guillotiere	mwl
 h2	0.4.20	MIT	https://github.com/hyperium/h2	mwl
 half	2.7.1	MIT OR Apache-2.0	https://github.com/VoidStarKat/half-rs	mwl
 harfrust	0.12.0	MIT	https://github.com/harfbuzz/harfrust	mwl
@@ -325,6 +340,7 @@ hkdf	0.13.0	MIT OR Apache-2.0	https://github.com/RustCrypto/KDFs/	mwl
 hmac	0.12.1	MIT OR Apache-2.0	https://github.com/RustCrypto/MACs	mwl
 hmac	0.13.0	MIT OR Apache-2.0	https://github.com/RustCrypto/MACs	mwl
 hostname-validator	1.1.1	MIT	https://github.com/pop-os/hostname-validator	mwl
+html-escape	0.2.15	MIT	https://github.com/magiclen/html-escape	mwl
 html5ever	0.40.1	MIT OR Apache-2.0	https://github.com/servo/html5ever	mwl
 htmlparser	0.2.1	MIT OR Apache-2.0	https://github.com/jdrouet/htmlparser.git	mwl
 http	1.5.0	MIT OR Apache-2.0	https://github.com/hyperium/http	mwl
@@ -392,6 +408,7 @@ ipnet	2.12.2	MIT OR Apache-2.0	https://github.com/krisprice/ipnet	mwl
 iprange	0.6.7	MIT	https://github.com/sticnarf/iprange-rs	mwl
 is-docker	0.2.0	MIT	https://github.com/TheLarkInn/is-docker	l
 is-wsl	0.4.0	MIT	https://github.com/TheLarkInn/is-wsl	l
+itertools	0.14.0	MIT OR Apache-2.0	https://github.com/rust-itertools/itertools	mwl
 itertools	0.15.0	MIT OR Apache-2.0	https://github.com/rust-itertools/itertools	mwl
 itoa	1.0.18	MIT OR Apache-2.0	https://github.com/dtolnay/itoa	mwl
 javascriptcore-rs	1.1.2	MIT	https://github.com/tauri-apps/javascriptcore-rs	l
@@ -406,6 +423,7 @@ keccak	0.1.6	Apache-2.0 OR MIT	https://github.com/RustCrypto/sponges/tree/master
 keccak	0.2.2	Apache-2.0 OR MIT	https://github.com/RustCrypto/sponges	mwl
 kem	0.3.0-pre.0	Apache-2.0 OR MIT	https://github.com/RustCrypto/traits/tree/master/kem	mwl
 keyboard-types	0.7.0	MIT OR Apache-2.0	https://github.com/pyfisch/keyboard-types	mwl
+keyboard-types	0.8.3	MIT OR Apache-2.0	https://github.com/rust-windowing/keyboard-types	mwl
 keyring	3.6.3	MIT OR Apache-2.0	https://github.com/hwchen/keyring-rs.git	mwl
 kqueue	1.2.1	MIT	https://gitlab.com/rust-kqueue/rust-kqueue	m
 kqueue-sys	1.1.2	MIT	https://gitlab.com/rust-kqueue/rust-kqueue-sys	m
@@ -444,6 +462,7 @@ lyon_extra	1.1.0	MIT OR Apache-2.0	https://github.com/nical/lyon	mwl
 lyon_geom	1.0.20	MIT OR Apache-2.0	https://github.com/nical/lyon	mwl
 lyon_path	1.0.19	MIT OR Apache-2.0	https://github.com/nical/lyon	mwl
 mac-notification-sys	0.6.15	MIT/Apache-2.0	https://github.com/h4llow3En/mac-notification-sys	m
+malloc_size_of_derive	0.1.3	MIT OR Apache-2.0	https://github.com/bholley/malloc_size_of_derive	mwl
 maplit	1.0.2	MIT/Apache-2.0	https://github.com/bluss/maplit	mwl
 markup5ever	0.40.0	MIT OR Apache-2.0	https://github.com/servo/html5ever	mwl
 md-5	0.10.6	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
@@ -480,10 +499,12 @@ num-bigint	0.4.8	MIT OR Apache-2.0	https://github.com/rust-num/num-bigint	mwl
 num-bigint-dig	0.8.6	MIT/Apache-2.0	https://github.com/dignifiedquire/num-bigint	mwl
 num-complex	0.4.6	MIT OR Apache-2.0	https://github.com/rust-num/num-complex	mwl
 num-conv	0.2.2	MIT OR Apache-2.0	https://github.com/jhpratt/num-conv	mwl
+num-derive	0.4.2	MIT OR Apache-2.0	https://github.com/rust-num/num-derive	mwl
 num-integer	0.1.47	MIT OR Apache-2.0	https://github.com/rust-num/num-integer	mwl
 num-iter	0.1.46	MIT OR Apache-2.0	https://github.com/rust-num/num-iter	mwl
 num-rational	0.4.2	MIT OR Apache-2.0	https://github.com/rust-num/num-rational	mwl
 num-traits	0.2.19	MIT OR Apache-2.0	https://github.com/rust-num/num-traits	mwl
+num_cpus	1.17.0	MIT OR Apache-2.0	https://github.com/seanmonstar/num_cpus	mwl
 num_enum	0.7.6	BSD-3-Clause OR MIT OR Apache-2.0	https://github.com/illicitonion/num_enum	mwl
 num_enum_derive	0.7.6	BSD-3-Clause OR MIT OR Apache-2.0	https://github.com/illicitonion/num_enum	mwl
 objc-sys	0.3.5	MIT	https://github.com/madsmtm/objc2	m
@@ -536,11 +557,16 @@ parking_lot_core	0.8.6	Apache-2.0/MIT	https://github.com/Amanieu/parking_lot	mwl
 parking_lot_core	0.9.12	MIT OR Apache-2.0	https://github.com/Amanieu/parking_lot	mwl
 parlance	0.1.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 parley	0.11.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
+parley	0.12.0	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 parley_data	0.11.1	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
+parley_data	0.12.0	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
+parley_emoji	0.12.0	MIT	https://github.com/linebender/parley	mwl
+parley_engine	0.12.0	Apache-2.0 OR MIT	https://github.com/linebender/parley	mwl
 password-hash	0.5.0	MIT OR Apache-2.0	https://github.com/RustCrypto/traits/tree/master/password-hash	mwl
 password-hash	0.6.1	MIT OR Apache-2.0	https://github.com/RustCrypto/traits	mwl
 paste	1.0.15	MIT OR Apache-2.0	https://github.com/dtolnay/paste	mwl
 pem-rfc7468	0.7.0	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats/tree/master/pem-rfc7468	mwl
+peniko	0.6.1	Apache-2.0 OR MIT	https://github.com/linebender/peniko	mwl
 percent-encoding	2.3.2	MIT OR Apache-2.0	https://github.com/servo/rust-url/	mwl
 petgraph	0.8.3	MIT OR Apache-2.0	https://github.com/petgraph/petgraph	l
 pgp	0.21.0	MIT OR Apache-2.0	https://github.com/rpgp/rpgp	mwl
@@ -669,6 +695,7 @@ secret-service	4.0.0	MIT OR Apache-2.0	https://github.com/hwchen/secret-service-
 security-framework	3.7.0	MIT OR Apache-2.0	https://github.com/kornelski/rust-security-framework	m
 security-framework-sys	2.17.0	MIT OR Apache-2.0	https://github.com/kornelski/rust-security-framework	m
 selectors	0.37.0	MPL-2.0	https://github.com/servo/stylo	mwl
+selectors	0.41.0	MPL-2.0	https://github.com/servo/stylo	mwl
 serde	1.0.229	MIT OR Apache-2.0	https://github.com/serde-rs/serde	mwl
 serde-value	0.7.0	MIT	https://github.com/arcnmx/serde-value	mwl
 serde_core	1.0.229	MIT OR Apache-2.0	https://github.com/serde-rs/serde	mwl
@@ -684,6 +711,7 @@ serde_with_macros	3.24.0	MIT OR Apache-2.0	https://github.com/jonasbb/serde_with
 serdect	0.2.0	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats/tree/master/serdect	mwl
 serdect	0.3.0	Apache-2.0 OR MIT	https://github.com/RustCrypto/formats	mwl
 servo_arc	0.4.3	MIT OR Apache-2.0	https://github.com/servo/stylo	mwl
+servo_arc	0.5.0	MIT OR Apache-2.0	https://github.com/servo/stylo	mwl
 sha1	0.10.7	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
 sha1	0.11.0	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
 sha1-checked	0.10.0	MIT OR Apache-2.0	https://github.com/RustCrypto/hashes	mwl
@@ -709,6 +737,7 @@ slint	1.18.1	GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Sli
 slint-macros	1.18.1	GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0	https://github.com/slint-ui/slint	mwl
 slotmap	1.1.1	Zlib	https://github.com/orlp/slotmap	mwl
 slotmap-careful	0.9.1	MIT OR Apache-2.0	https://gitlab.torproject.org/tpo/core/arti.git/	mwl
+smallbitvec	2.6.1	MIT OR Apache-2.0	https://github.com/servo/smallbitvec	mwl
 smallvec	1.16.4	MIT OR Apache-2.0	https://github.com/servo/rust-smallvec	mwl
 smappservice-rs	0.1.3	MIT	https://github.com/gethopp/smappservice-rs	m
 smithay-client-toolkit	0.19.2	MIT	https://github.com/smithay/client-toolkit	l
@@ -740,6 +769,14 @@ strsim	0.10.0	MIT	https://github.com/dguo/strsim-rs	mwl
 strsim	0.11.1	MIT	https://github.com/rapidfuzz/strsim-rs	mwl
 strum	0.28.0	MIT	https://github.com/Peternator7/strum	mwl
 strum_macros	0.28.0	MIT	https://github.com/Peternator7/strum	mwl
+stylo	0.22.0	MPL-2.0	https://github.com/servo/stylo	mwl
+stylo_atoms	0.22.0	MPL-2.0	https://github.com/servo/stylo	mwl
+stylo_derive	0.22.0	MPL-2.0	https://github.com/servo/stylo	mwl
+stylo_dom	0.22.0	MPL-2.0	https://github.com/servo/stylo	mwl
+stylo_malloc_size_of	0.22.0	MIT OR Apache-2.0	https://github.com/servo/stylo	mwl
+stylo_static_prefs	0.22.0	MPL-2.0	https://github.com/servo/stylo	mwl
+stylo_taffy	0.3.0-beta.4	MIT OR Apache-2.0 OR MPL-2.0	https://github.com/dioxuslabs/blitz	mwl
+stylo_traits	0.22.0	MPL-2.0	https://github.com/servo/stylo	mwl
 subtle	2.6.1	BSD-3-Clause	https://github.com/dalek-cryptography/subtle	mwl
 svgtypes	0.16.1	Apache-2.0 OR MIT	https://github.com/linebender/svgtypes	mwl
 swash	0.2.10	Apache-2.0 OR MIT	https://github.com/dfrg/swash	mwl
@@ -752,15 +789,18 @@ synstructure	0.14.0	MIT	https://github.com/mystor/synstructure	mwl
 sys-locale	0.3.2	MIT OR Apache-2.0	https://github.com/1Password/sys-locale	mwl
 sysinfo	0.38.4	MIT	https://github.com/GuillaumeGomez/sysinfo	mwl
 taffy	0.10.1	MIT	https://github.com/DioxusLabs/taffy	mwl
+taffy	0.15.1	MIT	https://github.com/DioxusLabs/taffy	mwl
 tap	1.0.1	MIT	https://github.com/myrrlyn/tap	mwl
 tauri-winrt-notification	0.8.1	MIT OR Apache-2.0	https://github.com/tauri-apps/winrt-notification	w
 tempfile	3.27.0	MIT OR Apache-2.0	https://github.com/Stebalien/tempfile	mwl
 tendril	0.5.1	MIT OR Apache-2.0	https://github.com/servo/html5ever	mwl
 text-size	1.1.1	MIT OR Apache-2.0	https://github.com/rust-analyzer/text-size	mwl
+thin-vec	0.2.21	MIT OR Apache-2.0	https://github.com/mozilla/thin-vec	mwl
 thiserror	1.0.69	MIT OR Apache-2.0	https://github.com/dtolnay/thiserror	mwl
 thiserror	2.0.21	MIT OR Apache-2.0	https://github.com/dtolnay/thiserror	mwl
 thiserror-impl	1.0.69	MIT OR Apache-2.0	https://github.com/dtolnay/thiserror	mwl
 thiserror-impl	2.0.21	MIT OR Apache-2.0	https://github.com/dtolnay/thiserror	mwl
+thread_local	1.1.10	MIT OR Apache-2.0	https://github.com/Amanieu/thread_local-rs	mwl
 time	0.3.55	MIT OR Apache-2.0	https://github.com/time-rs/time	mwl
 time-core	0.1.9	MIT OR Apache-2.0	https://github.com/time-rs/time	mwl
 time-macros	0.2.32	MIT OR Apache-2.0	https://github.com/time-rs/time	mwl
@@ -771,6 +811,8 @@ tiny-skia-path	0.12.0	BSD-3-Clause	https://github.com/linebender/tiny-skia/tree/
 tiny-xlib	0.2.5	MIT OR Apache-2.0 OR Zlib	https://github.com/rust-windowing/tiny-xlib	l
 tinystr	0.8.5	Unicode-3.0	https://github.com/unicode-org/icu4x	mwl
 tinyvec	1.13.3	Zlib OR Apache-2.0 OR MIT	https://github.com/Lokathor/tinyvec	mwl
+to_shmem	0.6.0	MPL-2.0	https://github.com/servo/stylo	mwl
+to_shmem_derive	0.2.0	MPL-2.0	https://github.com/servo/stylo	mwl
 tokio	1.54.1	MIT	https://github.com/tokio-rs/tokio	mwl
 tokio-macros	2.7.2	MIT	https://github.com/tokio-rs/tokio	mwl
 tokio-rustls	0.26.6	MIT OR Apache-2.0	https://github.com/rustls/tokio-rustls	mwl
@@ -836,6 +878,7 @@ twofish	0.7.1	MIT OR Apache-2.0	https://github.com/RustCrypto/block-ciphers	mwl
 typed-index-collections	3.5.0	MIT OR Apache-2.0	https://github.com/zheland/typed-index-collections	mwl
 typenum	1.20.1	MIT OR Apache-2.0	https://github.com/paholg/typenum	mwl
 udev	0.9.3	MIT	https://github.com/Smithay/udev-rs	l
+uluru	3.1.0	MPL-2.0	https://github.com/servo/uluru	mwl
 uncased	0.9.10	MIT OR Apache-2.0	https://github.com/SergioBenitez/uncased	mwl
 unicase	2.10.0	MIT OR Apache-2.0	https://github.com/seanmonstar/unicase	mwl
 unicode-bidi	0.3.18	MIT OR Apache-2.0	https://github.com/servo/unicode-bidi	mwl
@@ -857,6 +900,8 @@ usvg	0.48.1	Apache-2.0 OR MIT	https://github.com/linebender/resvg	mwl
 utf8_iter	1.1.0	Apache-2.0 OR MIT	https://github.com/hsivonen/utf8_iter	mwl
 utf_types	1.0.0	Apache-2.0 OR MIT	https://github.com/hsivonen/utf_types	mwl
 uuid	1.29.0	Apache-2.0 OR MIT	https://github.com/uuid-rs/uuid	mwl
+vello_common	0.3.0	Apache-2.0 OR MIT	https://github.com/linebender/vello	mwl
+vello_cpu	0.3.0	Apache-2.0 OR MIT	https://github.com/linebender/vello	mwl
 visibility	0.1.1	Zlib OR MIT OR Apache-2.0	https://github.com/danielhenrymantilla/visibility.rs	mwl
 void	1.0.2	MIT	https://github.com/reem/rust-void.git	mwl
 vtable	0.5.0	MIT OR Apache-2.0	https://github.com/slint-ui/slint	mwl
@@ -935,6 +980,7 @@ xdg-home	1.3.0	MIT	https://github.com/zeenix/xdg-home	l
 xkbcommon	0.9.0	MIT	https://github.com/rust-x-bindings/xkbcommon-rs	l
 xkbcommon-dl	0.4.2	MIT	https://github.com/rust-windowing/xkbcommon-dl	l
 xkeysym	0.2.1	MIT OR Apache-2.0 OR Zlib	https://github.com/notgull/xkeysym	l
+xml5ever	0.40.0	MIT OR Apache-2.0	https://github.com/servo/html5ever	mwl
 xmlwriter	0.1.0	MIT	https://github.com/RazrFalcon/xmlwriter	mwl
 yazi	0.2.2	Apache-2.0 OR MIT	https://github.com/dfrg/yazi	mwl
 yeslogic-fontconfig-sys	6.0.1	MIT	https://github.com/yeslogic/fontconfig-rs	l

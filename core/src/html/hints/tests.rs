@@ -115,7 +115,7 @@ fn lengths_are_bounded() {
 
 #[test]
 fn a_border_with_no_number_draws_one_pixel() {
-    let hinted = hints(r#"<table border><tr><td>a</td></tr></table>"#);
+    let hinted = hints(r"<table border><tr><td>a</td></tr></table>");
     assert!(hinted.style.contains("border:1px outset gray;"), "{}", hinted.style);
     assert_eq!(declarations_for(&hinted, ">a<"), "border:1px inset gray;");
 }

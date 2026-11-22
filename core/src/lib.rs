@@ -23,6 +23,7 @@ pub mod mailto;
 pub mod mapping;
 pub mod mime;
 pub mod model;
+pub mod page;
 mod pattern;
 pub mod print;
 pub mod ranking;
