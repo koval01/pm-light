@@ -43,7 +43,7 @@ lol_html = "2"
 parking_lot = "0.12"
 proton-crypto-account = { git = "https://github.com/ProtonMail/proton-crypto-rs", rev = "c468e282625206eda9b48d539949e6183b1da32a", default-features = false, features = ["rustpgp"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
-rand = "0.8"
+rand = "0.10"
 rqrr = "0.11"
 rxing = { version = "0.9", default-features = false, features = ["decoders", "encoding_rs", "multi_barcode_readers", "qrcode"] }
 regex = "1"
