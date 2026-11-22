@@ -343,4 +343,6 @@ only inside Slint's `i-slint-core` and `rxing`, and `humantime` only inside arti
 crate that brings it moves. `cargo deny` reports `unmaintained` only for crates the app depends on directly (`unmaintained = "workspace"`),
 so it no longer stops the build. `cargo deny` also found two
 advisories in `hickory-proto` 0.25 (RUSTSEC-2026-0118 and 0119): the first needs DNSSEC validation, which is not
-built in, and the second only slows the encoding of the app's own queries. It was moved to 0.26.3 regardless.
+built in, and the second only slows the encoding of the app's own queries. It was moved to 0.26.3 regardless. `url`
+2.5.8 overflowed the stack in `Url::origin()` on a `blob:` URL nested thousands of times (RUSTSEC-2026-0592), which
+ends the process; the app's own code never asks a URL for its origin, and it was moved to 2.5.9.
