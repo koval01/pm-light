@@ -86,7 +86,10 @@ for every mail as the app would keep it.
 
 - Without a kept font context every mail finds the system's fonts again: 40 to 80 ms more each. The first time in a
   run takes 0.1 to 0.6 s.
-- Painting a whole screen again, for scrolling, took 3 to 7 ms (median) and 35 ms at worst for 1360x1200 pixels.
+- Painting a screen of 1360x1200 pixels further down a long letter takes 28 to 42 ms at the median and up to 87 ms
+  (`page::tests::scrolling_cost`): too slow for every frame of a scroll. An earlier figure of 3 to 7 ms was wrong:
+  the measuring program moved the page's origin instead of scrolling it, and painted little. Painting on several
+  threads (`anyrender_vello_cpu`'s `multithreading`) was slower still, 49 to 59 ms.
 - WebKit's processes: 26 MB with an empty page, 43 to 66 MB with these mails open. `ARCHITECTURE.md` gives 19 and
   36 MB for the app's slimmed configuration.
 - Only the reader's webview lives all the time (`mail_view::warm_up`); the composer, previews, printing, Proton's check
@@ -189,11 +192,11 @@ window instead of a native view above it.
 - **Drawing.** A thread of its own holds the document, lays it out and paints the visible screen into a
   `SharedPixelBuffer`, handed to the window through `invoke_from_event_loop`. Only a screen is painted, never the
   page, which also keeps clear of the 65,535-pixel limit.
-- **Scrolling.** A Slint `Flickable` with the page's height as content, and the picture placed at the scroll offset:
-  scrolling follows the toolkit, and a new screen is asked for as it moves. At 3 to 7 ms a screen it keeps up; a band
-  a screen taller than the pane hides a slow one.
+- **Scrolling.** The window shows a band of three screens and moves it as the wheel turns, which costs the toolkit
+  nothing; a new band, painted in the background, is asked for once the shown one has less than half a screen to
+  spare (`app/src/page_view.rs`).
 - **Selection and copy.** Blitz selects text from pointer events and gives it back (`get_selected_text`). The
-  `TouchArea` hands presses and moves to the thread; Copy in `menu::edit` (and `shortcuts.rs` on Windows) puts the
+  `TouchArea` hands presses and moves to the thread; Copy reaches the window's key scope on every system and puts the
   text on the clipboard instead of acting on a webview.
 - **Links and the cursor.** A click that did not drag is hit-tested (`hit`); the link's `href` goes to
   `outside::open_link` as now. `get_cursor` becomes the `TouchArea`'s `mouse-cursor`.
