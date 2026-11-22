@@ -207,8 +207,8 @@ impl Service {
     }
 
     /// Mail has left a page: the next page's first rows move up into it.
-    async fn refill(&self, result: Result<()>) -> Result<()> {
-        let result = self.settle(result).await;
+    async fn refill(&self, touched: Option<&[String]>, result: Result<()>) -> Result<()> {
+        let result = self.settle(touched, result).await;
         if result.is_ok() && self.view.lock().pages() > 0 {
             self.view_reload().await;
         }
@@ -285,9 +285,10 @@ impl Service {
         ids.unwrap_or_else(|| self.view.lock().targets())
     }
 
-    /// What every change ends with. Counts and the list only move on the server's word.
-    async fn settle(&self, result: Result<()>) -> Result<()> {
-        self.threads.lock().clear();
+    /// What every change ends with. Counts and the list only move on the server's word. Only the conversations the
+    /// change `touched` are read again: `None` is a change whose reach is not known.
+    async fn settle(&self, touched: Option<&[String]>, result: Result<()>) -> Result<()> {
+        self.forget_threads(touched);
         match &result {
             Ok(()) => match self.counts().await {
                 Ok(counts) => {
@@ -318,7 +319,7 @@ impl Service {
         self.publish(&update);
         let conversations = self.are_conversations(&ids);
         let result = self.change_rows(&ids, &changes, conversations).await;
-        self.settle(result).await
+        self.settle(Some(&ids), result).await
     }
 
     pub async fn view_move(&self, ids: Option<Vec<String>>, target: &str) -> Result<()> {
@@ -334,7 +335,7 @@ impl Service {
         self.remove_rows(&ids);
         let changes = MessageChanges { folder: Some(target.to_string()), ..Default::default() };
         let result = self.change_rows(&ids, &changes, conversations).await;
-        self.refill(result).await
+        self.refill(Some(&ids), result).await
     }
 
     pub async fn view_delete(&self, ids: Option<Vec<String>>) -> Result<()> {
@@ -346,7 +347,7 @@ impl Service {
             self.forget_message(id);
         }
         let result = self.delete_rows(&ids, &folder, conversations).await;
-        self.refill(result).await
+        self.refill(Some(&ids), result).await
     }
 
     pub async fn view_label(&self, ids: Option<Vec<String>>, label: &str, on: bool) -> Result<()> {
@@ -355,7 +356,7 @@ impl Service {
         let update = self.view.lock().update(false, changed, Vec::new());
         self.publish(&update);
         let result = self.label_rows(&ids, label, on).await;
-        if result.is_err() { self.settle(result).await } else { result }
+        if result.is_err() { self.settle(Some(&ids), result).await } else { result }
     }
 
     pub async fn view_empty(&self) -> Result<()> {
@@ -365,7 +366,8 @@ impl Service {
             self.view.lock().clear();
             self.publish_rows();
         }
-        self.refill(result).await
+        // Messages leave conversations no row names.
+        self.refill(None, result).await
     }
 
     pub async fn view_not_spam(&self, id: &str) -> Result<()> {
@@ -384,14 +386,14 @@ impl Service {
         let until = timing::snooze_time(choice)?;
         self.remove_rows(&[id.to_string()]);
         let result = self.snooze(&conversation, until).await;
-        self.refill(result).await
+        self.refill(Some(&[conversation]), result).await
     }
 
     pub async fn view_unsnooze(&self, id: &str) -> Result<()> {
         let Some(conversation) = self.conversation_of(id) else { return Ok(()) };
         self.remove_rows(&[id.to_string()]);
         let result = self.unsnooze(&conversation).await;
-        self.refill(result).await
+        self.refill(Some(&[conversation]), result).await
     }
 }
 

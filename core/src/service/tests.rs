@@ -563,7 +563,7 @@ fn a_start_that_cannot_reach_proton_stays_on_connecting() {
 
 const A_PLAIN_MESSAGE: &str = r#"{"Code":1000,"Message":{"ID":"0","Body":"","MIMEType":"text/plain"}}"#;
 
-fn a_kept_message(id: &str) -> Arc<Message> {
+pub(super) fn a_kept_message(id: &str) -> Arc<Message> {
     Arc::new(Message {
         meta: MessageMeta {
             id: id.to_string(),

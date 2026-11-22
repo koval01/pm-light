@@ -136,6 +136,19 @@ impl Service {
         Ok(rows)
     }
 
+    /// The conversations a change touched, named or holding a message named: what they say of each message, unread or
+    /// where it lies, may no longer hold. The rest stay, or every mail opened after an unread one read again all that
+    /// was read ahead. `None` forgets them all.
+    pub(super) fn forget_threads(&self, touched: Option<&[String]>) {
+        let mut threads = self.threads.lock();
+        match touched {
+            Some(ids) => threads.retain(|(conversation, messages)| {
+                !ids.contains(conversation) && !messages.iter().any(|message| ids.contains(&message.id))
+            }),
+            None => threads.clear(),
+        }
+    }
+
     pub(super) async fn public_keys(&self, email: &str) -> Result<(u8, Vec<PublicKeyRow>)> {
         #[derive(Deserialize, Default)]
         #[serde(rename_all = "PascalCase", default)]
