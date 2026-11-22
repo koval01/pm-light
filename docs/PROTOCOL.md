@@ -139,6 +139,28 @@ written into the message, so quoted headers follow the reader's language.
 `PUT /mail/v4/conversations/read`, `unread` (`LabelID`), `label`, `unlabel` and `delete` (`LabelID`) take `IDs`. A search and
 the labels in `ALWAYS_MESSAGE_LABELS` stay messages (`isConversationMode`). `StickyLabels` is applied by the server.
 
+## Inbox categories
+
+Proton sorts incoming mail into categories on its side; the client shows the inbox one category at a time, as tabs.
+Read from the web client (`useElements.ts`, `elementQuery.ts`, `categoriesViewSelector.ts`, `useApplyLocation.tsx`,
+`CategoriesViewSections.tsx`) and Proton's Android app for the words.
+
+| What                                                                                                             | Source   | Status                                                                       |
+| ---------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------- |
+| Category labels: 24 Primary, 20 Social, 21 Promotions, 25 Newsletters, 26 Transactions, 22 Updates               | Web      | matches, in Proton's order of tabs                                           |
+| `GET /core/v4/labels?Type=4`: the categories among the system folders, `Display` says which have a tab           | Web      | matches                                                                      |
+| On when `MailSettings.MailCategoryView` and the organization's `MailCategoryViewEnabled`                         | Web      | matches                                                                      |
+| A free account's organization allows them; a paying one's: `GET /core/v4/organizations/settings`, no if it fails | Web      | matches `canFetchOrganization`                                               |
+| Tabs only in the inbox and not in a search (`selectShouldShowCategoryViewTabs`)                                  | Web      | matches                                                                      |
+| A tab's list: `LabelID[]=0&LabelID[]=<category>`; Primary adds every hidden category and the old forum, 23       | Web      | matches `appendCategoryIDsInInbox`                                           |
+| A search asks for the whole inbox, `LabelID=0`                                                                   | This app | the tabs are hidden, as in Web                                               |
+| Counts: `OnlyInInboxForCategories=1` when on, `=0` when allowed but off, left out when not allowed               | Web      | matches `getCountQueryParams`                                                |
+| A tab's unread: its category's count; Primary's adds every hidden category's                                     | Web      | matches `selectCategoryUnreadCount`                                          |
+| Moving to a category: `PUT /mail/v4/conversations/label` with the category's `LabelID`, the whole conversation   | Web      | matches; other tabs replace Inbox in the move menu                           |
+| `PUT /mail/v4/settings/mail-category-view` with `MailCategoryView` as `true` or `false`                          | Web      | matches                                                                      |
+| A tab shown or hidden: `PUT /core/v4/labels/{id}` with the label's `Name`, `Color`, `Notify` and `Display`       | Web      | matches `updateLabel`; Primary and the last other tab stay                   |
+| Tabs count unread mail always; `MailCategoryViewCountersEnabled` and the dot from `LastUnseenMessageEventID`     | Web      | left out: the dot needs the event loop's ids, which this app does not follow |
+
 ## Signature footer
 
 `PMSignature` is two bits: 1 turns Proton's line on, and 2 says the plan does not let it be turned off. The line is added

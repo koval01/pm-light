@@ -3,10 +3,13 @@
 
 use super::{Error, ListOptions, MessageChanges, MessageMeta, Ordering, Result, Service, Value, now_seconds};
 use crate::{
-    search,
+    categories, search,
     timing::{self, SnoozeChoice},
-    view::{Filters, ViewUpdate, can_move},
+    view::{Filters, ViewUpdate, can_move, place_of},
 };
+
+/// The folder that has categories.
+const INBOX: &str = "inbox";
 
 pub type ViewListener = Box<dyn Fn(&ViewUpdate) + Send + Sync>;
 
@@ -45,11 +48,15 @@ impl Service {
     }
 
     fn list_options(&self, offset: u64) -> ListOptions {
+        // Apart: a guard lives to the end of its statement.
+        let tab = self.view.lock().tab().map(str::to_string);
+        let categories = tab.map_or_default(|tab| self.categories.read().labels_of(&tab));
         let view = self.view.lock();
         let filters = view.filters();
         let query = search::parse(&filters.keyword).query;
         let (begin, end) = search::begin_and_end(&query);
         ListOptions {
+            categories,
             offset: Some(offset),
             limit: Some(view.page()),
             keyword: query.keyword_text(),
@@ -140,7 +147,8 @@ impl Service {
             self.publish_rows();
             let stored = self.view.lock().as_stored();
             if let Some(list) = stored {
-                self.store_list(&folder, &list);
+                let place = self.view.lock().place();
+                self.store_list(&place, &list);
             }
             let ahead = self.view.lock().likely_next(None);
             self.open_ahead(ahead);
@@ -154,21 +162,43 @@ impl Service {
         self.publish_state();
     }
 
+    /// A folder from its start. The inbox opens on Primary when the account shows it by category, as Proton's does.
     pub async fn view_open(&self, folder: &str) {
-        // Asked of the disk at most once a folder: after that memory holds it.
-        let known = self.view.lock().has_shelf(folder);
-        if !known && let Some(list) = self.stored_list(folder).await {
-            self.view.lock().stock(folder, list);
+        let category = (folder == INBOX && self.categories.read().on()).then_some(categories::PRIMARY);
+        self.view_open_in(folder, category).await;
+    }
+
+    /// One of the inbox's categories, from its start: Proton's tab drops filters, search and page alike.
+    pub async fn view_category(&self, category: &str) {
+        let shown = self.categories.read().has_tab(category);
+        if shown {
+            self.view_open_in(INBOX, Some(category)).await;
         }
-        let mark = self.view.lock().open(folder);
+    }
+
+    async fn view_open_in(&self, folder: &str, category: Option<&str>) {
+        // Asked of the disk at most once a place: after that memory holds it.
+        let place = place_of(folder, category);
+        let known = self.view.lock().has_shelf(&place);
+        if !known && let Some(list) = self.stored_list(&place).await {
+            self.view.lock().stock(&place, list);
+        }
+        let mark = self.view.lock().open_in(folder, category);
         self.publish_rows();
         self.load(mark).await;
     }
 
-    /// Whatever the screen last showed, for a page that has just loaded.
+    /// Whatever the screen last showed, for a page that has just loaded. A category that went is Primary again.
     pub async fn view_resume(&self) {
-        let folder = self.view.lock().folder.clone();
-        self.view_open(&folder).await;
+        let (folder, tab) = {
+            let view = self.view.lock();
+            (view.folder.clone(), view.category().map(str::to_string))
+        };
+        let shown = tab.filter(|tab| self.categories.read().has_tab(tab));
+        match shown {
+            Some(tab) => self.view_category(&tab).await,
+            None => self.view_open(&folder).await,
+        }
     }
 
     pub async fn view_reload(&self) {
@@ -336,6 +366,39 @@ impl Service {
         let changes = MessageChanges { folder: Some(target.to_string()), ..Default::default() };
         let result = self.change_rows(&ids, &changes, conversations).await;
         self.refill(Some(&ids), result).await
+    }
+
+    /// Mail moved to another of the inbox's categories, as Proton's client moves it (`useApplyLocation`): the whole
+    /// conversation, whether the rows are conversations or messages. What leaves the tab on screen leaves the list, and
+    /// the list is read again, since the rest of a conversation leaves with it.
+    pub async fn view_categorize(&self, ids: Option<Vec<String>>, category: &str) -> Result<()> {
+        if !self.categories.read().has_tab(category) {
+            return Err(Error::CannotMove);
+        }
+        let ids = self.targets(ids);
+        let tab = self.view.lock().tab().map(str::to_string);
+        let Some(tab) = tab else { return Err(Error::CannotMove) };
+        let stays = self.categories.read().labels_of(&tab).iter().any(|label| label == category);
+        let mut conversations: Vec<String> = {
+            let view = self.view.lock();
+            ids.iter().filter_map(|id| view.row(id)).map(|row| row.conversation_id.clone()).collect()
+        };
+        conversations.sort();
+        conversations.dedup();
+        if conversations.is_empty() {
+            return Ok(());
+        }
+        if !stays {
+            self.remove_rows(&ids);
+        }
+        let body = serde_json::json!({"LabelID": category});
+        let result =
+            self.batch("/mail/v4/conversations/label", &conversations, "Could not move conversation", body).await;
+        let result = self.settle(Some(&conversations), result).await;
+        if result.is_ok() && !stays {
+            self.view_reload().await;
+        }
+        result
     }
 
     pub async fn view_delete(&self, ids: Option<Vec<String>>) -> Result<()> {

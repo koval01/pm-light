@@ -1,6 +1,7 @@
 //! What the interface can ask for. Owns the session and the keys: neither ever reaches the page.
 
 mod account;
+mod categories;
 mod changes;
 mod contacts;
 mod images;
@@ -201,6 +202,8 @@ pub struct Service {
     /// The account's own setting, kept from when it was last read.
     next_on_move: AtomicBool,
     habits: RwLock<Habits>,
+    /// The inbox's categories, kept from when they were last read.
+    categories: RwLock<crate::categories::Categories>,
 }
 
 /// While set, whatever is saved is sealed under this key. Gone from memory whenever the app locks.
@@ -270,6 +273,7 @@ impl Service {
             opening_ahead: AtomicBool::new(false),
             next_on_move: AtomicBool::new(false),
             habits: RwLock::new(Habits::default()),
+            categories: RwLock::default(),
         });
         let weak = Arc::downgrade(&service);
         service.client.on_session_change(Box::new(move |change| {

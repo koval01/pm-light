@@ -30,12 +30,20 @@ pub fn can_move(from: &str, target: &str) -> bool {
     !(CANNOT_LEAVE.contains(&from) && CANNOT_ENTER.contains(&target))
 }
 
+/// A folder, or one of the inbox's categories, by one name. `#` is in no id Proton gives.
+#[must_use]
+pub fn place_of(folder: &str, category: Option<&str>) -> String {
+    category.map_or_else(|| folder.to_string(), |category| format!("{folder}#{category}"))
+}
+
 /// What the page needs after a change. Rows travel only when they changed: selecting a message is
 /// a key press, and it should not cost the whole list.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ViewUpdate {
     pub folder: String,
+    /// The inbox's category on screen, the label id of its tab. Nothing where there are no tabs, as in a search.
+    pub category: Option<String>,
     pub filters: Filters,
     pub selected: Option<String>,
     pub checked: Vec<String>,
@@ -74,6 +82,8 @@ pub struct ViewUpdate {
 #[expect(clippy::struct_excessive_bools, reason = "the state of one screen, each a fact of its own")]
 pub struct View {
     pub folder: String,
+    /// The inbox's category on screen, when the account shows its inbox by category: its label id.
+    category: Option<String>,
     filters: Filters,
     selected: Option<String>,
     checked: Vec<String>,
@@ -106,6 +116,7 @@ impl Default for View {
     fn default() -> Self {
         Self {
             folder: "inbox".to_string(),
+            category: None,
             filters: Filters::default(),
             selected: None,
             checked: Vec::new(),
@@ -133,6 +144,7 @@ impl View {
     pub fn update(&self, whole: bool, changed: Vec<MessageMeta>, removed: Vec<String>) -> ViewUpdate {
         ViewUpdate {
             folder: self.folder.clone(),
+            category: self.tab().map(str::to_string),
             filters: self.filters.clone(),
             selected: self.selected.clone(),
             checked: self.checked.clone(),
@@ -160,6 +172,24 @@ impl View {
         &self.filters
     }
 
+    /// The inbox's category open, searched in or not.
+    #[must_use]
+    pub fn category(&self) -> Option<&str> {
+        self.category.as_deref()
+    }
+
+    /// The category whose tab is on screen. A search covers the whole folder, and shows no tabs, as in Proton's.
+    #[must_use]
+    pub fn tab(&self) -> Option<&str> {
+        self.category.as_deref().filter(|_| self.filters.keyword.is_empty())
+    }
+
+    /// What the screen shows, as the shelves and the disk name it: the folder, or the inbox's category.
+    #[must_use]
+    pub fn place(&self) -> String {
+        place_of(&self.folder, self.category.as_deref())
+    }
+
     /// Where the next page starts. A search checked here has read more than it kept.
     #[must_use]
     pub fn offset(&self) -> u64 {
@@ -179,8 +209,14 @@ impl View {
 
     /// Starts showing a folder from nothing. Returns the mark its answer must bring back.
     pub fn open(&mut self, folder: &str) -> u64 {
+        self.open_in(folder, None)
+    }
+
+    /// Starts showing a folder, or one of the inbox's categories, from nothing.
+    pub fn open_in(&mut self, folder: &str, category: Option<&str>) -> u64 {
         self.shelve();
         self.folder = folder.to_string();
+        self.category = category.map(str::to_string);
         self.filters = Filters::default();
         self.selected = None;
         self.checked.clear();

@@ -47,7 +47,11 @@ impl Service {
             counts: Vec<api::ApiCount>,
         }
         let path = if self.groups_mail() { "/mail/v4/conversations/count" } else { "/mail/v4/messages/count" };
-        let reply: Reply = self.client.get(path).await?;
+        // Where categories may be used, Proton is told whether to count them in the inbox only, as its client does.
+        let only_inbox = self.categories.read().count_parameter();
+        let path =
+            only_inbox.map_or_else(|| path.to_string(), |only| format!("{path}?OnlyInInboxForCategories={only}"));
+        let reply: Reply = self.client.get(&path).await?;
         let counts = api::to_counts(&reply.counts);
         *self.last_counts.lock() = Some(counts.clone());
         Ok(counts)

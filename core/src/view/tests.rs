@@ -385,3 +385,70 @@ fn conversations_do_not_mix_with_the_messages_before_them() {
     assert!(view.row("m0").is_none());
     assert!(view.row("c0").is_some());
 }
+
+/// The inbox at `category`, showing `ids`, confirmed by Proton.
+fn tab_showing(view: &mut View, category: &str, ids: &[&str]) {
+    let mark = view.open_in("inbox", Some(category));
+    assert!(view.loaded(mark, ids.iter().map(|id| row(id)).collect()));
+    view.confirm(100);
+}
+
+#[test]
+fn a_category_is_named_apart_from_its_folder() {
+    assert_eq!(place_of("inbox", None), "inbox");
+    assert_eq!(place_of("inbox", Some("24")), "inbox#24");
+    let mut view = View::default();
+    view.open_in("inbox", Some("25"));
+    assert_eq!((view.folder.as_str(), view.category(), view.place().as_str()), ("inbox", Some("25"), "inbox#25"));
+    view.open("archive");
+    assert_eq!((view.category(), view.place().as_str()), (None, "archive"));
+}
+
+#[test]
+fn each_tab_is_kept_apart_and_shown_again_on_a_return() {
+    let mut view = View::default();
+    tab_showing(&mut view, "24", &["p1", "p2"]);
+    tab_showing(&mut view, "20", &["s1"]);
+    view.open_in("inbox", Some("24"));
+    assert_eq!(listed(&view), ids(&["p1", "p2"]));
+    view.open_in("inbox", Some("20"));
+    assert_eq!(listed(&view), ids(&["s1"]));
+    view.open("inbox");
+    assert!(listed(&view).is_empty(), "the inbox as one list is a place of its own");
+    assert!(view.has_shelf("inbox#24") && view.has_shelf("inbox#20") && !view.has_shelf("inbox#25"));
+}
+
+#[test]
+fn a_search_shows_no_tab_but_keeps_the_category_to_go_back_to() {
+    let mut view = View::default();
+    tab_showing(&mut view, "21", &["d1"]);
+    assert_eq!(view.update(false, Vec::new(), Vec::new()).category.as_deref(), Some("21"));
+    view.set_filters(Filters { keyword: "sale".into(), ..Filters::default() });
+    assert_eq!(view.tab(), None);
+    assert_eq!(view.update(false, Vec::new(), Vec::new()).category, None);
+    assert_eq!(view.category(), Some("21"));
+    assert!(view.set_filters(Filters::default()), "the tab's own rows come back");
+    assert_eq!(view.tab(), Some("21"));
+    assert_eq!(listed(&view), ids(&["d1"]));
+}
+
+#[test]
+fn filters_keep_the_tab() {
+    let mut view = View::default();
+    tab_showing(&mut view, "20", &["s1"]);
+    view.set_filters(Filters { unread: true, has_attachments: true, ..Filters::default() });
+    assert_eq!(view.tab(), Some("20"));
+}
+
+#[test]
+fn a_tab_is_kept_on_disk_under_its_own_name() {
+    let mut view = View::default();
+    tab_showing(&mut view, "26", &["t1"]);
+    let stored = view.as_stored().unwrap();
+    let mut fresh = View::default();
+    fresh.stock(&view.place(), stored);
+    fresh.open_in("inbox", Some("26"));
+    assert_eq!(listed(&fresh), ids(&["t1"]));
+    fresh.open("inbox");
+    assert!(listed(&fresh).is_empty());
+}

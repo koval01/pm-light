@@ -71,6 +71,7 @@ impl Service {
         let habits = api::to_habits(raw);
         self.view.lock().set_page(habits.page_size);
         *self.habits.write() = habits;
+        self.categories.write().read_settings(raw);
     }
 
     /// Once, when the mailbox opens. Each change here brings them up to date.

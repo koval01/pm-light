@@ -32,15 +32,17 @@ impl View {
             updated_at: self.updated_at,
             found: self.found,
         };
-        self.shelves.retain(|(kept, _)| *kept != self.folder);
-        self.shelves.push((self.folder.clone(), shelf));
+        let place = self.place();
+        self.shelves.retain(|(kept, _)| *kept != place);
+        self.shelves.push((place, shelf));
         if self.shelves.len() > SHELVES {
             self.shelves.remove(0);
         }
     }
 
     pub(super) fn unshelve(&mut self) {
-        let found = self.shelves.iter().position(|(kept, _)| *kept == self.folder);
+        let place = self.place();
+        let found = self.shelves.iter().position(|(kept, _)| *kept == place);
         let shelf = found.map_or_default(|at| self.shelves.remove(at).1);
         self.rows = shelf.rows;
         self.has_more = shelf.has_more;
@@ -50,14 +52,14 @@ impl View {
     }
 
     #[must_use]
-    pub fn has_shelf(&self, folder: &str) -> bool {
-        (self.folder == folder && self.updated_at.is_some()) || self.shelves.iter().any(|(kept, _)| kept == folder)
+    pub fn has_shelf(&self, place: &str) -> bool {
+        (self.place() == place && self.updated_at.is_some()) || self.shelves.iter().any(|(kept, _)| kept == place)
     }
 
-    /// A folder as the disk remembers it, to show first after a start.
-    pub fn stock(&mut self, folder: &str, list: StoredList) {
-        self.shelves.retain(|(kept, _)| kept != folder);
-        self.shelves.push((folder.to_string(), list));
+    /// A folder, or a category of the inbox, as the disk remembers it, to show first after a start.
+    pub fn stock(&mut self, place: &str, list: StoredList) {
+        self.shelves.retain(|(kept, _)| kept != place);
+        self.shelves.push((place.to_string(), list));
     }
 
     /// What the screen shows, for the disk, unless it is a search.

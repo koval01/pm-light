@@ -792,7 +792,7 @@ fn time_settings_go_to_their_own_paths_and_refuse_nonsense() {
     assert_eq!(*server.seen.lock(), ["/core/v4/settings/dateformat", "/core/v4/settings/weekstart"]);
 }
 
-fn mail_folder(name: &str) -> std::path::PathBuf {
+pub(super) fn mail_folder(name: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!("proton-service-{name}-{}", std::process::id()));
     crate::mail_store::erase(&dir);
     dir

@@ -76,6 +76,20 @@ fn builds_a_list_query() {
 }
 
 #[test]
+fn a_category_asks_for_the_folder_and_its_labels_as_a_list() {
+    let options = ListOptions { categories: vec!["24".into(), "22".into(), "23".into()], ..Default::default() };
+    let q = list_query("inbox", &options);
+    assert!(q.starts_with("LabelID%5B%5D=0&LabelID%5B%5D=24&LabelID%5B%5D=22&LabelID%5B%5D=23&Page=0"), "{q}");
+    assert!(!q.contains("LabelID=0"), "the folder alone is not asked as well: {q}");
+}
+
+#[test]
+fn a_hostile_category_is_sent_encoded_as_one_value() {
+    let q = list_query("inbox", &ListOptions { categories: vec!["2&LabelID=5".into()], ..Default::default() });
+    assert!(q.starts_with("LabelID%5B%5D=0&LabelID%5B%5D=2%26LabelID%3D5&Page=0"), "{q}");
+}
+
+#[test]
 fn caps_the_page_size_and_encodes_the_keyword() {
     let q = list_query(
         "inbox",

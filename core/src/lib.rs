@@ -3,6 +3,7 @@
 #![cfg_attr(not(test), forbid(unsafe_code))]
 
 pub mod calendar;
+pub mod categories;
 pub mod client;
 pub mod compose;
 pub mod crypto;

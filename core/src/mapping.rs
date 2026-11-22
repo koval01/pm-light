@@ -357,8 +357,15 @@ pub fn list_query(folder: &str, options: &ListOptions) -> String {
     let limit = options.limit.unwrap_or(DEFAULT_PAGE_SIZE).max(1);
     let page = options.offset.unwrap_or(0) / limit;
     let mut query = form_urlencoded::Serializer::new(String::new());
+    if options.categories.is_empty() {
+        query.append_pair("LabelID", label_of(folder));
+    } else {
+        // Mail in the folder and in the category both, as `appendCategoryIDsInInbox` asks for it.
+        for label in std::iter::once(label_of(folder)).chain(options.categories.iter().map(String::as_str)) {
+            query.append_pair("LabelID[]", label);
+        }
+    }
     query
-        .append_pair("LabelID", label_of(folder))
         .append_pair("Page", &page.to_string())
         .append_pair("PageSize", &limit.min(MAX_PAGE_SIZE).to_string())
         .append_pair("Sort", "Time")

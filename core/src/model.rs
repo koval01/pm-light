@@ -289,25 +289,21 @@ pub struct Message {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct ListOptions {
     pub offset: Option<u64>,
     pub limit: Option<u64>,
     pub keyword: Option<String>,
     pub unread: Option<bool>,
     pub has_attachments: Option<bool>,
-    #[serde(default)]
     pub from: Option<String>,
-    #[serde(default)]
     pub to: Option<String>,
-    #[serde(default)]
     pub subject: Option<String>,
-    #[serde(default)]
     pub begin: Option<u64>,
-    #[serde(default)]
     pub end: Option<u64>,
-    #[serde(default)]
     pub starred: Option<bool>,
+    /// Labels the mail must wear besides the folder's: an inbox category's, as `categories::labels_of` gives them.
+    pub categories: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
