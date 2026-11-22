@@ -20,10 +20,12 @@ docker volume create pml-attacks-cargo >/dev/null
 
 # Cargo names the test program it built, wherever its layout puts it, and the path is kept beside the build. Stylo, the
 # CSS engine of the mail's page, writes part of itself with Python when it is built: the image has none of its own.
+# Without link-time optimisation: with it and Stylo, linking the tests ran out of Docker's memory and was killed.
 docker run --rm -v "$SOURCE":/src:ro -v pml-attacks-target:/target -v pml-attacks-cargo:/usr/local/cargo/registry \
   -w /src -e CARGO_TARGET_DIR=/target "$IMAGE" \
   bash -c "apt-get update -qq >/dev/null && apt-get install -y -qq --no-install-recommends python3 >/dev/null \\
-    && cargo test --release -p proton-core --lib --no-run --config 'build.rustflags=[]' --message-format=json \
+    && cargo test --release -p proton-core --lib --no-run --config 'build.rustflags=[]' \\
+      --config 'profile.release.lto=false' --config 'profile.release.codegen-units=16' --message-format=json \
     | sed -n 's/.*\"executable\":\"\([^\"]*\)\".*/\1/p' | tail -n 1 > /target/attacks-program"
 
 docker run --rm --network none --memory 1g --memory-swap 1g --cpus 2 --pids-limit 64 --read-only \
