@@ -113,6 +113,14 @@ measured them:
 `vello_cpu` counts pixels in 16 bits: nothing taller than 65,535 pixels may be painted at once, so a page is painted
 a screen at a time.
 
+## In the app
+
+Built in behind a setting (Appearance, Reading), with the system's web view the default. On 2026-11-23 a real
+newsletter was drawn by Blitz in a debug build on macOS: no error in the journal, no WebKit process running, and
+100 MB for the whole app, against 105 MB with WebKit and an HTML mail open by `ARCHITECTURE.md`. Scrolling,
+selecting and copying text and opening a link in the browser were tried by hand and worked. Screen readers do not
+reach the mail yet, and the long run has not been run with Blitz.
+
 ## Hostile input
 
 Crafted mails went through `html::protect` and then Blitz, in Docker as `scripts/attacks.sh` runs hostile input: built
