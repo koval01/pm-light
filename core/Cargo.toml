@@ -65,7 +65,7 @@ reed-solomon-erasure = "6"
 [dev-dependencies]
 scraper = "0.29"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
-rcgen = { version = "0.13", default-features = false, features = ["crypto", "ring"] }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [lints]
