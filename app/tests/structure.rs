@@ -36,6 +36,7 @@ const UNSAFE_READ: &[&str] = &[
     "app/src/print_view.rs",
     "app/src/protection.rs",
     "app/src/session.rs",
+    "app/src/single_instance/user.rs",
     "app/src/switches.rs",
     "app/src/tray.rs",
 ];
