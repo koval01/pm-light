@@ -138,7 +138,16 @@ What this client defends against, how, and what it does not. It records the find
 - **The process.** Core dumps are off. On Windows a crash report leaves the heap out, and libraries are not loaded
   from a network share or a low-integrity folder, with the system's own preferred. On macOS a release build refuses debuggers (`PT_DENY_ATTACH`), and on Linux the
   process is not dumpable. A second start hands its link to the first copy over a local socket and quits: a message
-  over 256 KiB is dropped, and only `mailto:` links are taken from it.
+  over 256 KiB is dropped, and only `mailto:` links are taken from it. The socket is the person's own
+  (`single_instance.rs`). On macOS and Linux it lies in a folder no other account may enter: `XDG_RUNTIME_DIR`, the
+  temporary folder macOS gives each account, or a folder of the app's own made for that person alone, and a folder
+  anyone else may open is never used. On Windows the pipe's name carries the person's security identifier, a start
+  hands over only to a pipe whose server runs as the same person, and other accounts may only read a pipe they did not
+  make. The program's arguments are read in one place (`program.rs`), never its own name: they switch on the checks
+  CI runs, under which the core refuses every request but a read, or carry a `mailto:` link.
+- **The login item** starts the app from where it runs now, and is refused on macOS and Linux when a folder on the way
+  to it may be written by anyone, as `/tmp` or `/Users/Shared`: another account could put its own program there once
+  the app was gone.
 
 ## Interception
 
@@ -189,7 +198,11 @@ Beside them, on every push and on a timetable, all in CI:
   carries is pinned by its path and SHA-256, the Windows import libraries aside: one more, or one changed, stops the
   build until someone has read it.
 - **Semgrep**, once a day and on every push, with its rules for Rust, security audits, secrets and GitHub Actions,
-  as a second engine beside CodeQL. Its findings go to the Security tab.
+  as a second engine beside CodeQL. Its findings go to the Security tab. A note on code that is safe on purpose is
+  marked where it stands, `// nosemgrep: <rule>` under the reason: the arguments and the program's own path are read
+  in `program.rs` alone, `TMPDIR` only once it is found private, and `scripts/connections.py` asks only RIPEstat and
+  Onionoo, over HTTPS, which its self-test proves. Every `unsafe` block was read against its `// Safety:` comment:
+  three comments said more than was true and were corrected with the code.
 - **Sanitizers and Miri** (`sanitizers.yml`): AddressSanitizer over the core's tests with LeakSanitizer, and over the
   app's tests that strike its `unsafe` calls; Miri over the core's pure code; and `scripts/attacks.sh`, the hostile
   input above, sealed in a container.
@@ -226,7 +239,10 @@ All are fixed unless listed under [Known limits](#known-limits).
 | Medium   | A proxy in the environment was obeyed, which would have taken names away from Quad9                    | Proxies are ignored                                     |
 | Medium   | Any 4xx to a token refresh, 429 and 409 among them, deleted the session; any error at startup did too  | Only 400/401/422 count, twice, 10 s apart               |
 | Medium   | A 401 from the refresh itself waited for its own lock and hung every request for good                  | The refresh path never refreshes                        |
+| Medium   | The socket a second start handed its link through was `/tmp/org.koval-dev.proton-mail-light.sock` on macOS and an abstract name on Linux, open to every account: another could take the name first, receive each link and keep the app from starting, or knock and hand it links (found from Semgrep's note on `temp_dir`, whose fallback never ran) | A folder only the person may enter; on Windows a pipe named for the person, served by the same person |
 | Low      | Sleep did not count as being away, so a closed laptop with a focused window stayed unlocked            | Time asleep counts                                      |
+| Low      | A login item could point into a folder anyone may write, where another account could place a program once the app was gone | Refused on macOS and Linux                  |
+| Low      | `prctl` got `int` where it reads `unsigned long`, and a private WebKit class was sent `key` without being asked whether it has one | The widths it reads; the class is asked, and the answer must be a string |
 | Low      | A sender's display name could add lines to a contact's vCard                                           | Line breaks are escaped, control characters dropped     |
 | Low      | `CON` and other device names, invisible characters and padding survived in saved file names            | Handled, and a long name keeps its extension            |
 | Low      | A link dialog showed `https://bank.example@evil.example/` with no hint of the real host                | The host comes first                                    |
@@ -282,6 +298,9 @@ with no sanitizer in front of them.
   whose engine Tor does not harden as Tor Browser does. Choosing Tor on a network that blocks it leaves the app
   offline: bridges are not offered yet. arti's GeoIP feature, which names the countries of a circuit, is marked
   experimental by the Tor Project.
+- **A login item on Windows.** Windows grants by lists of rights, which the app does not read, so it does not refuse a
+  login item for a program in a folder another account may write. Installed for all users or in the person's own
+  folders, the program is not another account's to change.
 - **Unsigned builds.** There is no Developer ID, notarization or hardened runtime, so nothing protects the installed
   app from being replaced by something running as the user.
 
