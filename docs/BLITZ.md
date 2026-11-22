@@ -115,7 +115,8 @@ a screen at a time.
 
 ## In the app
 
-Built in behind a setting (Appearance, Reading), with the system's web view the default. On 2026-11-23 a real
+Built in behind a setting (Appearance, Reading). Blitz is the default since 2026-11-23, at the user's word; the
+system's web view stays one choice away. On 2026-11-23 a real
 newsletter was drawn by Blitz in a debug build on macOS: no error in the journal, no WebKit process running, and
 100 MB for the whole app, against 105 MB with WebKit and an HTML mail open by `ARCHITECTURE.md`. Scrolling,
 selecting and copying text and opening a link in the browser were tried by hand and worked. Screen readers do not

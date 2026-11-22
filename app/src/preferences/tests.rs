@@ -53,3 +53,12 @@ fn preferences_survive_a_round_trip() {
     let preferences = Preferences { palette: 3, language: "de".into(), ..Preferences::default() };
     assert_eq!(serde_json::to_string(&preferences).ok().map(|text| parse(&text)), Some(preferences));
 }
+
+/// Blitz draws mail unless the person chose the system's web view, a file from before the setting included.
+#[test]
+fn blitz_draws_mail_unless_asked_otherwise() {
+    assert_eq!(Preferences::default().mail_engine, 1);
+    assert_eq!(first_start().mail_engine, 1);
+    assert_eq!(parse(r#"{"notifications": true}"#).mail_engine, 1);
+    assert_eq!(parse(r#"{"mailEngine": 0}"#).mail_engine, 0);
+}

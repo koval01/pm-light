@@ -30,7 +30,7 @@ pub struct Preferences {
     pub compact: bool,
     pub rows: bool,
     pub mail_text: u8,
-    /// What draws an HTML mail: 0 the system's web view, 1 Blitz, inside the app (`page_view.rs`).
+    /// What draws an HTML mail: 0 the system's web view, 1 Blitz, inside the app (`page_view.rs`), the default.
     pub mail_engine: u8,
     /// Empty means the system's language.
     pub language: String,
@@ -77,7 +77,7 @@ impl Default for Preferences {
             compact: false,
             rows: false,
             mail_text: 1,
-            mail_engine: 0,
+            mail_engine: 1,
             language: String::new(),
             tor: None,
             tour_pending: false,
