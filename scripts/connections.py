@@ -40,9 +40,23 @@ OWN = re.compile(
 PROTON, QUAD9, GRAVATAR = "Proton", "Quad9", "Gravatar"
 OWNERS = {PROTON: ("PROTON",), QUAD9: ("QUAD9",), GRAVATAR: ("AUTOMATTIC",)}
 AGENT = {"User-Agent": "pm-light-connection-check"}
+# The only places this asks, both open: RIPEstat for whom an address belongs to, Onionoo for Tor's relays.
+ASKED = ("https://stat.ripe.net/data/", "https://onionoo.torproject.org/")
+
+
+class NotAsked(Exception):
+    """A place outside ASKED."""
+
+
+def asks_only_known(url):
+    return isinstance(url, str) and url.startswith(ASKED)
 
 
 def fetch(url):
+    if not asks_only_known(url):
+        raise NotAsked(url)
+    # Over HTTPS, and only to the two places in ASKED: the trace gives no more than an address, parsed as one.
+    # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
     with urllib.request.urlopen(urllib.request.Request(url, headers=AGENT), timeout=60) as answer:
         return json.load(answer)
 
@@ -68,14 +82,21 @@ def destinations(lines):
     return found, own
 
 
-def holder(address, asns):
-    info = fetch("https://stat.ripe.net/data/network-info/data.json?resource=" + urllib.parse.quote(str(address)))
+def as_number(value):
+    """An autonomous system's number as RIPEstat gives it, or nothing for anything else."""
+    text = str(value)
+    return int(text) if text.isascii() and text.isdigit() and len(text) <= 10 else None
+
+
+def holder(address, asns, get=None):
+    get = get or fetch
+    info = get("https://stat.ripe.net/data/network-info/data.json?resource=" + urllib.parse.quote(str(address)))
     numbers = info.get("data", {}).get("asns", [])
-    if not numbers:
+    number = as_number(numbers[0]) if numbers else None
+    if number is None:
         return "no autonomous system"
-    number = numbers[0]
     if number not in asns:
-        overview = fetch(f"https://stat.ripe.net/data/as-overview/data.json?resource=AS{number}")
+        overview = get(f"https://stat.ripe.net/data/as-overview/data.json?resource=AS{number}")
         asns[number] = f"AS{number} {overview.get('data', {}).get('holder', '')}"
     return asns[number]
 
@@ -205,6 +226,50 @@ def self_test():
         "Proton reached directly",
         "Gravatar while it is on",
     }
+    places = [
+        ("https://stat.ripe.net/data/as-overview/data.json?resource=AS3", True),
+        ("https://onionoo.torproject.org/details?type=relay", True),
+        ("file:///etc/passwd", False),
+        ("http://stat.ripe.net/data/", False),
+        ("https://stat.ripe.net.example.com/data/", False),
+        ("https://onionoo.torproject.org.example.com/", False),
+        (b"https://stat.ripe.net/data/", False),
+    ]
+    for url, known in places:
+        if asks_only_known(url) != known:
+            print(f"::error::self-test: {url!r} was {'refused' if known else 'let through'}")
+            return 1
+    try:
+        fetch("file:///etc/passwd")
+    except NotAsked:
+        pass
+    except Exception as error:
+        print(f"::error::self-test: a file was opened, and gave {type(error).__name__}")
+        return 1
+    else:
+        print("::error::self-test: a file was read")
+        return 1
+    asked = []
+
+    def ripe(answers):
+        def get(url):
+            asked.append(url)
+            return answers.pop(0)
+        return get
+
+    numbers = [("62371", 62371), (62371, 62371), ("1/../x", None), ("1&resource=AS2", None), ("", None), ("12345678901", None), (None, None), ("٣", None)]
+    for given, expected in numbers:
+        if as_number(given) != expected:
+            print(f"::error::self-test: the AS number {given!r} read as {as_number(given)!r}")
+            return 1
+    name = holder(ipaddress.ip_address(proton), {}, ripe([{"data": {"asns": ["1/../x"]}}]))
+    if name != "no autonomous system" or len(asked) != 1:
+        print(f"::error::self-test: an AS number that is no number was asked about: {asked}")
+        return 1
+    name = holder(ipaddress.ip_address(proton), {}, ripe([{"data": {"asns": [62371]}}, {"data": {"holder": "PROTON"}}]))
+    if name != "AS62371 PROTON" or not asked[-1].endswith("resource=AS62371"):
+        print(f"::error::self-test: a real AS number was misread: {name}, {asked}")
+        return 1
     tor = {ipaddress.ip_address(relay)}
     built_in = fallbacks_of_text('"91.39.70.41:9001",\n"[2600:3c06::2000:c9ff:fe82:3b43]:443"')
     if (ipaddress.ip_address(fallback), 9001) not in built_in or len(built_in) != 2:
