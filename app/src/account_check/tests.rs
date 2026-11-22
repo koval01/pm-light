@@ -22,3 +22,11 @@ fn the_report_holds_numbers_only() {
     assert_eq!(report, "folders=14\ninbox rows=9\nwidth=1440\nheight=2210\n");
     assert!(report.chars().all(|c| c.is_ascii_alphanumeric() || c == '=' || c == '\n' || c == ' '));
 }
+
+#[test]
+fn the_tabs_are_reported_as_fixed_words_and_numbers() {
+    let report = category_report(&[("primary", Some(7)), ("newsletters", Some(1)), ("transactions", None)]);
+    assert_eq!(report, "category primary rows=7\ncategory newsletters rows=1\ncategory transactions refused\n");
+    assert!(report.chars().all(|c| c.is_ascii_alphanumeric() || c == '=' || c == '\n' || c == ' '));
+    assert_eq!(category_report(&[]), "");
+}

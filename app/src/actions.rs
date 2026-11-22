@@ -296,6 +296,10 @@ pub fn snooze(choice: SnoozeChoice) {
 
 pub fn move_to(target: String) {
     let Some(service) = SERVICE.get().cloned() else { return };
+    if let Some(category) = target.strip_prefix(crate::categories::TARGET).map(str::to_string) {
+        spawn("moving to another category", async move { service.view_categorize(None, &category).await });
+        return;
+    }
     spawn("moving", async move { service.view_move(None, &target).await });
 }
 

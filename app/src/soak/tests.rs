@@ -7,6 +7,7 @@ fn every_action_can_be_chosen() {
         Action::Step,
         Action::Scroll,
         Action::Folder,
+        Action::Category,
         Action::Search,
         Action::Settings,
         Action::Letter,

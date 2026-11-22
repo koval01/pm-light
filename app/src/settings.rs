@@ -5,6 +5,7 @@
 mod about_page;
 mod account_pages;
 mod app_pages;
+mod category_page;
 mod filter_pages;
 mod guarded_pages;
 mod lock_page;
@@ -242,6 +243,7 @@ fn draw(ctx: &Ctx, id: &str) {
         "keyboard" => app_pages::keyboard(ctx),
         "about" => about_page::page(ctx),
         "messages" => mail_pages::messages(ctx),
+        "categories" => category_page::page(ctx),
         "privacy" => mail_pages::privacy(ctx),
         "identity" => mail_pages::identity(ctx),
         "folders" => mail_pages::folders(ctx),
@@ -283,6 +285,7 @@ fn hear(ctx: &Ctx, tab: &str, id: &str, part: i32, value: i32) {
             }
         }
         "tor" => tor_page::heard(ctx, id, value),
+        "categories" => category_page::heard(ctx, id, value),
         "about" => about_page::heard(ctx, id),
         "language" | "appearance" | "application" | "connection" | "journal" | "keyboard" => {
             app_pages::heard(ctx, tab, id, value);

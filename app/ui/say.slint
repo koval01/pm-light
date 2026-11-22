@@ -38,6 +38,17 @@ export global Say {
         if key == "cache.about" { return @tr("Mail is encrypted and opens at once, even after a restart. The key stays with the session, so with an app password mail cannot be read without it. Signing out or turning this off erases everything."); }
         if key == "cache.keep" { return @tr("Keep read mail on this computer"); }
         if key == "cache.title" { return @tr("Mail storage"); }
+        if key == "categories.lastShown" { return @tr("One category besides Primary always keeps its tab. To see the inbox as one list, turn email categories off."); }
+        if key == "categories.list" { return @tr("Categories"); }
+        if key == "categories.newsletters" { return @tr("News and other mail that sells nothing"); }
+        if key == "categories.notAllowed" { return @tr("Your organization does not use email categories, so the inbox is one list."); }
+        if key == "categories.primary" { return @tr("What needs your attention, and the mail of every hidden category"); }
+        if key == "categories.promotions" { return @tr("Deals, offers and advertising"); }
+        if key == "categories.social" { return @tr("What social networks send"); }
+        if key == "categories.transactions" { return @tr("Bookings, bills and orders"); }
+        if key == "categories.updates" { return @tr("Automatic confirmations and alerts"); }
+        if key == "categories.use" { return @tr("Use email categories"); }
+        if key == "categories.useHint" { return @tr("Proton sorts the mail in the inbox into categories, and each has a tab above the list."); }
         if key == "common.cancel" { return @tr("Cancel"); }
         if key == "common.create" { return @tr("Create"); }
         if key == "common.loading" { return @tr("Loading…"); }
@@ -588,6 +599,7 @@ export global Say {
         if key == "tabs.apps" { return @tr("Get the apps"); }
         if key == "tabs.backToMail" { return @tr("Back to mail"); }
         if key == "tabs.backup" { return @tr("Backup and export"); }
+        if key == "tabs.categories" { return @tr("Email categories"); }
         if key == "tabs.connection" { return @tr("Connection"); }
         if key == "tabs.domains" { return @tr("Domain names"); }
         if key == "tabs.encryption" { return @tr("Encryption and keys"); }

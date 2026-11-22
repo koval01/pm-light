@@ -1,7 +1,7 @@
 //! Keeps the mailbox current whether or not the window is on screen: this thread does the work
 //! itself, so a hidden window cannot delay a notification.
 
-use crate::{App, actions, autolock, notifications, view};
+use crate::{App, actions, autolock, counts, notifications};
 use parking_lot::Mutex;
 use proton_core::{
     Service,
@@ -77,7 +77,7 @@ async fn check(service: Arc<Service>, app: Weak<App>) {
             report_link(&app, Link::Online);
             log::debug!("mail changed: {} new, {} unread", change.new_mail, change.unread);
             let _ = app.upgrade_in_event_loop(move |app| {
-                view::show_counts(&app, &change.counts);
+                counts::show(&app, &change.counts);
                 if change.new_mail > 0 {
                     notifications::announce(&app, change.new_mail);
                 }

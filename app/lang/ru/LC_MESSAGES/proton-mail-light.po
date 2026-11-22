@@ -4850,3 +4850,75 @@ msgstr "Снимок письма уже не зашифрован. Его см�
 msgctxt "Say"
 msgid "The picture leaves Proton's encryption"
 msgstr "Снимок выходит из шифрования Proton"
+
+msgctxt "Categories"
+msgid "Primary"
+msgstr "Основной"
+
+msgctxt "Categories"
+msgid "Social"
+msgstr "Соцсети"
+
+msgctxt "Categories"
+msgid "Promotions"
+msgstr "Промоакции"
+
+msgctxt "Categories"
+msgid "Newsletters"
+msgstr "Рассылки"
+
+msgctxt "Categories"
+msgid "Transactions"
+msgstr "Транзакции"
+
+msgctxt "Categories"
+msgid "Updates"
+msgstr "Обновления"
+
+msgctxt "Say"
+msgid "One category besides Primary always keeps its tab. To see the inbox as one list, turn email categories off."
+msgstr "Одна категория, кроме «Основной», всегда остаётся вкладкой. Чтобы видеть входящие одним списком, отключите категории писем."
+
+msgctxt "Say"
+msgid "Categories"
+msgstr "Категории"
+
+msgctxt "Say"
+msgid "News and other mail that sells nothing"
+msgstr "Новости и другие письма, которые ничего не продают"
+
+msgctxt "Say"
+msgid "Your organization does not use email categories, so the inbox is one list."
+msgstr "Ваша организация не использует категории писем, поэтому входящие — один список."
+
+msgctxt "Say"
+msgid "What needs your attention, and the mail of every hidden category"
+msgstr "То, что требует внимания, и письма всех скрытых категорий"
+
+msgctxt "Say"
+msgid "Deals, offers and advertising"
+msgstr "Скидки, предложения и реклама"
+
+msgctxt "Say"
+msgid "What social networks send"
+msgstr "Письма из соцсетей"
+
+msgctxt "Say"
+msgid "Bookings, bills and orders"
+msgstr "Бронирования, счета и заказы"
+
+msgctxt "Say"
+msgid "Automatic confirmations and alerts"
+msgstr "Автоматические подтверждения и уведомления"
+
+msgctxt "Say"
+msgid "Use email categories"
+msgstr "Использовать категории писем"
+
+msgctxt "Say"
+msgid "Proton sorts the mail in the inbox into categories, and each has a tab above the list."
+msgstr "Proton сортирует письма во входящих по категориям, и у каждой есть вкладка над списком."
+
+msgctxt "Say"
+msgid "Email categories"
+msgstr "Категории писем"

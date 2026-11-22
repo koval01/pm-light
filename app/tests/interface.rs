@@ -152,9 +152,22 @@ fn the_check_finds_a_button_without_a_hint() {
 /// the badge followed one and stayed behind.
 #[test]
 fn the_inbox_count_is_set_in_one_place() {
-    let view = fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/view.rs")).expect("the view");
-    assert_eq!(view.matches("set_inbox_unread(").count(), 1, "the inbox count is set in more than one place");
-    let at = view.find("fn show_inbox_unread").expect("the one place");
-    let body = view.get(at..).and_then(|rest| rest.split("\n}\n").next()).unwrap_or_default();
+    fn sources(folder: &std::path::Path, found: &mut Vec<String>) {
+        for entry in fs::read_dir(folder).expect("a folder of the app").flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                sources(&path, found);
+            } else if path.extension().is_some_and(|end| end == "rs") {
+                found.push(fs::read_to_string(&path).expect("a source file"));
+            }
+        }
+    }
+    let mut all = Vec::new();
+    sources(&PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src"), &mut all);
+    let setting: usize = all.iter().map(|text| text.matches("set_inbox_unread(").count()).sum();
+    assert_eq!(setting, 1, "the inbox count is set in more than one place");
+    let counts = fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/counts.rs")).expect("counts");
+    let at = counts.find("fn show_inbox_unread").expect("the one place");
+    let body = counts.get(at..).and_then(|rest| rest.split("\n}\n").next()).unwrap_or_default();
     assert!(body.contains("set_inbox_unread(") && body.contains("show_unread("), "{body}");
 }

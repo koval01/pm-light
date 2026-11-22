@@ -2,7 +2,7 @@
 //! window on the main thread, so everything crosses over as plain data.
 
 use crate::{
-    App, BodyLine, FileRow, FolderRow, HeaderRow, InfoGroup, InfoItem, InfoWindow, MailRow, actions, contacts,
+    App, BodyLine, FileRow, FolderRow, HeaderRow, InfoGroup, InfoItem, InfoWindow, MailRow, actions, contacts, counts,
     mail_view, modal, numbers, palette,
     pictures::{Logo, logo_of, picture_pixels, thumbnail_pixels},
     reader, search,
@@ -289,7 +289,7 @@ pub fn publish(service: &Arc<Service>, app: &Weak<App>, update: &ViewUpdate) {
     let updated = update.updated_at.map(|at| timing::hour_text(i64::try_from(at).unwrap_or(0)));
     let changed: Vec<(String, bool, bool, Vec<String>)> =
         update.changed.iter().map(|meta| (meta.id.clone(), meta.unread, meta.starred, meta.labels.clone())).collect();
-    let counts = update.counts.clone();
+    let (counts, category) = (update.counts.clone(), update.category.clone().unwrap_or_default());
     let (refreshing, failed, has_more) = (update.refreshing, update.error.is_some(), update.has_more);
     let (page_at, pages) = (i32::try_from(update.page_at).unwrap_or(0), i32::try_from(update.pages).unwrap_or(0));
     let (removed, selected) = (update.removed.clone(), update.selected.clone());
@@ -303,6 +303,7 @@ pub fn publish(service: &Arc<Service>, app: &Weak<App>, update: &ViewUpdate) {
         // A window moved to another display draws at another scale: the next pictures follow it.
         remember_scale(&app);
         app.set_updated(updated.unwrap_or_default().into());
+        app.set_category(category.into());
         app.set_failed(failed);
         app.set_loading(refreshing);
         if !loading {
@@ -347,7 +348,7 @@ pub fn publish(service: &Arc<Service>, app: &Weak<App>, update: &ViewUpdate) {
         apply_changes(&app, &changed);
         show_checked(&app, &checked);
         if let Some(counts) = &counts {
-            show_counts(&app, counts);
+            counts::show(&app, counts);
         }
         if !added.is_empty() {
             let rows = app.get_rows();
@@ -430,37 +431,6 @@ fn follow(service: &Arc<Service>, app: &Weak<App>, next: Option<String>) {
             window.set_has_mail(false);
         }
     }
-}
-
-/// What the heading above the list says is about the folder open, whichever that is.
-fn show_folder_unread(app: &App) {
-    let open = app.get_folders().iter().find(|folder| folder.active);
-    app.set_folder_unread(open.map_or(0, |folder| folder.unread));
-}
-
-/// The mail not yet read in the inbox, in the one place it is shown from: the window, the Dock and the tray together.
-/// Two ways set it, the folders at the start and the list after it, and the badge once followed only a third.
-fn show_inbox_unread(app: &App, unread: u64) {
-    app.set_inbox_unread(i32::try_from(unread).unwrap_or(i32::MAX));
-    crate::tray::show_unread(app, unread);
-}
-
-/// Every count the window shows, and the Dock and the tray with them: a count taken by the list itself, after a mail
-/// was read, leaves the background check nothing new to report, and the badge kept the old number.
-pub fn show_counts(app: &App, counts: &Counts) {
-    let unread = |id: &str| counts.get(id).map_or(0, |count| i32::try_from(count.unread).unwrap_or(i32::MAX));
-    show_inbox_unread(app, counts.get("inbox").map_or(0, |count| count.unread));
-    let folders = app.get_folders();
-    for index in 0..folders.row_count() {
-        if let Some(mut folder) = folders.row_data(index) {
-            let now = unread(folder.id.as_str());
-            if folder.unread != now {
-                folder.unread = now;
-                folders.set_row_data(index, folder);
-            }
-        }
-    }
-    show_folder_unread(app);
 }
 
 /// The splash leaves once the envelope has sealed at least once, however fast the mail came.
@@ -553,7 +523,7 @@ pub fn list_title(app: &Weak<App>, id: &str) {
                 folders.set_row_data(index, folder);
             }
         }
-        show_folder_unread(&app);
+        counts::show_folder_unread(&app);
     });
 }
 
@@ -562,7 +532,7 @@ fn colour_of(hex: Option<&str>) -> u32 {
 }
 
 pub fn folder_rows(app: &Weak<App>, folders: &[Folder], counts: &Counts, active: &str) {
-    let inbox = counts.get("inbox").map_or(0, |count| count.unread);
+    let counts = counts.clone();
     *FOLDERS.lock() = folders
         .iter()
         .filter(|folder| folder.id == "inbox" || folder.kind != "system")
@@ -598,7 +568,6 @@ pub fn folder_rows(app: &Weak<App>, folders: &[Folder], counts: &Counts, active:
         }
     }
     let _ = app.upgrade_in_event_loop(move |app| {
-        show_inbox_unread(&app, inbox);
         app.set_has_labels(has_labels);
         let rows: Vec<FolderRow> = rows
             .into_iter()
@@ -613,7 +582,7 @@ pub fn folder_rows(app: &Weak<App>, folders: &[Folder], counts: &Counts, active:
             })
             .collect();
         app.set_folders(ModelRc::from(Rc::new(VecModel::from(rows))));
-        show_folder_unread(&app);
+        counts::show(&app, &counts);
     });
 }
 

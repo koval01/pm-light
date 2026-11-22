@@ -47,6 +47,8 @@ const LANGUAGES: [&str; 2] = ["ru", "de"];
 #[derive(Clone, Debug, PartialEq)]
 enum Step {
     Mail(usize),
+    /// One of the inbox's categories, by its label id.
+    Category(&'static str),
     Folder(&'static str),
     Search(&'static str),
     Letter(&'static str),
@@ -66,6 +68,7 @@ impl Step {
     fn word(&self) -> String {
         match self {
             Self::Mail(index) => format!("mail-{}", index + 1),
+            Self::Category(id) => format!("category-{}", proton_core::categories::name_of(id).unwrap_or("other")),
             Self::Folder(folder) => format!("folder-{folder}"),
             Self::Search(_) => "search".into(),
             Self::Letter(mode) => format!("letter-{mode}"),
@@ -81,12 +84,14 @@ impl Step {
     }
 }
 
-/// Every step, in order, for an inbox of `mails` rows: the first is open already.
-fn steps(mails: usize) -> Vec<Step> {
+/// Every step, in order, for an inbox of `mails` rows and the category tabs it has: the first is open already.
+fn steps(mails: usize, tabs: &[&'static str]) -> Vec<Step> {
     let mut steps = vec![Step::Mail(0)];
     steps.extend((1..mails).map(Step::Mail));
     // While a mail of the inbox is open: a reply and a forward take the open mail.
     steps.extend(LETTERS.into_iter().map(Step::Letter));
+    // Each tab as Proton sorted it, the open mail let go as a click on a tab lets it go.
+    steps.extend(tabs.iter().copied().map(Step::Category));
     steps.extend(FOLDERS.into_iter().map(Step::Folder));
     steps.push(Step::Search("sale"));
     steps.extend(settings::tabs::all().map(|tab| Step::Settings(tab.id)));
@@ -138,7 +143,10 @@ fn beside(note: &Path, ending: &str) -> PathBuf {
 /// From the account check, once its note is written.
 pub fn start(app: &App, note: PathBuf) {
     let Some((service, rows)) = take_seen() else { return };
-    let steps = steps(rows.len());
+    let categories = service.categories();
+    let tabs: Vec<&'static str> =
+        if categories.on() { categories.tabs().iter().map(|tab| tab.id).collect() } else { Vec::new() };
+    let steps = steps(rows.len(), &tabs);
     log::info!("the screen tour: {} steps", steps.len());
     let _ = std::fs::remove_file(beside(&note, ".step"));
     let _ = std::fs::remove_file(beside(&note, ".done"));
@@ -244,6 +252,7 @@ fn show(service: &Arc<Service>, app: &App, rows: &[MessageMeta], step: &Step) {
                 view::open_mail(service, &app.as_weak(), row.id.clone());
             }
         }
+        Step::Category(id) => app.invoke_category_chosen((*id).into()),
         Step::Folder(folder) => app.invoke_open_folder((*folder).into()),
         Step::Search(text) => {
             app.invoke_open_folder("inbox".into());

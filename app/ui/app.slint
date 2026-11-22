@@ -12,6 +12,7 @@ import { NameWindow } from "name.slint";
 import { AccountCard, AccountPanel } from "account.slint";
 import { Tour, TourSpot } from "tour.slint";
 import { ListChoice, Pager } from "list_pages.slint";
+import { Categories, CategoryTab, CategoryTabs } from "categories.slint";
 import { PreviewWindow } from "preview.slint";
 import { PrintWindow } from "print.slint";
 import "fonts/InterVariable.ttf";
@@ -129,7 +130,7 @@ export struct ContactHint {
     email: string,
 }
 
-export { Auth, CodeLine, CodePiece, DayCell, MomentWindow, NameWindow, PreviewWindow, PrintWindow, Theme, ContactRow, CommandRow, ContactsWindow, PaletteWindow, Say, Settings, SettingsRow, SettingsSection, TabRow, Words }
+export { Auth, Categories, CodeLine, CodePiece, DayCell, MomentWindow, NameWindow, PreviewWindow, PrintWindow, Theme, ContactRow, CommandRow, ContactsWindow, PaletteWindow, Say, Settings, SettingsRow, SettingsSection, TabRow, Words }
 
 // What the menu bar says. The menu is the system's, so its words travel through Rust.
 export global Menus {
@@ -536,6 +537,10 @@ export component App inherits Window {
     in property <string> folder-title;
     in property <int> inbox-unread;
     in property <int> folder-unread;
+    // The inbox's categories, and the label id of the one on screen: empty where there are no tabs.
+    in property <[CategoryTab]> category-tabs;
+    in property <string> category;
+    callback category-chosen(string);
     in property <int> stage;
     in property <string> updated;
     in property <string> version-text;
@@ -1293,6 +1298,21 @@ export component App inherits Window {
                         if (root.folder-id == "trash" || root.folder-id == "spam") && root.rows.length > 0: Tab {
                             label: @tr("Empty folder");
                             clicked => { root.act("empty"); }
+                        }
+                    }
+                }
+                if root.category != "" && root.category-tabs.length > 0: HorizontalLayout {
+                    padding-left: 10px;
+                    padding-right: 12px;
+                    CategoryTabs {
+                        tabs: root.category-tabs;
+                        active: root.category;
+                        chosen(id) => {
+                            keys.focus();
+                            root.pulse();
+                            root.only-unread = false;
+                            root.only-files = false;
+                            root.category-chosen(id);
                         }
                     }
                 }

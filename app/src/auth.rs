@@ -239,8 +239,9 @@ fn open_mailbox(service: &Arc<Service>, app: &Weak<App>) {
     keyboard::read_settings(&service, &app);
     tokio::spawn(async move {
         // A row is written once, so what the account chose for it has to be known first.
-        // First: whether mail stands in conversations decides which counts are asked for.
-        service.read_habits().await;
+        // First: whether mail stands in conversations, and whether the inbox is shown by category, decide which counts
+        // are asked for.
+        futures::join!(service.read_habits(), service.read_categories());
         let folder_count = if let (Ok(folders), Ok(counts), _) =
             futures::join!(service.folders(), service.counts(), service.time_settings())
         {

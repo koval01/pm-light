@@ -46,6 +46,7 @@ pub const GROUPS: [(&str, &[Tab]); 4] = [
                 "mail",
                 &["settings.reading", "settings.writing", "settings.undoSend", "settings.hideRemote"],
             ),
+            tab("categories", "tabs.categories", "inbox", &["categories.use", "categories.list"]),
             tab("privacy", "tabs.privacy", "shield-check", &["settings.hideRemote", "settings.confirmLinks"]),
             tab("identity", "tabs.identity", "id-card", &["settings.addresses"]),
             tab("folders", "tabs.folders", "folder", &["nav.folders", "nav.labels"]),

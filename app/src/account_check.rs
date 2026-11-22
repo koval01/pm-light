@@ -32,6 +32,7 @@ thread_local! {
     static WRITE_TO: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
     static STAGE: Cell<&'static str> = const { Cell::new("waiting for the session") };
     static FOUND: Cell<(usize, usize)> = const { Cell::new((0, 0)) };
+    static TABS: RefCell<String> = const { RefCell::new(String::new()) };
 }
 
 /// The file the check writes to, when the app was started for one.
@@ -62,6 +63,32 @@ fn note(path: PathBuf, text: &str) {
 #[must_use]
 pub fn report(folders: usize, rows: usize, width: u32, height: u32) -> String {
     format!("folders={folders}\ninbox rows={rows}\nwidth={width}\nheight={height}\n")
+}
+
+/// Each category tab of the inbox, by Proton's word for it, and the rows its first page holds, or that Proton refused
+/// it: what the window's tabs show can be held against Proton's own client by these.
+#[must_use]
+pub fn category_report(tabs: &[(&str, Option<usize>)]) -> String {
+    tabs.iter()
+        .map(|(name, rows)| {
+            rows.map_or_else(|| format!("category {name} refused\n"), |rows| format!("category {name} rows={rows}\n"))
+        })
+        .collect()
+}
+
+/// The tabs the account has, each read as the window reads it.
+async fn read_tabs(service: &Service) -> String {
+    let categories = service.categories();
+    if !categories.on() {
+        return "categories=off\n".to_string();
+    }
+    let mut tabs = Vec::new();
+    for tab in categories.tabs() {
+        let options = ListOptions { limit: Some(ROWS), categories: categories.labels_of(tab.id), ..Default::default() };
+        tabs.push((tab.name, service.list("inbox", &options).await.ok().map(|rows| rows.len())));
+    }
+    log::info!("the account check: {} category tabs", tabs.len());
+    category_report(&tabs)
 }
 
 /// From `main`, once the window exists: the note is waited for from here.
@@ -103,8 +130,10 @@ pub fn mailbox_opened(service: &Arc<Service>, app: &Weak<App>, folders: usize) {
             }
         }
         let count = rows.len();
+        let tabs = read_tabs(&service).await;
         let _ = app.upgrade_in_event_loop(move |app| {
             FOUND.set((folders, count));
+            TABS.set(tabs);
             crate::screen_tour::remember(&service, rows);
             match first {
                 Some(id) => draw_first(&service, &app, id),
@@ -139,7 +168,7 @@ fn finished_without_mail() {
     let Some(path) = WRITE_TO.take() else { return };
     let (folders, _) = FOUND.get();
     log::info!("the account check: {folders} folders, an empty inbox");
-    note(path, &report(folders, 0, 0, 0));
+    note(path, &(report(folders, 0, 0, 0) + &TABS.take()));
 }
 
 /// The first mail is drawn: its picture beside the note.
@@ -150,7 +179,7 @@ pub fn finish(png: &[u8], width: u32, height: u32) {
     let mut picture = path.clone().into_os_string();
     picture.push(".png");
     let _ = std::fs::write(PathBuf::from(picture), png);
-    note(path.clone(), &report(folders, rows, width, height));
+    note(path.clone(), &(report(folders, rows, width, height) + &TABS.take()));
     if let Some(app) = crate::actions::main_window() {
         match crate::soak::minutes() {
             Some(minutes) => {

@@ -227,6 +227,20 @@ fn mailbox(app: &App) {
     app.set_account_initials("AE".into());
 }
 
+/// Every category as a tab, as an account with all of them shown has them, and one of them open.
+fn categories(app: &App, open: &str) {
+    let tab = |id: &str, name: &str, unread: i32| CategoryTab { id: id.into(), name: name.into(), unread };
+    app.set_category_tabs(model(vec![
+        tab("24", "primary", 12),
+        tab("20", "social", 0),
+        tab("21", "promotions", 3),
+        tab("25", "newsletters", 1),
+        tab("26", "transactions", 1200),
+        tab("22", "updates", 0),
+    ]));
+    app.set_category(open.into());
+}
+
 fn open_mail(app: &App) {
     app.set_has_mail(true);
     app.set_opening(false);
@@ -340,6 +354,22 @@ fn the_window_looks_as_it_did() {
     shoot_at("mailbox-full-hd", 1920, 1080, 1.0);
     shoot_at("mailbox-4k", 3840, 2160, 1.0);
     shoot_at("mailbox-4k-150", 2560, 1440, 1.5);
+
+    // The inbox by category, as Proton sorts it: tabs above the list, each with its unread mail.
+    categories(&app, "24");
+    shoot_at("categories-small", 900, 580, 1.0);
+    shoot_at("categories-large", 1280, 820, 1.0);
+    shoot_at("categories-full-hd", 1920, 1080, 1.0);
+    categories(&app, "26");
+    open_mail(&app);
+    // A list narrowed by an open mail names only the tab that is open; in German, the longest words, not even that.
+    shoot_at("categories-mail-small", 900, 580, 1.0);
+    slint::select_bundled_translation("de").expect("German");
+    shoot_at("categories-mail-small-de", 900, 580, 1.0);
+    shoot_at("categories-mail-large-de", 1280, 820, 1.0);
+    slint::select_bundled_translation("en").expect("English");
+    app.set_has_mail(false);
+    app.set_category(SharedString::default());
 
     // A folder a page at a time: the pager beside the filters.
     app.set_list_pages(8);

@@ -12,6 +12,10 @@ affiliated with Proton AG.
 - **Writing:** sending of every kind except one external address and password mail, which were seen working:
   plain text, scheduled, with expiry, with undo, from the options panel and the send button's menu.
 - **List:** the bulk bar's actions, Empty folder, star on real mail; pages after mail was moved off the last one.
+- **Inbox categories:** the tabs, their counts and their mail against Proton's web client on the test account (the
+  account check lists each tab's rows, and the tour photographs each); moving mail to another category, and the
+  settings that turn categories on and show or hide a tab. Tabs count unread mail always: Proton's dot for new mail
+  and its setting for counters are not followed.
 - **Reader:** the receipt banner, unsubscribing, the toolbar's actions on real mail, the print dialog and seals printed
   for real.
 - **Contacts:** adding and removing.

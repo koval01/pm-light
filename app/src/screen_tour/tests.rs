@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn the_tour_shows_every_mail_folder_letter_and_settings_page() {
-    let all = steps(9);
+    let all = steps(9, &[]);
     assert_eq!(all.first(), Some(&Step::Mail(0)), "the first step is the window as the check left it");
     for index in 0..9 {
         assert!(all.contains(&Step::Mail(index)));
@@ -23,7 +23,7 @@ fn the_tour_shows_every_mail_folder_letter_and_settings_page() {
 #[test]
 fn settings_pages_follow_one_another() {
     // Leaving a settings page for another keeps settings open: only the last one closes them.
-    let all = steps(3);
+    let all = steps(3, &[]);
     let pages: Vec<usize> =
         all.iter().enumerate().filter(|(_, step)| matches!(step, Step::Settings(_))).map(|(at, _)| at).collect();
     let (Some(first), Some(last)) = (pages.first(), pages.last()) else { panic!("no settings pages") };
@@ -32,7 +32,7 @@ fn settings_pages_follow_one_another() {
 
 #[test]
 fn the_window_comes_back_from_full_screen_before_the_looks() {
-    let all = steps(1);
+    let all = steps(1, &[]);
     let full = all.iter().position(|step| *step == Step::FullScreen);
     let first_look = all.iter().position(|step| matches!(step, Step::Look(..)));
     assert!(full.is_some() && first_look == full.map(|at| at + 1));
@@ -42,7 +42,7 @@ fn the_window_comes_back_from_full_screen_before_the_looks() {
 
 #[test]
 fn names_are_unique_plain_and_sort_in_order() {
-    let all = steps(9);
+    let all = steps(9, &[]);
     let names: Vec<String> = all.iter().enumerate().map(|(index, step)| step_text(index, step)).collect();
     for name in &names {
         assert!(name.bytes().all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-'), "{name}");
@@ -57,7 +57,7 @@ fn names_are_unique_plain_and_sort_in_order() {
 
 #[test]
 fn a_one_mail_inbox_still_has_a_tour() {
-    let all = steps(1);
+    let all = steps(1, &[]);
     assert_eq!(all.iter().filter(|step| matches!(step, Step::Mail(_))).count(), 1);
     assert!(all.len() > 40);
 }
@@ -67,4 +67,18 @@ fn the_tour_zooms_only_to_what_the_setting_offers() {
     for (_, zoom) in ZOOMS {
         assert!(crate::look::ZOOMS.contains(&zoom), "the setting has no zoom of {zoom}");
     }
+}
+
+#[test]
+fn every_category_tab_has_its_picture_while_the_inbox_is_open() {
+    let tabs = ["24", "20", "25"];
+    let all = steps(2, &tabs);
+    let shown: Vec<&Step> = all.iter().filter(|step| matches!(step, Step::Category(_))).collect();
+    assert_eq!(shown, [&Step::Category("24"), &Step::Category("20"), &Step::Category("25")]);
+    let first_tab = all.iter().position(|step| matches!(step, Step::Category(_)));
+    let first_folder = all.iter().position(|step| matches!(step, Step::Folder(_)));
+    assert!(first_tab < first_folder, "the tabs are the inbox's, so they come before the other folders");
+    let names: Vec<String> = all.iter().enumerate().map(|(index, step)| step_text(index, step)).collect();
+    assert!(names.iter().any(|name| name.ends_with("-category-newsletters")), "{names:?}");
+    assert_eq!(steps(2, &[]).len() + 3, all.len());
 }

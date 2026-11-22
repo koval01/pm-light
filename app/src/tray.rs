@@ -284,7 +284,7 @@ pub fn show_action_menu(app: &App, kind: &str) {
             }
         }
         "move" => {
-            for (id, name) in view::move_targets() {
+            for (id, name) in crate::categories::move_targets(app) {
                 let name = if id == "inbox" { app.get_word_inbox().to_string() } else { name };
                 let _ = menu.append(&MenuItem::with_id(format!("{MOVE}{id}"), name, true, None));
             }

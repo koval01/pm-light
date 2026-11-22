@@ -83,7 +83,7 @@ fn message_commands(app: &App, words: &Words<'_>) -> Vec<Command> {
     list.push(command(words.get_source(), "", Run::Info(4)));
     list.push(command(words.get_print(), "", Run::Print));
     list.push(command(words.get_headers(), "h", Run::Info(3)));
-    for (id, name) in view::move_targets() {
+    for (id, name) in crate::categories::move_targets(app) {
         let name = app.invoke_folder_name(id.as_str().into(), name.as_str().into());
         list.push(command(words.invoke_move_to_folder(name), "", Run::Move(id)));
     }

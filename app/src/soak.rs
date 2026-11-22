@@ -51,6 +51,7 @@ enum Action {
     Step,
     Scroll,
     Folder,
+    Category,
     Search,
     Settings,
     Letter,
@@ -67,11 +68,12 @@ enum Action {
 }
 
 /// How often each is chosen, against the others: what is done most with a mail client comes up most.
-const WEIGHTS: [(Action, u32); 17] = [
+const WEIGHTS: [(Action, u32); 18] = [
     (Action::OpenMail, 12),
     (Action::Step, 8),
     (Action::Scroll, 6),
     (Action::Folder, 6),
+    (Action::Category, 4),
     (Action::Search, 4),
     (Action::Settings, 5),
     (Action::Letter, 3),
@@ -242,6 +244,16 @@ fn perform(service: &Arc<Service>, app: &App, rows: &[MessageMeta], action: Acti
         Action::Step => view::step(service, &app.as_weak(), if pick.is_multiple_of(2) { 1 } else { -1 }),
         Action::Scroll => crate::keyboard::scroll(app, if pick.is_multiple_of(2) { 1 } else { -1 }),
         Action::Folder => app.invoke_open_folder(one_of(&FOLDERS, pick).into()),
+        // A tab of the inbox's categories, as a click picks one; elsewhere, the inbox, where the tabs are.
+        Action::Category => {
+            let tabs = app.get_category_tabs();
+            let count = u64::try_from(tabs.row_count()).unwrap_or(0);
+            let tab = usize::try_from(pick.checked_rem(count).unwrap_or(0)).ok().and_then(|at| tabs.row_data(at));
+            match tab {
+                Some(tab) if !app.get_category().is_empty() => app.invoke_category_chosen(tab.id),
+                _ => app.invoke_open_folder("inbox".into()),
+            }
+        }
         Action::Search => {
             let from_inbox = rows.get(usize::try_from(pick / 2 % 64).unwrap_or(0)).and_then(subject_word);
             let word = if pick.is_multiple_of(2) { from_inbox.unwrap_or("sale") } else { one_of(&WORDS, pick) };

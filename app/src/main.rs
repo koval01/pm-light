@@ -7,9 +7,11 @@ mod account_panel;
 mod actions;
 mod auth;
 mod autolock;
+mod categories;
 mod checks;
 mod composer;
 mod contacts;
+mod counts;
 mod folder_names;
 #[cfg(target_os = "linux")]
 mod gtk_loop;
@@ -249,6 +251,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     actions::connect(&service, &app);
     connect_window(&service, &app);
     connect_list(&service, &app);
+    categories::connect(&service, &app);
     search::connect(&service, &app);
     keyboard::connect(&service, &app);
     undo_send::connect(&service, &app);

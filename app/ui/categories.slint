@@ -1,0 +1,141 @@
+// The inbox's categories, as Proton sorts the mail into them: a row of tabs above the list, each with what is unread
+// in it. Shown in the inbox only, when the account has its categories on, and not in a search, as in Proton's client.
+// Where the names do not all fit, the tabs not open show their picture alone, and then the open one too.
+
+import { Theme, Icon } from "base.slint";
+
+export struct CategoryTab {
+    // Proton's label id of the category.
+    id: string,
+    // Its word: primary, social, promotions, newsletters, transactions or updates.
+    name: string,
+    unread: int,
+}
+
+export global Categories {
+    public pure function title(name: string) -> string {
+        if name == "primary" { return @tr("Primary"); }
+        if name == "social" { return @tr("Social"); }
+        if name == "promotions" { return @tr("Promotions"); }
+        if name == "newsletters" { return @tr("Newsletters"); }
+        if name == "transactions" { return @tr("Transactions"); }
+        if name == "updates" { return @tr("Updates"); }
+        return name;
+    }
+
+    public pure function icon(name: string) -> image {
+        if name == "social" { return @image-url("icons/user-round.svg"); }
+        if name == "promotions" { return @image-url("icons/megaphone.svg"); }
+        if name == "newsletters" { return @image-url("icons/newspaper.svg"); }
+        if name == "transactions" { return @image-url("icons/credit-card.svg"); }
+        if name == "updates" { return @image-url("icons/bell.svg"); }
+        return @image-url("icons/inbox.svg");
+    }
+
+    // Past 999 the number says no more, as in Proton's.
+    public pure function count(unread: int) -> string {
+        return unread > 999 ? "999+" : unread;
+    }
+}
+
+component Tab {
+    in property <CategoryTab> tab;
+    in property <bool> on;
+    // The name stays, or the picture says it alone.
+    in property <bool> named;
+    callback clicked;
+    accessible-role: AccessibleRole.tab;
+    accessible-label: Categories.title(root.tab.name);
+    accessible-item-selected: root.on;
+    accessible-action-default => { root.clicked(); }
+    height: 34px;
+    min-width: row.preferred-width + 16px;
+    Rectangle {
+        y: 2px;
+        height: parent.height - 6px;
+        border-radius: 8px;
+        background: touch.has-hover && !root.on ? Theme.hover : transparent;
+        animate background { duration: 120ms; }
+    }
+    row := HorizontalLayout {
+        x: 8px;
+        width: self.preferred-width;
+        spacing: 6px;
+        alignment: start;
+        Icon {
+            y: (parent.height - self.height) / 2 - 2px;
+            width: 15px;
+            height: 15px;
+            source: Categories.icon(root.tab.name);
+            tint: root.on ? Theme.foreground : Theme.muted;
+        }
+        if root.named: Text {
+            text: Categories.title(root.tab.name);
+            color: root.on ? Theme.foreground : Theme.muted;
+            font-size: 12px;
+            font-weight: root.on ? 600 : 500;
+            vertical-alignment: center;
+        }
+        if root.tab.unread > 0: Text {
+            text: Categories.count(root.tab.unread);
+            color: root.on ? Theme.accent : Theme.faint;
+            font-size: 11px;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+    // The open tab is underlined, flat, on the line that closes the row.
+    if root.on: Rectangle {
+        y: parent.height - 2px;
+        height: 2px;
+        border-radius: 1px;
+        background: Theme.strong;
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// How the tabs would stand, measured out of sight: 0 names every tab, 1 only the open one, 2 none.
+component Row inherits HorizontalLayout {
+    in property <[CategoryTab]> tabs;
+    in property <string> active;
+    in property <int> naming;
+    callback chosen(string);
+    alignment: start;
+    for tab in root.tabs: Tab {
+        tab: tab;
+        on: tab.id == root.active;
+        named: root.naming == 0 || (root.naming == 1 && tab.id == root.active);
+        clicked => { root.chosen(tab.id); }
+    }
+}
+
+export component CategoryTabs {
+    in property <[CategoryTab]> tabs;
+    // The label id of the tab on screen.
+    in property <string> active;
+    callback chosen(string);
+    private property <int> naming: every.preferred-width <= root.width ? 0 : open-only.preferred-width <= root.width ? 1 : 2;
+    // Whatever room the list has: the tabs fit themselves to it, and never widen it.
+    min-width: 0;
+    horizontal-stretch: 1;
+    height: 35px;
+    every := Row { tabs: root.tabs; active: root.active; naming: 0; visible: false; }
+    open-only := Row { tabs: root.tabs; active: root.active; naming: 1; visible: false; }
+    Rectangle {
+        y: parent.height - 1px;
+        height: 1px;
+        background: Theme.border;
+    }
+    shown := Row {
+        x: 0;
+        width: parent.width;
+        height: 34px;
+        tabs: root.tabs;
+        active: root.active;
+        naming: root.naming;
+        chosen(id) => { root.chosen(id); }
+    }
+}
