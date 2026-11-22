@@ -70,6 +70,7 @@ fn tell_the_system(choice: u8) {
     let application = NSApplication::sharedApplication(marker);
     let application: &AnyObject = &application;
     // Safety: the application takes an appearance or nothing, on the main thread.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let _: () = unsafe { msg_send![application, setAppearance: appearance.as_deref()] };
 }
 

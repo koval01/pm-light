@@ -11,6 +11,7 @@ pub fn harden_process() -> Vec<&'static str> {
         // A crash must not leave a file holding tokens and mail.
         let none = libc::rlimit { rlim_cur: 0, rlim_max: 0 };
         // Safety: a limit of this process, from a structure alive for the call.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         if unsafe { libc::setrlimit(libc::RLIMIT_CORE, &raw const none) } != 0 {
             missing.push("core files could not be turned off");
         }
@@ -18,6 +19,7 @@ pub fn harden_process() -> Vec<&'static str> {
     // Debug builds stay debuggable.
     #[cfg(all(target_os = "macos", not(debug_assertions)))]
     // Safety: a request about this process alone, with no address to read or write.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     if unsafe { libc::ptrace(libc::PT_DENY_ATTACH, 0, std::ptr::null_mut(), 0) } != 0 {
         missing.push("debuggers could not be kept out");
     }
@@ -27,6 +29,7 @@ pub fn harden_process() -> Vec<&'static str> {
         // The call reads every argument after the option as an `unsigned long`, and a plain `0` would go as an `int`.
         let (off, unused): (libc::c_ulong, libc::c_ulong) = (0, 0);
         // Safety: a setting of this process, each argument of the width the call reads.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         if unsafe { libc::prctl(libc::PR_SET_DUMPABLE, off, unused, unused, unused) } != 0 {
             missing.push("the process could not be made unreadable to others");
         }
@@ -56,15 +59,17 @@ mod windows {
         // A crash report goes to Microsoft or a local dump with the heap left out: that is where
         // tokens and mail would be.
         // Safety: a plain call with a defined flag.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         if unsafe { WerSetFlags(WER_FAULT_REPORTING_FLAG_NOHEAP) } < 0 {
             missing.push("crash reports could not be kept from the heap");
         }
         let mut policy = PROCESS_MITIGATION_IMAGE_LOAD_POLICY::default();
         policy.Anonymous.Flags = NO_REMOTE_IMAGES | NO_LOW_LABEL_IMAGES | PREFER_SYSTEM32_IMAGES;
         let size = size_of::<PROCESS_MITIGATION_IMAGE_LOAD_POLICY>();
+        let buffer = (&raw const policy).cast::<c_void>();
         // Safety: the buffer is the policy's own structure, of its own size, alive for the call.
-        let set =
-            unsafe { SetProcessMitigationPolicy(ProcessImageLoadPolicy, (&raw const policy).cast::<c_void>(), size) };
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
+        let set = unsafe { SetProcessMitigationPolicy(ProcessImageLoadPolicy, buffer, size) };
         if set == 0 {
             missing.push("the library loading policy was not taken");
         }

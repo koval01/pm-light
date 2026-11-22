@@ -318,11 +318,13 @@ fn show_in(window: &slint::Window, menu: Menu) {
     match handle.as_raw() {
         // Safety: the view belongs to the open window, which outlives this call on its own thread.
         #[cfg(target_os = "macos")]
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         RawWindowHandle::AppKit(view) => unsafe {
             menu.show_context_menu_for_nsview(view.ns_view.as_ptr(), None);
         },
         // Safety: as above, for the window's handle.
         #[cfg(target_os = "windows")]
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         RawWindowHandle::Win32(window) => unsafe {
             menu.show_context_menu_for_hwnd(window.hwnd.get(), None);
         },

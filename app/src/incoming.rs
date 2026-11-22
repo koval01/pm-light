@@ -79,6 +79,7 @@ mod system {
 
     unsafe extern "C-unwind" fn open_urls(_: *mut AnyObject, _: Sel, _: *mut AnyObject, urls: *mut NSArray<NSURL>) {
         // Safety: AppKit passes an array that lives for the length of this call.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let urls = unsafe { urls.as_ref() }.map_or_else(Vec::new, NSArray::to_vec);
         for text in urls.iter().filter_map(|url| url.absoluteString()) {
             super::accept(&text.to_string());
@@ -93,6 +94,7 @@ mod system {
     fn add(class: *const AnyClass, selector: Sel, method: Imp, types: &str) {
         let Ok(types) = CString::new(types) else { return };
         // Safety: the types match the function, and the name it is added under is the one AppKit calls.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         if !unsafe { ffi::class_addMethod(class.cast_mut(), selector, method, types.as_ptr()) }.as_bool() {
             log::warn!("the application delegate already answers this call");
         }
@@ -109,6 +111,7 @@ mod system {
         let delegate: &AnyObject = (*delegate).as_ref();
         let class: *const AnyClass = delegate.class();
         // Safety: an `Imp` is only a pointer, and the runtime calls it with the types given below.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let (open_urls, reopen) = unsafe {
             (
                 transmute::<unsafe extern "C-unwind" fn(*mut AnyObject, Sel, *mut AnyObject, *mut NSArray<NSURL>), Imp>(

@@ -38,12 +38,14 @@ pub fn capture(view: &WebView, _width: f64, _height: f64, then: impl FnOnce(Opti
     let then = RefCell::new(Some(then));
     let done = block2::RcBlock::new(move |data: *mut NSData, _error: *mut AnyObject| {
         // Safety: WebKit hands its data or nothing, alive for this call.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let png = unsafe { data.as_ref() }.and_then(drawn);
         if let Some(then) = then.borrow_mut().take() {
             then(png);
         }
     });
     // Safety: a plain call on the page's own view, on the window's thread. No configuration is the whole page.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let none: Option<&AnyObject> = None;
         let _: () = msg_send![&*page, createPDFWithConfiguration: none, completionHandler: &*done];
@@ -64,6 +66,7 @@ pub fn drawn(pdf: &NSData) -> Option<Vec<u8>> {
     );
     // Safety: AppKit's own classes, each result checked for nothing before it is used. The context drawn into is a
     // bitmap's own, made current for this thread only and put back before the block ends.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let rep: Option<Retained<AnyObject>> = msg_send![reps, imageRepWithData: pdf];
         let rep = rep?;
@@ -126,6 +129,7 @@ fn data_of(bytes: &[u8]) -> Retained<NSData> {
 pub fn copy(png: &[u8]) -> bool {
     let png = data_of(png);
     // Safety: AppKit's own pasteboard, on the window's thread.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let Some(board): Option<Retained<AnyObject>> =
             class(c"NSPasteboard").and_then(|boards| msg_send![boards, generalPasteboard])
@@ -141,6 +145,7 @@ pub fn copy(png: &[u8]) -> bool {
 /// `board` is an `NSPasteboard`.
 unsafe fn put(board: &AnyObject, png: &NSData) -> bool {
     // Safety: the caller hands a pasteboard, and both are plain calls on it with data and a type it takes.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let _: isize = msg_send![board, clearContents];
         let placed: Bool = msg_send![board, setData: png, forType: &*NSString::from_str("public.png")];
@@ -157,6 +162,7 @@ pub fn copy_checked(png: &[u8]) -> bool {
 pub fn put_and_read_back(png: &[u8]) -> Option<(Vec<u8>, bool)> {
     let data = data_of(png);
     // Safety: a pasteboard made for this call alone, released at its end.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let board: Retained<AnyObject> = msg_send![class(c"NSPasteboard")?, pasteboardWithUniqueName];
         let placed = put(&board, &data);
@@ -177,6 +183,7 @@ pub fn share(app: &App, path: &Path) -> bool {
     let RawWindowHandle::AppKit(view) = handle.as_raw() else { return false };
     let Some(path) = path.to_str() else { return false };
     // Safety: the window's own view, alive while the window is, and AppKit's classes, on the window's thread.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let view: &AnyObject = view.ns_view.cast::<AnyObject>().as_ref();
         let Some(classes) = class(c"NSURL").zip(class(c"NSArray")).zip(class(c"NSSharingServicePicker")) else {

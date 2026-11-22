@@ -13,10 +13,12 @@ pub(super) fn snapshot(view: &WebView, then: fn(Option<slint::SharedPixelBuffer<
     let page = view.webview();
     let done = block2::RcBlock::new(move |image: *mut AnyObject, _error: *mut AnyObject| {
         // Safety: WebKit hands an `NSImage` or nothing, and it lives for this call.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let picture = unsafe { image.as_ref() }.and_then(pixels_of);
         then(picture);
     });
     // Safety: a plain call on the page's own view, on the window's thread; no configuration means the whole page.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let none: Option<&AnyObject> = None;
         let _: () = msg_send![&*page, takeSnapshotWithConfiguration: none, completionHandler: &*done];
@@ -37,6 +39,7 @@ fn pixels_of(image: &objc2::runtime::AnyObject) -> Option<slint::SharedPixelBuff
     // `NSBitmapImageFileTypePNG`.
     const PNG: usize = 4;
     // Safety: plain AppKit calls on an image WebKit made, each checked for nothing before it is used.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let png: Retained<NSData> = unsafe {
         let tiff: Option<Retained<NSData>> = msg_send![image, TIFFRepresentation];
         let class = AnyClass::get(c"NSBitmapImageRep")?;
@@ -71,6 +74,7 @@ pub(super) fn round_the_corner(view: &WebView, app: &App) {
     let page: &NSView = &page;
     page.setWantsLayer(true);
     // Safety: a view that wants a layer has one, and these are plain properties of it.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let layer: Option<Retained<AnyObject>> = msg_send![page, layer];
         if let Some(layer) = layer {
@@ -97,6 +101,7 @@ pub fn round_lower_corners(view: &WebView, radius: f64) {
     let page: &NSView = &page;
     page.setWantsLayer(true);
     // Safety: a view that wants a layer has one, and these are plain properties of it.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let layer: Option<Retained<AnyObject>> = msg_send![page, layer];
         if let Some(layer) = layer {

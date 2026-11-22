@@ -91,6 +91,7 @@ mod platform {
         let handle = handle.window_handle().ok()?;
         let RawWindowHandle::AppKit(view) = handle.as_raw() else { return None };
         // Safety: the view belongs to an open window, on the thread that owns it.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let view = unsafe { view.ns_view.cast::<NSView>().as_ref() };
         view.window()
     }
@@ -145,6 +146,7 @@ mod platform {
     pub fn present(parent: &Window, overlay: &Window) {
         if let (Some(parent), Some(overlay)) = (native(parent), native(overlay)) {
             // Safety: both handles are of open windows on this thread.
+            // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
             unsafe {
                 SetWindowLongPtrW(overlay, GWLP_HWNDPARENT, parent as isize);
                 EnableWindow(parent, 0);
@@ -155,6 +157,7 @@ mod platform {
     pub fn dismiss(parent: &Window, _overlay: &Window) {
         if let Some(parent) = native(parent) {
             // Safety: as above. The owner comes back first, or Windows raises some other app.
+            // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
             unsafe {
                 EnableWindow(parent, 1);
                 SetForegroundWindow(parent);

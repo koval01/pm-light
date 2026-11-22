@@ -128,6 +128,7 @@ pub mod touch_id {
 
     pub fn available() -> bool {
         // Safety: a fresh context, queried on this thread.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         unsafe { LAContext::new().canEvaluatePolicy_error(POLICY).is_ok() }
     }
 
@@ -138,6 +139,7 @@ pub mod touch_id {
             let _ = sender.send(accepted.as_bool());
         });
         // Safety: the block lives until the call returns, and the system copies it.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         unsafe {
             let context = LAContext::new();
             context.evaluatePolicy_localizedReason_reply(POLICY, &NSString::from_str(reason), &reply);

@@ -81,12 +81,14 @@ mod windows {
     pub fn register() {
         let id = wide(IDENTIFIER);
         // Safety: the string is terminated and outlives the call, which copies it.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         if unsafe { SetCurrentProcessExplicitAppUserModelID(id.as_ptr()) } < 0 {
             log::warn!("the app id was not taken");
         }
         let path = wide(&format!("Software\\Classes\\AppUserModelId\\{IDENTIFIER}"));
         let mut key: HKEY = null_mut();
         // Safety: every pointer is to a terminated string or a local that outlives the call.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let opened = unsafe {
             RegCreateKeyExW(
                 HKEY_CURRENT_USER,
@@ -107,11 +109,13 @@ mod windows {
         let (field, value) = (wide("DisplayName"), wide(NAME));
         let bytes = u32::try_from(value.len() * 2).unwrap_or(0);
         // Safety: the value is a terminated UTF-16 string of exactly `bytes` bytes, and the key is open.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let set = unsafe { RegSetValueExW(key, field.as_ptr(), 0, REG_SZ, value.as_ptr().cast(), bytes) };
         if set != DONE {
             log::warn!("the app's name could not be registered: {set}");
         }
         // Safety: the key was opened above and is closed once.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         unsafe { RegCloseKey(key) };
     }
 }

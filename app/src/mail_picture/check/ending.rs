@@ -11,6 +11,7 @@ pub fn end_page_processes() -> usize {
 fn end(pid: u32) -> bool {
     let Ok(pid) = libc::pid_t::try_from(pid) else { return false };
     // Safety: takes two numbers; the process is one of the program's own engine, found just before.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe { libc::kill(pid, libc::SIGKILL) == 0 }
 }
 
@@ -21,13 +22,16 @@ fn end(pid: u32) -> bool {
         System::Threading::{OpenProcess, PROCESS_TERMINATE, TerminateProcess},
     };
     // Safety: takes a right and a number; the handle is closed below.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let process = unsafe { OpenProcess(PROCESS_TERMINATE, 0, pid) };
     if process.is_null() {
         return false;
     }
     // Safety: a handle opened above with the right to end the process.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let ended = unsafe { TerminateProcess(process, 1) } != 0;
     // Safety: the handle came from `OpenProcess` above and is closed once.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe { CloseHandle(process) };
     ended
 }

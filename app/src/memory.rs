@@ -25,6 +25,7 @@ unsafe extern "C" {
 pub fn give_back() {
     // Safety: takes no pointers. Forced, it also tidies what ended threads left behind and the arenas the whole program
     // shares, which mimalloc guards itself, so any thread may call it at any time.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe { mi_collect(true) };
 }
 
@@ -39,6 +40,7 @@ fn give_back_system_heap() {
         fn malloc_zone_pressure_relief(zone: *mut std::ffi::c_void, goal: usize) -> usize;
     }
     // Safety: no zone means all of them, and a goal of zero means as much as there is.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) };
 }
 
@@ -149,6 +151,7 @@ mod system {
     pub(super) fn footprint(pid: i32) -> Option<u64> {
         let mut usage = MaybeUninit::<Usage>::uninit();
         // Safety: the buffer has the size this flavor writes, and is read only if the call succeeded.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         unsafe {
             (proc_pid_rusage(pid, RUSAGE_INFO_V0, usage.as_mut_ptr().cast()) == 0)
                 .then(|| usage.assume_init().footprint)
@@ -162,6 +165,7 @@ mod system {
     fn named(pid: i32, start: &[u8]) -> bool {
         let mut name = [0_u8; NAME_BYTES];
         // Safety: the buffer has the size given, and the call writes no more.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let length = unsafe { proc_name(pid, name.as_mut_ptr().cast(), u32::try_from(NAME_BYTES).unwrap_or(0)) };
         usize::try_from(length).is_ok_and(|length| name.get(..length).is_some_and(|name| name.starts_with(start)))
     }
@@ -197,11 +201,13 @@ mod system {
     pub(super) fn counted() -> Option<Vec<i32>> {
         let own = i32::try_from(process::id()).ok()?;
         // Safety: takes a number and only reads system state.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let responsible = |pid: i32| unsafe { responsibility_get_pid_responsible_for_pid(pid) };
         let ours = responsible(own);
         let mut pids = vec![0_i32; MOST_PROCESSES];
         let size = i32::try_from(pids.len() * size_of::<i32>()).ok()?;
         // Safety: the buffer holds `size` bytes, and the call writes no more.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let count = unsafe { proc_listallpids(pids.as_mut_ptr().cast(), size) };
         pids.truncate(usize::try_from(count).ok()?);
         Some(pids.into_iter().filter(|pid| *pid == own || (responsible(*pid) == ours && is_webkit(*pid))).collect())
@@ -284,6 +290,7 @@ mod system {
     /// Every process: its number, its parent's, and the name of its program.
     pub(super) fn processes() -> Vec<(u32, u32, String)> {
         // Safety: takes flags and a number, and gives a handle that is closed below.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
         if snapshot == INVALID_HANDLE_VALUE {
             return Vec::new();
@@ -292,15 +299,18 @@ mod system {
             PROCESSENTRY32W { dwSize: u32::try_from(size_of::<PROCESSENTRY32W>()).unwrap_or(0), ..Default::default() };
         let mut found = Vec::new();
         // Safety: the entry is as large as `dwSize` says, which the call checks.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let mut more = unsafe { Process32FirstW(snapshot, &raw mut entry) } != 0;
         while more {
             let length = entry.szExeFile.iter().position(|unit| *unit == 0).unwrap_or(entry.szExeFile.len());
             let name = String::from_utf16_lossy(entry.szExeFile.get(..length).unwrap_or_default());
             found.push((entry.th32ProcessID, entry.th32ParentProcessID, name));
             // Safety: as above.
+            // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
             more = unsafe { Process32NextW(snapshot, &raw mut entry) } != 0;
         }
         // Safety: the handle came from the snapshot above and is closed once.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         unsafe { CloseHandle(snapshot) };
         found
     }
@@ -309,16 +319,18 @@ mod system {
     pub(super) fn private_working_set(pid: u32) -> Option<u64> {
         let size = u32::try_from(size_of::<PROCESS_MEMORY_COUNTERS_EX2>()).ok()?;
         // Safety: takes a right and a number; the handle is closed below.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let process = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
         if process.is_null() {
             return None;
         }
         let mut counters = PROCESS_MEMORY_COUNTERS_EX2 { cb: size, ..Default::default() };
+        let buffer = (&raw mut counters).cast::<PROCESS_MEMORY_COUNTERS>();
         // Safety: the buffer is as large as `size`, which the call is told and does not exceed.
-        let read =
-            unsafe { K32GetProcessMemoryInfo(process, (&raw mut counters).cast::<PROCESS_MEMORY_COUNTERS>(), size) }
-                != 0;
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
+        let read = unsafe { K32GetProcessMemoryInfo(process, buffer, size) } != 0;
         // Safety: the handle came from `OpenProcess` above and is closed once.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         unsafe { CloseHandle(process) };
         if read { u64::try_from(counters.PrivateWorkingSetSize).ok() } else { None }
     }

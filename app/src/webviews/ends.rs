@@ -174,6 +174,7 @@ pub fn after(view: &wry::WebView, keeper: &'static Keeper, number: u64) {
     let handler = ProcessFailedEventHandler::create(Box::new(move |_, arguments| {
         let mut kind = COREWEBVIEW2_PROCESS_FAILED_KIND::default();
         // Safety: a plain getter on the arguments WebView2 handed this call, which live for it.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let read = arguments.is_some_and(|arguments| unsafe { arguments.ProcessFailedKind(&raw mut kind) }.is_ok());
         let kind = read.then_some(kind.0);
         noticed(keeper, number, kind.unwrap_or(-1), on_windows(kind));
@@ -181,6 +182,7 @@ pub fn after(view: &wry::WebView, keeper: &'static Keeper, number: u64) {
     }));
     let mut token = 0_i64;
     // Safety: a call on the webview's own interface, on the window's thread that made it; the handler is kept by it.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let added = unsafe { view.webview().add_ProcessFailed(&handler, &raw mut token) };
     // The HRESULT alone: a number, never the error's text.
     if let Some(code) = added.err().map(|error| error.code().0) {

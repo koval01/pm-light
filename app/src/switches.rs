@@ -59,6 +59,7 @@ fn with_features_off<'a>(builder: WebViewBuilder<'a>, off: &[&str]) -> WebViewBu
     let Some(marker) = MainThreadMarker::new() else { return builder };
     let Some(kind) = AnyClass::get(c"WKPreferences") else { return builder };
     // Safety: each private selector is asked about before it is sent, and the rest is public.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let configuration = WKWebViewConfiguration::new(marker);
         configuration.setWebsiteDataStore(&WKWebsiteDataStore::nonPersistentDataStore(marker));
@@ -91,6 +92,7 @@ fn key_of(feature: &objc2::runtime::AnyObject) -> Option<objc2::rc::Retained<obj
     };
     // Safety: `key` is sent only to an object that says it answers to it, and nothing that comes back is used before
     // it is found to be a string.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let key: Option<Retained<AnyObject>> = unsafe {
         let answers: Bool = msg_send![feature, respondsToSelector: sel!(key)];
         if answers.as_bool() { msg_send![feature, key] } else { None }

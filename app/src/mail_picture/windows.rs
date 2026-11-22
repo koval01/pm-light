@@ -43,6 +43,7 @@ pub fn capture(view: &WebView, width: f64, height: f64, then: impl FnOnce(Option
         Ok(())
     }));
     // Safety: a call on the page's own interface, on the window's thread that made it.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     let asked = unsafe {
         page.CallDevToolsProtocolMethod(
             &HSTRING::from("Page.captureScreenshot"),
@@ -64,6 +65,7 @@ pub fn capture(view: &WebView, width: f64, height: f64, then: impl FnOnce(Option
 unsafe fn place(format: u32, bytes: &[u8]) -> bool {
     // Safety: the memory is the size of `bytes`, locked before it is written and unlocked after; the clipboard owns it
     // once taken, and it is freed here only when it was not.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         let memory = GlobalAlloc(GMEM_MOVEABLE, bytes.len());
         if memory.is_null() {
@@ -94,6 +96,7 @@ pub fn copy(png: &[u8]) -> bool {
     let Some(bitmap) = image::load_from_memory(png).ok().map(|picture| dib(&picture.to_rgba8())) else { return false };
     let name: Vec<u16> = "PNG".encode_utf16().chain(Some(0)).collect();
     // Safety: the clipboard is opened, filled and closed on this thread; each handle is checked.
+    // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
     unsafe {
         if OpenClipboard(std::ptr::null_mut()) == 0 {
             return false;

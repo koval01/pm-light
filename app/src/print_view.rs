@@ -68,6 +68,7 @@ fn panel_is_open(app: &App) -> bool {
     crate::modal::native_window(app.window()).is_some_and(|window| {
         let window: &NSWindow = &window;
         // Safety: a plain property of a window of this program, read on the main thread.
+        // nosemgrep: rust.lang.security.unsafe-usage.unsafe-usage
         let sheet: Option<Retained<AnyObject>> = unsafe { msg_send![window, attachedSheet] };
         sheet.is_some()
     })
