@@ -9,6 +9,9 @@
 //! On Linux a context is where protocols are registered, once each. An incognito webview gets a
 //! context of its own there whatever is passed, so a webview with a protocol of its own must be
 //! incognito, or the second one made would be refused.
+//!
+//! Every webview is made here, by `page` or `proton`, for a `Keeper`, and is watched from then on: when the engine's
+//! process behind it ends, its keeper hears of it (`ends.rs`).
 
 use parking_lot::Mutex;
 use std::{borrow::Cow, cell::RefCell, path::PathBuf, sync::Arc};
@@ -17,6 +20,9 @@ use wry::{
     dpi::{LogicalPosition, LogicalSize},
     http::{Request, Response, StatusCode, header},
 };
+
+mod ends;
+pub use ends::{Keeper, Remedy, Tries, given_up};
 
 thread_local! {
     static PAGES: RefCell<WebContext> = RefCell::new(WebContext::new(folder("pages")));
@@ -44,8 +50,13 @@ fn with_context<T>(
 /// For the app's own pages: mail, the editor, previews and printouts. None of them needs the network, so each is cut off
 /// from it: every connection it makes goes to the door to nowhere (`nowhere.rs`), and it opens no window. A page that
 /// hands its links to the browser says so after this, in `make`.
-pub fn page<T>(make: impl FnOnce(WebViewBuilder<'_>) -> T) -> T {
-    with_context(&PAGES, |builder| make(cut_off(builder)))
+pub fn page(
+    keeper: &'static Keeper,
+    make: impl FnOnce(WebViewBuilder<'_>) -> wry::Result<wry::WebView>,
+) -> wry::Result<Held> {
+    let number = ends::number();
+    let view = with_context(&PAGES, |builder| make(ends::before(cut_off(builder), keeper, number)))?;
+    Ok(Held::new(keeper, number, view))
 }
 
 fn cut_off(builder: WebViewBuilder<'_>) -> WebViewBuilder<'_> {
@@ -119,7 +130,8 @@ static SHRUNK: Mutex<Vec<&'static str>> = Mutex::new(Vec::new());
 /// A webview the app keeps, which says in the journal when it goes. On Linux it goes inside GDK's own trap for X11
 /// errors: wry destroys its X11 window under GTK's widgets, and GTK, destroying theirs again in its loop, is refused
 /// with a `BadWindow` on `DestroyWindow`, which GDK otherwise ends the program over. A refusal is written down, not
-/// hidden. Every webview kept is one of these (`app/tests/structure.rs`).
+/// hidden. Every webview kept is one of these (`app/tests/structure.rs`), and only `page` and `proton` make one, so
+/// every webview kept is watched for its engine ending.
 pub struct Held {
     view: wry::WebView,
     /// The size its place has, which the page is held to: see `place_at`.
@@ -130,19 +142,17 @@ pub struct Held {
 }
 
 impl Held {
-    /// `what` is a fixed word for the journal.
-    #[cfg_attr(
-        not(target_os = "linux"),
-        expect(clippy::missing_const_for_fn, reason = "it holds the page to its place on Linux, which is not const")
-    )]
-    pub fn new(what: &'static str, view: wry::WebView) -> Self {
+    /// `number` is the one its engine's end is reported under.
+    fn new(keeper: &'static Keeper, number: u64, view: wry::WebView) -> Self {
+        ends::after(&view, keeper, number);
+        ends::alive(number);
         #[cfg(target_os = "linux")]
         let wanted = hold_to_its_place(&view);
         Self {
             view,
             #[cfg(target_os = "linux")]
             wanted,
-            gone: Gone { what },
+            gone: Gone { what: keeper.what, number },
         }
     }
 }
@@ -177,6 +187,8 @@ impl std::ops::Deref for Held {
 impl Drop for Held {
     fn drop(&mut self) {
         log::debug!("the webview for {} goes", self.gone.what);
+        // An end reported from here on is for a webview its keeper no longer has.
+        ends::gone(self.gone.number);
         #[cfg(target_os = "linux")]
         if let Some(display) = x11_display() {
             display.error_trap_push();
@@ -186,6 +198,7 @@ impl Drop for Held {
 
 struct Gone {
     what: &'static str,
+    number: u64,
 }
 
 impl Drop for Gone {
@@ -279,8 +292,13 @@ pub fn area(what: &'static str, x: f64, y: f64, width: f64, height: f64) -> Rect
 }
 
 /// For Proton's verification page.
-pub fn proton<T>(make: impl FnOnce(WebViewBuilder<'_>) -> T) -> T {
-    with_context(&PROTON, make)
+pub fn proton(
+    keeper: &'static Keeper,
+    make: impl FnOnce(WebViewBuilder<'_>) -> wry::Result<wry::WebView>,
+) -> wry::Result<Held> {
+    let number = ends::number();
+    let view = with_context(&PROTON, |builder| make(ends::before(builder, keeper, number)))?;
+    Ok(Held::new(keeper, number, view))
 }
 
 /// What went wrong, safe for the journal: an error's own text may hold a path.
@@ -324,6 +342,11 @@ impl OnePage {
         } else {
             format!("{}://page", self.protocol)
         }
+    }
+
+    /// The address of the page handed over last, to load it again.
+    pub fn address(&self) -> Option<String> {
+        self.served.lock().as_ref().map(|(address, _)| address.clone())
     }
 
     /// Hands the page over, and gives the address to load it from. A new number each time, so that

@@ -270,6 +270,13 @@ screen, and it never touches the real Keychain entries.
   shared context registers a protocol once, and a second webview would be refused.
 - **A webview's data folder.** Every webview is made through `webviews::page` or `webviews::proton`. Without a folder,
   WebView2 writes beside the program, which fails under Program Files.
+- **An engine's process that ends.** Ended in Task Manager or Activity Monitor, crashed or out of memory, it left a
+  webview black until the app started again. `webviews::page` and `webviews::proton` take a `Keeper`, and
+  `webviews/ends.rs` hears the end on each system (wry's web content handler on macOS, `ProcessFailed` by its kind on
+  Windows, `web-process-terminated` on Linux) and tells the keeper, on the window's thread, to load the page again or
+  make the webview again from what it holds. A page that ends it each time is given up after `MOST_TRIES`, with a plain
+  line in its place. Printing and the mail picture may run twice, so each of their callbacks checks it belongs to the
+  webview made last. `--check-picture` ends the engine in its second drawing, and CI requires the picture back.
 - **Toasts are numbers.** Every number is named in `toasts.rs` and worded in `app.slint`; `tests/toasts.rs` holds them
   together. A folder that failed to save once said "Sender blocked".
 - **Translations have a context.** Slint looks a text up by the component it is in. The same English in two components

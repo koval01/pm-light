@@ -14,7 +14,7 @@ const MOST_LINES: usize = 500;
 /// leave this list once they are short enough.
 const STILL_LONG: &[(&str, usize)] = &[
     ("app/src/view.rs", 1265),
-    ("app/src/composer.rs", 982),
+    ("app/src/composer.rs", 867),
     ("core/src/html.rs", 634),
     ("core/src/client.rs", 598),
     ("core/src/search.rs", 578),
@@ -26,9 +26,10 @@ const STILL_LONG: &[(&str, usize)] = &[
 const UNSAFE_READ: &[&str] = &[
     "app/src/incoming.rs",
     "app/src/look.rs",
+    "app/src/mail_picture/check/ending.rs",
     "app/src/mail_picture/macos.rs",
     "app/src/mail_picture/windows.rs",
-    "app/src/mail_view.rs",
+    "app/src/mail_view/layer.rs",
     "app/src/memory.rs",
     "app/src/menu.rs",
     "app/src/modal.rs",
@@ -39,6 +40,7 @@ const UNSAFE_READ: &[&str] = &[
     "app/src/single_instance/user.rs",
     "app/src/switches.rs",
     "app/src/tray.rs",
+    "app/src/webviews/ends.rs",
 ];
 
 fn root() -> PathBuf {

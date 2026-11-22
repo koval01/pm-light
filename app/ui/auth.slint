@@ -26,6 +26,8 @@ export global Auth {
     in property <string> verify-address;
     in property <bool> verify-in-browser;
     in property <bool> verify-failed;
+    // Said in the bar over Proton's page, in its title's place: that the page was loaded again, or given up.
+    in property <string> verify-note;
     in-out property <length> verify-x;
     in-out property <length> verify-y;
     in-out property <length> verify-width;
@@ -480,10 +482,11 @@ export component AuthScreen {
             height: 36px;
             MainButton { width: 170px; height: 36px; ghost: true; label: @tr("Back to sign-in"); clicked => { Auth.verify-back(); } }
             Text {
-                text: @tr("Proton verification");
-                color: Theme.foreground;
-                font-size: 13px;
-                font-weight: 600;
+                text: Auth.verify-note != "" ? Auth.verify-note : @tr("Proton verification");
+                color: Auth.verify-note != "" ? Theme.muted : Theme.foreground;
+                font-size: Auth.verify-note != "" ? 12px : 13px;
+                font-weight: Auth.verify-note != "" ? 400 : 600;
+                wrap: word-wrap;
                 vertical-alignment: center;
                 horizontal-alignment: center;
                 horizontal-stretch: 1;

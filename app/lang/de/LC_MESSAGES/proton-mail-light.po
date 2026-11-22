@@ -2095,6 +2095,10 @@ msgid "Save"
 msgstr "Speichern"
 
 msgctxt "Say"
+msgid "The system's web engine stopped each time the editor opened, so it is closed. What you wrote is kept: close this window to keep it as a draft."
+msgstr "Die Web-Engine des Systems hat bei jedem Öffnen des Editors angehalten, daher ist er geschlossen. Was du geschrieben hast, bleibt erhalten: Schließe dieses Fenster, um es als Entwurf zu behalten."
+
+msgctxt "Say"
 msgid "Delete the message after"
 msgstr "Nachricht löschen nach"
 
@@ -3071,6 +3075,10 @@ msgid "This type of file cannot be shown here. You can save it."
 msgstr "Dieser Dateityp kann hier nicht angezeigt werden. Du kannst die Datei speichern."
 
 msgctxt "Say"
+msgid "The system's web engine stopped each time it drew this file. You can save it."
+msgstr "Die Web-Engine des Systems hat jedes Mal angehalten, als sie diese Datei darstellen wollte. Du kannst die Datei speichern."
+
+msgctxt "Say"
 msgid "{{name}} can hold macros, which run on your computer once allowed. Save it only if you trust the sender, and do not enable macros in it."
 msgstr "{{name}} kann Makros enthalten, die nach dem Erlauben auf deinem Computer laufen. Speichere die Datei nur, wenn du dem Absender vertraust, und aktiviere keine Makros."
 
@@ -3357,6 +3365,10 @@ msgstr "Daten für Proton"
 msgctxt "Say"
 msgid "Download"
 msgstr "Herunterladen"
+
+msgctxt "Say"
+msgid "The system's web engine stopped each time it drew this mail, so it is not shown. Open the mail again to try once more."
+msgstr "Die Web-Engine des Systems hat jedes Mal angehalten, als sie diese E-Mail darstellen wollte, daher wird sie nicht angezeigt. Öffne die E-Mail erneut, um es noch einmal zu versuchen."
 
 msgctxt "Say"
 msgid "Could not open this file"
@@ -4097,6 +4109,14 @@ msgstr "Scanne dies mit einer Authenticator-App oder gib den Schlüssel von Hand
 msgctxt "Say"
 msgid "B,KB,MB,GB,TB"
 msgstr "B,KB,MB,GB,TB"
+
+msgctxt "Say"
+msgid "The system's web engine stopped each time it showed Proton's check. Open the page in your browser instead."
+msgstr "Die Web-Engine des Systems hat jedes Mal angehalten, als sie Protons Prüfung zeigen wollte. Öffne die Seite stattdessen in deinem Browser."
+
+msgctxt "Say"
+msgid "The web engine behind Proton's check stopped, so the check was loaded again. Any progress in it may be lost."
+msgstr "Die Web-Engine hinter Protons Prüfung hat angehalten, daher wurde die Prüfung neu geladen. Bisheriger Fortschritt darin kann verloren sein."
 
 msgctxt "InfoWindow"
 msgid "Message"

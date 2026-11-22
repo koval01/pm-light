@@ -561,6 +561,8 @@ export component App inherits Window {
     // A picture of the mail's page, standing in for it while a panel is over it.
     in property <image> page-picture;
     in property <bool> page-frozen;
+    // The system's web engine ended each time it drew the mail, so its page was given up.
+    in property <bool> page-failed;
     // The splash's envelope, drawn by `splash.rs` for this screen: one turn, and the flight to the logo.
     in property <[image]> splash-frames;
     in property <[image]> flight-frames;
@@ -1845,6 +1847,15 @@ export component App inherits Window {
                         color: Theme.muted;
                         font-size: 13px;
                     }
+                    if !root.opening && root.has-mail && root.page-failed: Text {
+                        x: 22px;
+                        width: parent.width - 44px;
+                        text: Say.text("reader.engineStopped");
+                        color: Theme.muted;
+                        font-size: 13px;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                    }
                     if !root.opening && root.has-mail && root.plain && !root.empty-body: ScrollView {
                         content-width: body-area.width;
                         content-height: letter.preferred-height + 24px;
@@ -2607,6 +2618,8 @@ export component ComposeWindow inherits Window {
     in property <int> status;
     in property <bool> sending;
     in property <int> failed;
+    // The system's web engine ended each time the editor was made, so it was given up. The letter is kept.
+    in property <bool> editor-lost;
     in property <bool> own-close;
     in-out property <bool> confirming;
     in property <[FileRow]> files;
@@ -2841,7 +2854,18 @@ export component ComposeWindow inherits Window {
                 }
             }
             Rectangle { height: 1px; vertical-stretch: 0; background: Theme.border; }
-            body-area := Rectangle { vertical-stretch: 1; }
+            body-area := Rectangle {
+                vertical-stretch: 1;
+                if root.editor-lost: Text {
+                    x: 20px;
+                    width: parent.width - 40px;
+                    text: Say.text("compose.editorStopped");
+                    color: Theme.muted;
+                    font-size: 13px;
+                    wrap: word-wrap;
+                    horizontal-alignment: center;
+                }
+            }
             if root.files.length > 0: Rectangle {
                 // As many as fit in a row, and the rest below, so that each can still be taken off.
                 property <int> across: max(1, floor((self.width - 16px) / 188px));

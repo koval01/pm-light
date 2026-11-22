@@ -122,3 +122,27 @@ mod windows {
         }
     }
 }
+
+/// On Linux a sandbox may stand between the program and WebKit's web process: everything under the program is found,
+/// at any depth and through any name, and nothing that is not under it.
+#[test]
+fn processes_under_the_program_are_found_at_any_depth() {
+    let processes = [(10, 1), (20, 10), (21, 20), (22, 21), (30, 10), (40, 99), (41, 40), (10, 10)];
+    let mut found = descendants(10, &processes);
+    found.sort_unstable();
+    assert_eq!(found, vec![20, 21, 22, 30], "the program itself is not among what is ended");
+    assert_eq!(descendants(7, &processes), Vec::<u32>::new());
+    // A loop in what the system reported cannot keep the walk going.
+    assert_eq!(descendants(1, &[(2, 3), (3, 2), (2, 1)]), vec![2, 3]);
+}
+
+#[test]
+fn the_parent_is_read_after_the_name_whatever_the_name_holds() {
+    assert_eq!(parent_in_stat("1234 (WebKitWebProces) S 42 1234 1234 0 -1"), Some(42));
+    assert_eq!(parent_in_stat("1234 (a (b) c) R 7 1 1"), Some(7), "brackets and spaces in the name");
+    assert_eq!(parent_in_stat("1234 (x) y) S 9 1"), Some(9), "a closing bracket inside the name");
+    assert_eq!(parent_in_stat("1234 (gone"), None);
+    assert_eq!(parent_in_stat("1234 (x) S"), None);
+    assert_eq!(parent_in_stat("1234 (x) S -1"), None);
+    assert_eq!(parent_in_stat(""), None);
+}

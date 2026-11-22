@@ -26,3 +26,5 @@ gir = "gir"
 [default.extend-identifiers]
 # "café" cut at its accent, in tests of text in other scripts.
 caf = "caf"
+# WebKitGTK's web process as Linux names it in /proc: a process's name is cut at 15 letters.
+WebKitWebProces = "WebKitWebProces"

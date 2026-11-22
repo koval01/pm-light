@@ -53,6 +53,7 @@ export global Say {
         if key == "common.create" { return @tr("Create"); }
         if key == "common.loading" { return @tr("Loading…"); }
         if key == "common.save" { return @tr("Save"); }
+        if key == "compose.editorStopped" { return @tr("The system's web engine stopped each time the editor opened, so it is closed. What you wrote is kept: close this window to keep it as a draft."); }
         if key == "compose.expires" { return @tr("Delete the message after"); }
         if key == "compose.expiresDay" { return @tr("1 day"); }
         if key == "compose.expiresFourWeeks" { return @tr("4 weeks"); }
@@ -367,6 +368,7 @@ export global Say {
         if key == "palette.themeLight" { return @tr("Light theme"); }
         if key == "palette.themeSystem" { return @tr("System theme"); }
         if key == "preview.cannotShow" { return @tr("This type of file cannot be shown here. You can save it."); }
+        if key == "preview.engineStopped" { return @tr("The system's web engine stopped each time it drew this file. You can save it."); }
         if key == "preview.macros" { return @tr("{{name}} can hold macros, which run on your computer once allowed. Save it only if you trust the sender, and do not enable macros in it."); }
         if key == "preview.notWhatItClaims" { return @tr("This file is not what its name says. Be careful with it."); }
         if key == "preview.program" { return @tr("This is a program, not a document, so it is not opened here. Save it only if you trust the sender."); }
@@ -445,6 +447,7 @@ export global Say {
         if key == "privacy.telemetryHint" { return @tr("Applies to Proton's own apps. This client sends none."); }
         if key == "privacy.title" { return @tr("Data shared with Proton"); }
         if key == "reader.download" { return @tr("Download"); }
+        if key == "reader.engineStopped" { return @tr("The system's web engine stopped each time it drew this mail, so it is not shown. Open the mail again to try once more."); }
         if key == "reader.previewFailed" { return @tr("Could not open this file"); }
         if key == "reader.print" { return @tr("reader.print" => "Print"); }
         if key == "recovery.allowEmail" { return @tr("Reset the password by email"); }
@@ -655,6 +658,8 @@ export global Say {
         if key == "totp.key" { return @tr("Key"); }
         if key == "totp.scan" { return @tr("Scan this with an authenticator app, or enter the key by hand. Then type the code it shows."); }
         if key == "units.size" { return @tr("B,KB,MB,GB,TB"); }
+        if key == "verify.engineStopped" { return @tr("The system's web engine stopped each time it showed Proton's check. Open the page in your browser instead."); }
+        if key == "verify.reloaded" { return @tr("The web engine behind Proton's check stopped, so the check was loaded again. Any progress in it may be lost."); }
         return key;
     }
 }

@@ -1,12 +1,15 @@
 //! One broken part must not take the app with it. A panic on a worker ends only that task: the
 //! window is freed, so that nothing waits on an answer that will not come. A panic on the window's
 //! thread cannot be gone on from inside the event loop, so the program starts itself again, and a
-//! letter being written survives as the draft it was last saved to.
+//! letter being written survives as the draft it was last saved to. A call from the system into the app, such as a web
+//! engine saying its process ended, runs inside `contain`: a panic there ends only that call.
 
 use crate::{App, Auth, actions, composer};
 use proton_core::journal;
 use slint::ComponentHandle;
 use std::{
+    cell::Cell,
+    panic::{AssertUnwindSafe, catch_unwind},
     path::PathBuf,
     process::Command,
     sync::atomic::{AtomicBool, Ordering},
@@ -23,6 +26,29 @@ pub const IDENTIFIER: &str = "org.koval-dev.proton-mail-light";
 const MAIL_FOLDER: &str = "mail";
 
 static SAID: AtomicBool = AtomicBool::new(false);
+
+thread_local! {
+    /// How many calls from the system this thread is inside of now.
+    static CONTAINED: Cell<u32> = const { Cell::new(0) };
+}
+
+/// Runs a call from the system into the app, `what` a fixed word for the journal. A panic in it ends only this call: the
+/// system's code that called cannot be unwound through, and on the window's thread the program would start again over
+/// what is only one callback. `None` when it panicked.
+pub fn contain<T>(what: &'static str, work: impl FnOnce() -> T) -> Option<T> {
+    CONTAINED.set(CONTAINED.get().saturating_add(1));
+    let done = catch_unwind(AssertUnwindSafe(work));
+    CONTAINED.set(CONTAINED.get().saturating_sub(1));
+    if done.is_err() {
+        log::error!("a call from the system for {what} panicked, and only it ended");
+    }
+    done.ok()
+}
+
+/// Whether a panic on `thread` ends this copy of the program: on the window's thread, unless inside `contain`.
+fn ends_the_program(thread: &str, contained: u32) -> bool {
+    thread == MAIN_THREAD && contained == 0
+}
 
 fn now() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |time| time.as_secs())
@@ -119,7 +145,7 @@ pub fn install() {
         let thread = std::thread::current().name().unwrap_or("unnamed").to_string();
         log::error!(target: "proton_panic", "panic on {thread} at {place}");
         log::logger().flush();
-        if thread == MAIN_THREAD {
+        if ends_the_program(&thread, CONTAINED.get()) {
             start_again();
             // Skips the clean-up on purpose: the record is what explains this. The window's
             // thread cannot go on after a panic, and the copy just started takes over.

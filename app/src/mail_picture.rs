@@ -4,14 +4,19 @@
 //!
 //! Pictures from the sender's server are in it only when they are shown in the reader.
 
-use crate::webviews::PageScriptsOff as _;
+use crate::webviews::{Held, Keeper, PageScriptsOff as _, Remedy, Tries};
 use crate::{App, actions, preferences, print_dialog, print_view, settings::say, toasts};
 use proton_core::{
     PrintScope, Service,
     print::{PrintDocument, PrintOptions},
 };
 use slint::{ComponentHandle, Timer};
-use std::{cell::RefCell, path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    cell::{Cell, RefCell},
+    path::PathBuf,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use wry::{PageLoadEvent, Rect, dpi::LogicalPosition};
 
 pub mod check;
@@ -65,10 +70,19 @@ pub struct Picture {
 }
 
 thread_local! {
-    static VIEW: RefCell<Option<crate::webviews::Held>> = const { RefCell::new(None) };
+    static VIEW: RefCell<Option<Held>> = const { RefCell::new(None) };
     /// How far the picture has come, for the journal and for a check that stops on the way.
-    static STAGE: std::cell::Cell<&'static str> = const { std::cell::Cell::new("not begun") };
+    static STAGE: Cell<&'static str> = const { Cell::new("not begun") };
+    /// What the picture is drawn from and for, until it is delivered: what to start again with if the engine ends.
+    static JOB: RefCell<Option<(PrintDocument, Purpose)>> = const { RefCell::new(None) };
+    /// Numbers the webviews made, so that what a page that went still reports cannot act on the next one.
+    static MADE: Cell<u64> = const { Cell::new(0) };
+    /// Numbers the pictures asked for: the engine's ends are counted for one at a time.
+    static ASKED: Cell<u64> = const { Cell::new(0) };
+    static TRIES: RefCell<Tries> = const { RefCell::new(Tries::new()) };
 }
+
+static KEEPER: Keeper = Keeper { what: "the mail picture", ended: engine_ended };
 
 /// The stage the picture has reached, to the journal.
 fn reached(stage: &'static str) {
@@ -222,6 +236,7 @@ fn area(height: f64) -> Rect {
 }
 
 pub fn go_away() {
+    drop(JOB.take());
     drop(VIEW.take());
 }
 
@@ -283,19 +298,45 @@ fn failed(what: &str) {
 
 fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
     go_away();
+    ASKED.set(ASKED.get() + 1);
+    make(app, prepared, purpose);
+}
+
+/// The engine behind the page ended before the picture was delivered: it is drawn again from the start in a new
+/// webview, a few times at most, and then fails as any picture that could not be drawn.
+fn engine_ended(_remedy: Remedy) {
+    let Some((prepared, purpose)) = JOB.with_borrow(Clone::clone) else { return };
+    if !TRIES.with_borrow_mut(|tries| tries.again(ASKED.get(), Instant::now())) {
+        crate::webviews::given_up(&KEEPER);
+        failed("the engine ended");
+        return;
+    }
+    let Some(app) = actions::main_window() else { return };
+    drop(VIEW.take());
+    reached("drawn again");
+    make(&app, prepared, purpose);
+}
+
+fn make(app: &App, prepared: PrintDocument, purpose: Purpose) {
+    let made = MADE.get() + 1;
+    MADE.set(made);
+    JOB.set(Some((prepared.clone(), purpose)));
     reached("making the page");
     let weak = app.as_weak();
-    let built = crate::webviews::page(|builder| {
+    let built = crate::webviews::page(&KEEPER, |builder| {
         crate::switches::keep_to_drawing(builder)
             .page_scripts_off()
             .with_navigation_handler(|url| print_view::own_page(&url))
             .with_on_page_load_handler(move |event, _| {
                 if matches!(event, PageLoadEvent::Finished) {
-                    reached("page loaded");
                     let (weak, prepared) = (weak.clone(), prepared.clone());
                     let _ = slint::invoke_from_event_loop(move || {
-                        if weak.upgrade().is_some() {
-                            place(&prepared, purpose);
+                        if weak.upgrade().is_some() && MADE.get() == made {
+                            reached("page loaded");
+                            if purpose == Purpose::Check {
+                                check::page_loaded();
+                            }
+                            place(&prepared, purpose, made);
                         }
                     });
                 }
@@ -309,7 +350,7 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
     match built {
         Ok(view) => {
             crate::webviews::scripts_settled(&view);
-            VIEW.set(Some(crate::webviews::Held::new("the mail picture", view)));
+            VIEW.set(Some(view));
             reached("page made");
         }
         Err(error) => {
@@ -319,14 +360,16 @@ fn draw(app: &App, prepared: PrintDocument, purpose: Purpose) {
     }
 }
 
-fn place(prepared: &PrintDocument, purpose: Purpose) {
+fn place(prepared: &PrintDocument, purpose: Purpose, made: u64) {
     let Some(script) = print_view::placing(prepared) else { return failed("no script") };
     VIEW.with_borrow(|view| {
         let Some(view) = view else { return };
         let done = view.evaluate_script_with_callback(&script, move |_| {
             let _ = slint::invoke_from_event_loop(move || {
-                reached("mail placed");
-                measure(purpose);
+                if MADE.get() == made {
+                    reached("mail placed");
+                    measure(purpose, made);
+                }
             });
         });
         if done.is_err() {
@@ -335,15 +378,17 @@ fn place(prepared: &PrintDocument, purpose: Purpose) {
     });
 }
 
-fn measure(purpose: Purpose) {
+fn measure(purpose: Purpose, made: u64) {
     VIEW.with_borrow(|view| {
         let Some(view) = view else { return };
         let done = view.evaluate_script_with_callback(MEASURE, move |measured| {
             let (height, cut) = drawn_height(&measured);
             let _ = slint::invoke_from_event_loop(move || {
-                reached("measured");
-                log::debug!("the mail picture is {height:.0} points high");
-                sized(height, cut, purpose);
+                if MADE.get() == made {
+                    reached("measured");
+                    log::debug!("the mail picture is {height:.0} points high");
+                    sized(height, cut, purpose, made);
+                }
             });
         });
         if done.is_err() {
@@ -352,13 +397,16 @@ fn measure(purpose: Purpose) {
     });
 }
 
-fn sized(height: f64, cut: bool, purpose: Purpose) {
+fn sized(height: f64, cut: bool, purpose: Purpose, made: u64) {
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
             crate::webviews::place_at(view, area(height));
         }
     });
     Timer::single_shot(SETTLES, move || {
+        if MADE.get() != made {
+            return;
+        }
         reached("drawing asked for");
         let asked = VIEW.with_borrow(|view| {
             view.as_ref().is_some_and(|view| {
@@ -366,6 +414,9 @@ fn sized(height: f64, cut: bool, purpose: Purpose) {
                     // The webview goes on a later turn of the event loop, never inside its own callback: WebView2
                     // is still in the call that brought the picture.
                     let _ = slint::invoke_from_event_loop(move || {
+                        if MADE.get() != made {
+                            return;
+                        }
                         reached("drawn");
                         go_away();
                         match png {
