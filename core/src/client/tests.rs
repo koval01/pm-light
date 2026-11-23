@@ -614,3 +614,10 @@ async fn a_read_from_an_ended_session_answers_nothing_asked_after_it() {
     assert!(before.is_ok() && after.is_ok());
     assert_eq!(server.seen.lock().len(), 2, "another session's read answered this one");
 }
+
+#[test]
+fn every_state_sent_with_a_refresh_is_new() {
+    let states: std::collections::BTreeSet<String> = (0..100).map(|_| random_hex()).collect();
+    assert_eq!(states.len(), 100);
+    assert!(states.iter().all(|state| state.len() == 32 && *state != "0".repeat(32)));
+}

@@ -2,16 +2,15 @@
 
 use super::{
     Address, Attachment, ComposeLabels, ComposeMode, ComposeState, Deserialize, Engine, Error, Form, Message, Method,
-    Outgoing, OwnAddress, Part, PasswordProtection, RECIPIENT_INTERNAL, Recipient, Result, RngCore, STANDARD,
-    SavedDraft, SendOptions, Service, SimpleFilter, Uploaded, Value, api, compose, join_all, json, on_worker, send,
-    sieve, text,
+    Outgoing, OwnAddress, Part, PasswordProtection, RECIPIENT_INTERNAL, Recipient, Result, STANDARD, SavedDraft,
+    SendOptions, Service, SimpleFilter, Uploaded, Value, api, compose, join_all, json, on_worker, send, sieve, text,
 };
 
 impl Service {
     /// Holds a file's bytes until the draft is saved, so they cross the IPC boundary only once.
     pub fn stage_file(&self, data: Vec<u8>) -> String {
         let mut id = [0u8; 16];
-        rand::thread_rng().fill_bytes(&mut id);
+        rand::fill(&mut id);
         let id = crate::hex(&id);
         self.staged.lock().insert(id.clone(), data);
         id

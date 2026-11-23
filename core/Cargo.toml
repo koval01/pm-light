@@ -24,7 +24,9 @@ liblzma = { version = "0.4", features = ["static"] }
 # Hands Tor's `tracing` events on to `log`, and so to the journal.
 tracing = { version = "0.1", features = ["log"] }
 ammonia = "4"
-argon2 = "0.5"
+# The app password's key, and nothing else: raw Argon2id, without the password-hash strings or their randomness.
+# `zeroize` wipes its own working hashes, which 0.5 did through pgp's features and 0.6 does only when asked.
+argon2 = { version = "0.6", default-features = false, features = ["alloc", "zeroize"] }
 log = { version = "0.4", features = ["std"] }
 base64 = "0.23"
 # Dates and time zones. The system's zone database where there is one, and a copy built in for where there is none:
@@ -43,7 +45,7 @@ lol_html = "2"
 parking_lot = "0.12"
 proton-crypto-account = { git = "https://github.com/ProtonMail/proton-crypto-rs", rev = "c468e282625206eda9b48d539949e6183b1da32a", default-features = false, features = ["rustpgp"] }
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
-rand = "0.8"
+rand = "0.10"
 rqrr = "0.11"
 rxing = { version = "0.9", default-features = false, features = ["decoders", "encoding_rs", "multi_barcode_readers", "qrcode"] }
 regex = "1"
@@ -65,7 +67,7 @@ reed-solomon-erasure = "6"
 [dev-dependencies]
 scraper = "0.29"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
-rcgen = { version = "0.13", default-features = false, features = ["crypto", "ring"] }
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [lints]

@@ -7,7 +7,6 @@ use crate::{
     model::Outgoing,
 };
 use base64::{Engine, engine::general_purpose::STANDARD};
-use rand::RngCore;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
@@ -129,7 +128,7 @@ fn protected_entry(
 ) -> Result<Value> {
     let password = &protection.password;
     let mut token = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut token);
+    rand::fill(&mut token);
     let token = STANDARD.encode(token);
     let (salt, verifier) = crypto.password_verifier(password, &protection.signed_modulus)?;
     let packets = attachment_packets(attachments, |key| crypto.wrap_for_password(key, password))?;
