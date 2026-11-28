@@ -239,3 +239,10 @@ fn the_echo_tells_the_time_of_day_in_utc() {
     assert_eq!(time_of_day(86_400_000), "00:00:00.000", "a new day starts again");
     assert_eq!(time_of_day(u64::MAX).len(), 12, "the far future still fits");
 }
+
+#[test]
+fn every_journal_key_is_new_and_none_is_zero() {
+    let keys: std::collections::BTreeSet<[u8; KEY_BYTES]> = (0..100).map(|_| *new_key()).collect();
+    assert_eq!(keys.len(), 100);
+    assert!(!keys.contains(&[0; KEY_BYTES]));
+}

@@ -102,3 +102,34 @@ fn every_salt_is_new_and_none_is_zero() {
     assert_ne!(new_salt(), new_salt());
     assert_ne!(new_salt(), [0; SALT_BYTES]);
 }
+
+/// What a person could have set as the app password, and the salt beside it.
+const PASSWORD: &str = "café password";
+const SALT: [u8; SALT_BYTES] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+/// The keys for PASSWORD and SALT, from OpenSSL's Argon2id, which gives RFC 9106's own vector:
+/// `openssl kdf -keylen 32 -kdfopt hexpass:636166c3a92070617373776f7264 -kdfopt hexsalt:000102030405060708090a0b0c0d0e0f
+/// -kdfopt iter:3 -kdfopt memcost:65536 -kdfopt lanes:1 ARGON2ID`, and with iter:1 and memcost:256 for the tests' cost.
+const APP_COST_KEY: &str = "70b994e12add2c64d5a49343649e0de1c2e2908b298a290a08949e67ec7f186c";
+const TEST_COST_KEY: &str = "3cea240d6c35c85db570e3ba11c498754af890b78d0823ee0dda542051227094";
+
+#[test]
+fn the_apps_key_is_standard_argon2id() {
+    let key = derive_key_at(PASSWORD, &SALT, APP_MEMORY_KIB, APP_PASSES).unwrap();
+    assert_eq!(crate::hex(key.as_slice()), APP_COST_KEY);
+}
+
+#[test]
+fn the_tests_key_is_standard_argon2id_too() {
+    assert_eq!(crate::hex(derive_key(PASSWORD, &SALT).unwrap().as_slice()), TEST_COST_KEY);
+}
+
+/// The session as the Keychain keeps it, sealed by the app at its own cost, with argon2 0.5.3, before the move to 0.6.
+const SEALED_BEFORE: &str = r#"{"salt":"AAECAwQFBgcICQoLDA0ODw==","nonce":"b5uBi7QRg8/W6joZnU9exAMFz8yISv2f","sealed":"nTsNzVhwj+T1KV00r7J0vJJEL4r+zyQ="}"#;
+
+#[test]
+fn a_session_sealed_before_an_update_still_opens() {
+    let envelope: Envelope = serde_json::from_str(SEALED_BEFORE).unwrap();
+    let key = derive_key_at(PASSWORD, &salt_of(&envelope).unwrap(), APP_MEMORY_KIB, APP_PASSES).unwrap();
+    assert_eq!(open(&key, &envelope).unwrap().as_slice(), b"session");
+}

@@ -9,7 +9,6 @@ use crate::{
     webviews::{Held, Keeper, OnePage, Remedy, Tries},
 };
 use proton_core::{Service, compose::ComposeState, text};
-use rand::RngCore;
 use slint::ComponentHandle;
 use std::{
     cell::{Cell, RefCell},
@@ -68,7 +67,7 @@ pub(super) fn page_for(state: &ComposeState, right_to_left: bool, dark: bool) ->
 
 fn page(area: &str, dark: bool) -> String {
     let mut bytes = [0; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes);
     let nonce = proton_core::hex(&bytes);
     let (paper, ink) = if dark { ("#1b1c1f", "#f2f3f5") } else { ("#ffffff", "#17181c") };
     format!(

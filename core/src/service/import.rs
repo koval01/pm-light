@@ -5,7 +5,6 @@
 
 use super::{Error, Form, Part, Result, Service, json, on_worker};
 use crate::import::pgp_mime;
-use rand::RngCore;
 use serde::Deserialize;
 use std::fmt::Write as _;
 
@@ -39,7 +38,7 @@ struct Outcome {
 
 fn boundary() -> String {
     let mut bytes = [0_u8; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes);
     bytes.iter().fold(String::new(), |mut out, byte| {
         let _ = write!(out, "{byte:02x}");
         out
@@ -98,3 +97,6 @@ impl Service {
         Ok(ids)
     }
 }
+
+#[cfg(test)]
+mod tests;

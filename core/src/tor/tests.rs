@@ -410,13 +410,13 @@ async fn a_host_that_is_not_protons_is_refused_on_the_wire() {
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "hostile input: run by scripts/attacks.sh in a container"]
 async fn hostile_input_at_the_door_is_turned_away_in_time() {
-    use rand::{Rng, SeedableRng};
+    use rand::{RngExt, SeedableRng};
     let mut random = rand::rngs::StdRng::seed_from_u64(0x70_72_6f_74_6f_6e);
     let mut cases: Vec<Vec<u8>> = (0..3000)
         .map(|_| {
-            let length = random.gen_range(0..600);
-            let mut bytes: Vec<u8> = (0..length).map(|_| random.r#gen()).collect();
-            if random.gen_bool(0.5) && !bytes.is_empty() {
+            let length = random.random_range(0..600);
+            let mut bytes: Vec<u8> = (0..length).map(|_| random.random()).collect();
+            if random.random_bool(0.5) && !bytes.is_empty() {
                 bytes[0] = 5;
             }
             bytes

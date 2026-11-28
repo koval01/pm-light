@@ -48,3 +48,13 @@ fn a_letter_served_again_has_a_new_address_and_only_it_loads() {
     assert!(own_page(&second));
     assert!(!own_page(&first), "the page from before the end loads no more");
 }
+
+#[test]
+fn every_editor_page_has_a_nonce_of_its_own() {
+    let nonce =
+        |page: String| page.split("'nonce-").nth(1).and_then(|rest| rest.split('\'').next()).unwrap().to_string();
+    let first = nonce(page("", false));
+    assert_eq!(first.len(), 32);
+    assert_ne!(first, "0".repeat(32));
+    assert_ne!(first, nonce(page("", false)));
+}

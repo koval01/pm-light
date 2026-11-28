@@ -446,8 +446,7 @@ fn proxy_url(names: Names, (name, password): &(String, String), door: SocketAddr
 }
 
 fn random_word() -> String {
-    use rand::RngCore;
     let mut bytes = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes);
     crate::hex(&bytes)
 }

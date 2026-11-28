@@ -15,8 +15,11 @@ pub const KEY_BYTES: usize = 32;
 pub const SALT_BYTES: usize = 16;
 const NONCE_BYTES: usize = 24;
 /// OWASP's first Argon2id recommendation: slow for a guesser, a blink for the person.
-const MEMORY_KIB: u32 = if cfg!(test) { 256 } else { 64 * 1024 };
-const PASSES: u32 = if cfg!(test) { 1 } else { 3 };
+const APP_MEMORY_KIB: u32 = 64 * 1024;
+const APP_PASSES: u32 = 3;
+/// Tests run at a fraction of the cost, except those that check the app's own.
+const MEMORY_KIB: u32 = if cfg!(test) { 256 } else { APP_MEMORY_KIB };
+const PASSES: u32 = if cfg!(test) { 1 } else { APP_PASSES };
 
 /// Wrong passwords that cost only the pause, before the app starts to freeze.
 const FREE_ATTEMPTS: u32 = 4;
@@ -63,7 +66,13 @@ pub fn new_salt() -> [u8; SALT_BYTES] {
 }
 
 pub fn derive_key(password: &str, salt: &[u8]) -> Result<VaultKey> {
-    let params = Params::new(MEMORY_KIB, PASSES, 1, Some(KEY_BYTES)).map_err(Error::crypto)?;
+    derive_key_at(password, salt, MEMORY_KIB, PASSES)
+}
+
+/// Standard Argon2id, version 0x13, one lane: a key derived today has to be the same after any update of the crate,
+/// or the session sealed with it is lost.
+fn derive_key_at(password: &str, salt: &[u8], memory_kib: u32, passes: u32) -> Result<VaultKey> {
+    let params = Params::new(memory_kib, passes, 1, Some(KEY_BYTES)).map_err(Error::crypto)?;
     let mut key = Zeroizing::new([0; KEY_BYTES]);
     Argon2::new(Algorithm::Argon2id, Version::V0x13, params)
         .hash_password_into(password.as_bytes(), salt, key.as_mut())

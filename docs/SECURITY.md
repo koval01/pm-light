@@ -77,7 +77,9 @@ What this client defends against, how, and what it does not. It records the find
 - **Verification** runs Proton's page in a native webview with no access to the app's commands, a private data store,
   and no way to stay on a page outside proton.me.
 - **The session** is in the Keychain, sealed with Argon2id and XChaCha20-Poly1305 when an app password is set. Wrong
-  passwords cost a pause, then a freeze that survives a restart. It is deleted when Proton refuses it twice, 10 s
+  passwords cost a pause, then a freeze that survives a restart. The key is plain Argon2id, version 0x13, 64 MiB, three
+  passes and one lane: tests hold it to OpenSSL's output and open a session sealed by an older build, so an update of
+  the crate cannot lock anyone out. It is deleted when Proton refuses it twice, 10 s
   apart, and not because Proton is away or struggling: then the app waits and keeps trying.
 
 - **The journal** holds what the app did, never who or what about: no addresses, subjects, file names, tokens, ids,
@@ -344,4 +346,6 @@ only inside Slint's `i-slint-core` and `rxing`, and `humantime` only inside arti
 crate that brings it moves. `cargo deny` reports `unmaintained` only for crates the app depends on directly (`unmaintained = "workspace"`),
 so it no longer stops the build. `cargo deny` also found two
 advisories in `hickory-proto` 0.25 (RUSTSEC-2026-0118 and 0119): the first needs DNSSEC validation, which is not
-built in, and the second only slows the encoding of the app's own queries. It was moved to 0.26.3 regardless.
+built in, and the second only slows the encoding of the app's own queries. It was moved to 0.26.3 regardless. `url`
+2.5.8 overflowed the stack in `Url::origin()` on a `blob:` URL nested thousands of times (RUSTSEC-2026-0592), which
+ends the process; the app's own code never asks a URL for its origin, and it was moved to 2.5.9.

@@ -6,6 +6,11 @@ A fixed vulnerability is always listed, with its advisory.
 
 ## [Unreleased]
 
+### Security
+
+- `url` 2.5.9: a `blob:` URL nested thousands of times no longer overflows the stack in `Url::origin()`
+  ([RUSTSEC-2026-0592](https://rustsec.org/advisories/RUSTSEC-2026-0592)). The app's own code never calls it.
+
 ## [0.1.0] - 2026-11-16
 
 The first release. The builds are not signed by Apple or Microsoft, and the macOS one is not notarized.

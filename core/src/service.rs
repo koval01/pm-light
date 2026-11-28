@@ -43,7 +43,6 @@ use base64::{Engine, engine::general_purpose::STANDARD};
 use futures::{StreamExt, TryStreamExt, future::join_all, stream};
 use parking_lot::{Mutex, RwLock};
 use proton_crypto_account::keys::LockedKey;
-use rand::RngCore;
 use reqwest::{
     Method,
     multipart::{Form, Part},
