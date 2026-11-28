@@ -210,7 +210,10 @@ Beside them, on every push and on a timetable, all in CI:
   marked where it stands, `// nosemgrep: <rule>` under the reason: the arguments and the program's own path are read
   in `program.rs` alone, `TMPDIR` only once it is found private, and `scripts/connections.py` asks only RIPEstat and
   Onionoo, over HTTPS, which its self-test proves. Every `unsafe` block was read against its `// Safety:` comment:
-  three comments said more than was true and were corrected with the code.
+  three comments said more than was true and were corrected with the code, and each carries the mark below it. A
+  marked finding still comes in Semgrep's SARIF, flagged as suppressed, and GitHub opened an alert for it anyway: the
+  workflow leaves those out before the upload and says how many. Every rule still runs, so a block added later is an
+  alert until someone reads it and marks it.
 - **Sanitizers and Miri** (`sanitizers.yml`): AddressSanitizer over the core's tests with LeakSanitizer, and over the
   app's tests that strike its `unsafe` calls; Miri over the core's pure code; and `scripts/attacks.sh`, the hostile
   input above, sealed in a container.

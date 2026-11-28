@@ -55,6 +55,22 @@ jobs:
             --exclude vendor --exclude app/components \
             --exclude 'tests.rs' --exclude '*_tests.rs' --exclude 'app/tests' --exclude 'core/src/test_server.rs' \
             --exclude '*.asc' --exclude '*.pem' --exclude 'test_vectors.json'
+      # A finding marked in the code, `// nosemgrep: <rule>` under the reason why it is safe on purpose, still comes in
+      # the SARIF, flagged as suppressed in source, and GitHub opened an alert for it all the same. Only those go
+      # before the upload, and the run says how many: every rule still runs, and anything unmarked is an alert.
+      - name: Leave out what is marked in the code
+        run: |
+          python3 - <<'EOF'
+          import json
+          with open("semgrep.sarif", encoding="utf-8") as source:
+              sarif = json.load(source)
+          for run in sarif["runs"]:
+              kept = [result for result in run["results"] if not result.get("suppressions")]
+              print(f"{len(run['results']) - len(kept)} findings marked in the code left out, {len(kept)} kept")
+              run["results"] = kept
+          with open("semgrep.sarif", "w", encoding="utf-8") as target:
+              json.dump(sarif, target)
+          EOF
       - uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         if: ${{ !cancelled() }}
         with:
