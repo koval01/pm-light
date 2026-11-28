@@ -136,12 +136,14 @@ fn behind_the_page(app: &App) -> (u8, u8, u8, u8) {
 fn page(html: &str) -> String {
     let number = PAGE.get() + 1;
     PAGE.set(number);
-    SERVED.serve(number, document(number, html))
+    SERVED.serve(number, document(number, html, ""))
 }
 
-fn document(number: u64, html: &str) -> String {
+/// The reader's page around a cleaned mail. `hints` are rules of no specificity that go before every other: the
+/// legacy attributes Blitz does not read (`html::hints`).
+pub fn document(number: u64, html: &str, hints: &str) -> String {
     format!(
-        r#"<!doctype html><html><head><title>{number}</title><meta charset="utf-8"><meta http-equiv="x-dns-prefetch-control" content="off"><meta http-equiv="Content-Security-Policy" content="{POLICY}"><style>html{{background:#fff;overscroll-behavior:none}}::-webkit-scrollbar{{width:10px;height:0}}::-webkit-scrollbar-track{{background:transparent}}::-webkit-scrollbar-thumb{{background:#0003;border:2px solid transparent;background-clip:padding-box;border-radius:5px}}body{{margin:0;padding:16px 22px 24px;color:#000;font:14px system-ui,sans-serif;overflow-wrap:break-word;overscroll-behavior:none}}img{{max-width:100%;height:auto}}table{{max-width:100%!important}}td,th{{overflow-wrap:anywhere}}</style></head><body>{html}</body></html>"#
+        r#"<!doctype html><html><head><title>{number}</title><meta charset="utf-8"><meta http-equiv="x-dns-prefetch-control" content="off"><meta http-equiv="Content-Security-Policy" content="{POLICY}"><style>{hints}</style><style>html{{background:#fff;overscroll-behavior:none}}::-webkit-scrollbar{{width:10px;height:0}}::-webkit-scrollbar-track{{background:transparent}}::-webkit-scrollbar-thumb{{background:#0003;border:2px solid transparent;background-clip:padding-box;border-radius:5px}}body{{margin:0;padding:16px 22px 24px;color:#000;font:14px system-ui,sans-serif;overflow-wrap:break-word;overscroll-behavior:none}}img{{max-width:100%;height:auto}}table{{max-width:100%!important}}td,th{{overflow-wrap:anywhere}}</style></head><body>{html}</body></html>"#
     )
 }
 
@@ -205,6 +207,9 @@ fn own_page(url: &str) -> bool {
 
 /// Draws a new mail out of sight, and shows it once it is whole.
 pub fn show_finished(app: &App, html: &str) {
+    if crate::page_view::chosen() {
+        return crate::page_view::show(app, html);
+    }
     set_visible(false);
     WAITING.set(true);
     show(app, html);
@@ -243,6 +248,9 @@ fn fit_then_reveal() {
 }
 
 pub fn show(app: &App, html: &str) {
+    if crate::page_view::chosen() {
+        return crate::page_view::show(app, html);
+    }
     let address = page(html);
     app.set_page_failed(false);
     let reused = VIEW.with_borrow(|view| {
@@ -316,6 +324,9 @@ fn fit() {
 
 /// Runs in the page's own world even with scripts off: this is the app speaking, not the mail.
 pub fn scroll_page(direction: i32) {
+    if crate::page_view::chosen() {
+        return crate::page_view::scroll_page(direction);
+    }
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
             let _ = view.evaluate_script(&format!("window.scrollBy(0, {direction} * window.innerHeight * 0.85)"));
@@ -334,6 +345,9 @@ pub fn zoom_to(zoom: f64) {
 
 /// Called on every frame of a move, and only a new width needs the page measured again.
 pub fn place(app: &App) {
+    if crate::page_view::chosen() {
+        return crate::page_view::place(app);
+    }
     if WARM_LATER.get() && has_room(app) {
         warm_up(app);
     }
@@ -349,6 +363,23 @@ pub fn place(app: &App) {
     }
 }
 
+/// The preferences chose the other engine. The one let go takes its pages with it: the web view's processes end once
+/// Blitz draws, and Blitz's page goes once the web view does. The open mail is drawn again by the new one when the
+/// settings close.
+pub fn engine_changed() {
+    if crate::page_view::chosen() {
+        WARM_LATER.set(false);
+        set_visible(false);
+        drop(VIEW.take());
+        crate::page_view::warm_up();
+    } else {
+        crate::page_view::close();
+        if let Some(app) = crate::actions::main_window() {
+            warm_up(&app);
+        }
+    }
+}
+
 /// Runs `with` on the mail's page, if there is one. For checks.
 pub fn with_page<T>(with: impl FnOnce(&WebView) -> T) -> Option<T> {
     VIEW.with_borrow(|view| view.as_deref().map(with))
@@ -356,11 +387,17 @@ pub fn with_page<T>(with: impl FnOnce(&WebView) -> T) -> Option<T> {
 
 /// Whether a page is on screen now: made, meant to be seen, drawn whole and with nothing over it. For checks.
 pub fn on_screen() -> bool {
+    if crate::page_view::chosen() {
+        return crate::page_view::on_screen();
+    }
     VIEW.with_borrow(Option::is_some) && SHOWN.get() && !WAITING.get() && COVERS.get() == 0
 }
 
 /// The webview sits above everything the toolkit draws, so a panel over the mail means hiding it.
 pub fn set_visible(visible: bool) {
+    if crate::page_view::chosen() {
+        return crate::page_view::set_visible(visible);
+    }
     WAITING.set(false);
     VIEW.with_borrow(|view| {
         if let Some(view) = view {
@@ -372,6 +409,7 @@ pub fn set_visible(visible: bool) {
 /// Out of sight and emptied, but alive: starting WebKit again takes about a second, and it is the
 /// difference between a mail that opens and one that arrives.
 pub fn close() {
+    crate::page_view::close();
     set_visible(false);
     if let Some(app) = crate::actions::main_window() {
         app.set_page_failed(false);
@@ -385,6 +423,7 @@ pub fn close() {
 
 /// Nothing of a mail may outlive the session.
 pub fn destroy() {
+    crate::page_view::close();
     WAITING.set(false);
     drop(VIEW.take());
 }
@@ -393,6 +432,9 @@ pub fn destroy() {
 /// room: with no mail open it has none, and a page made a pixel wide under Tor, where the mailbox comes late, stayed
 /// black on Linux once it grew. It is made as soon as the pane has room.
 pub fn warm_up(app: &App) {
+    if crate::page_view::chosen() {
+        return crate::page_view::warm_up();
+    }
     if VIEW.with_borrow(Option::is_some) {
         return;
     }

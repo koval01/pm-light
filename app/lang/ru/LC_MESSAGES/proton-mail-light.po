@@ -4942,3 +4942,19 @@ msgstr "Proton сортирует письма во входящих по кат
 msgctxt "Say"
 msgid "Email categories"
 msgstr "Категории писем"
+
+msgctxt "Say"
+msgid "Mail is drawn by"
+msgstr "Письма рисует"
+
+msgctxt "Say"
+msgid "Blitz, built in"
+msgstr "Blitz, встроенный"
+
+msgctxt "Say"
+msgid "Blitz draws mail inside the app, with no web engine running and no script. It is new: the tables of some newsletters look different, and screen readers do not reach the mail it draws yet."
+msgstr "Blitz рисует письма внутри приложения, без работающего веб-движка и без скриптов. Он новый: таблицы некоторых рассылок выглядят иначе, а программы экранного доступа пока не видят нарисованное им письмо."
+
+msgctxt "Say"
+msgid "The system's web view"
+msgstr "Веб-просмотр системы"

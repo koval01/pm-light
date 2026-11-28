@@ -20,6 +20,7 @@ const DENSITIES: [&str; 2] = ["look.comfortable", "look.compact"];
 const LAYOUTS: [&str; 2] = ["look.columns", "look.rows"];
 const LIST_STYLES: [&str; 2] = ["look.pages", "look.oneList"];
 const MAIL_TEXTS: [&str; 3] = ["look.small", "look.normal", "look.large"];
+const ENGINES: [&str; 2] = ["look.engineSystem", "look.engineBlitz"];
 const WEEK_DAYS: [&str; 8] =
     ["time.weekDefault", "time.day1", "time.day2", "time.day3", "time.day4", "time.day5", "time.day6", "time.day7"];
 const CLOCKS: [&str; 3] = ["time.asLanguage", "time.h24", "time.h12"];
@@ -68,6 +69,20 @@ pub fn appearance(ctx: &Ctx) {
                 ),
             ],
         ),
+        section(
+            "",
+            &ctx.say("settings.reading"),
+            "",
+            vec![
+                segmented(
+                    "mail-engine",
+                    &ctx.say("look.engine"),
+                    words(ctx, &ENGINES),
+                    usize::from(chosen.mail_engine),
+                ),
+                hint(&ctx.say("look.engineHint")),
+            ],
+        ),
         section("", &ctx.say("look.window"), "", window_rows(ctx, &chosen)),
     ]);
 }
@@ -102,6 +117,7 @@ fn apply_look(ctx: &Ctx, app: &App, id: &str, value: i32) {
         "palette" => preferences.palette = chosen,
         "density" => preferences.compact = value == 1,
         "mail-text" => preferences.mail_text = chosen,
+        "mail-engine" => preferences.mail_engine = chosen.min(1),
         "layout" => preferences.rows = value == 1,
         "list-style" => preferences.list_pages = Some(value == 0),
         "close-to-tray" => preferences.close_to_tray = value == 1,
@@ -111,6 +127,9 @@ fn apply_look(ctx: &Ctx, app: &App, id: &str, value: i32) {
     look::apply(app);
     if id == "zoom" {
         look::apply_zoom(app);
+    }
+    if id == "mail-engine" {
+        crate::mail_view::engine_changed();
     }
     if id == "list-style" {
         let service = ctx.service.clone();

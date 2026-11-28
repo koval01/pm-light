@@ -32,6 +32,7 @@ mod notifications;
 mod nowhere;
 mod numbers;
 mod outside;
+mod page_view;
 mod palette;
 mod pictures;
 mod preferences;
@@ -200,6 +201,7 @@ fn connect_reading(service: &Arc<Service>, app: &App) {
             mail_view::place(&app);
         }
     });
+    page_view::wire(app);
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

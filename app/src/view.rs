@@ -616,7 +616,7 @@ fn has_text(message: &Message) -> bool {
 
 /// Splits a text mail into runs, so that each link can be pressed. Mail is hostile input: only web
 /// and mail addresses count as links, and `open_link` checks again.
-fn lines_of(body: &str) -> Vec<(String, String)> {
+pub fn lines_of(body: &str) -> Vec<(String, String)> {
     let mut pieces = Vec::new();
     for line in body.lines() {
         let mut rest = line;
@@ -944,7 +944,7 @@ static KNOWN_TRACKERS: LazyLock<Mutex<HashMap<String, HashMap<String, String>>>>
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The open message, for what is asked of it later.
-static OPEN: Mutex<Option<Arc<Message>>> = Mutex::new(None);
+pub static OPEN: Mutex<Option<Arc<Message>>> = Mutex::new(None);
 static CURRENT: Mutex<Option<String>> = Mutex::new(None);
 static LABELS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 static FOLDERS: Mutex<Vec<(String, String, bool)>> = Mutex::new(Vec::new());
